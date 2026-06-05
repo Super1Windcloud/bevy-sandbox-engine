@@ -1,0 +1,93 @@
+[workspace]
+resolver = "3"
+members = ["crates/*", "bevy_editor_panes/*", "bevy_widgets/*"]
+exclude = ["templates"]
+default-members = ["crates/bevy_editor_launcher"]
+
+[workspace.lints.clippy]
+doc_markdown = "warn"
+manual_let_else = "warn"
+match_same_arms = "warn"
+redundant_closure_for_method_calls = "warn"
+redundant_else = "warn"
+semicolon_if_nothing_returned = "warn"
+type_complexity = "allow"
+undocumented_unsafe_blocks = "warn"
+unwrap_or_default = "warn"
+
+ptr_as_ptr = "warn"
+ptr_cast_constness = "warn"
+ref_as_ptr = "warn"
+
+[workspace.lints.rust]
+missing_docs = "warn"
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(docsrs_dep)'] }
+unsafe_code = "deny"
+unsafe_op_in_unsafe_fn = "warn"
+unused_qualifications = "warn"
+
+[workspace.dependencies]
+bevy = { version = "0.18.1", features = ["experimental_bevy_feathers", "experimental_bevy_ui_widgets"] }
+bevy_derive = "0.18.1"
+bevy_macro_utils = "0.18.1"
+thiserror = "2"
+serde = { version = "1", features = ["derive"] }
+tracing-test = "0.2.6"
+tracing = "0.1.44"
+atomicow = "1.2.0"
+rfd = "0.17.2"
+ron = "0.12.1"
+variadics_please = "2.0.0"
+
+# local crates
+
+# bevy_editor_panes
+bevy_2d_viewport = { path = "bevy_editor_panes/bevy_2d_viewport" }
+bevy_3d_viewport = { path = "bevy_editor_panes/bevy_3d_viewport" }
+bevy_asset_browser = { path = "bevy_editor_panes/bevy_asset_browser" }
+bevy_marketplace_viewer = { path = "bevy_editor_panes/bevy_marketplace_viewer" }
+bevy_preferences = { path = "bevy_editor_panes/bevy_preferences" }
+bevy_properties_pane = { path = "bevy_editor_panes/bevy_properties_pane" }
+bevy_scene_tree = { path = "bevy_editor_panes/bevy_scene_tree" }
+
+# bevy_widgets
+bevy_color_picker = { path = "bevy_widgets/bevy_color_picker" }
+bevy_command_palette = { path = "bevy_widgets/bevy_command_palette" }
+bevy_context_menu = { path = "bevy_widgets/bevy_context_menu" }
+bevy_i-cant-believe-its-not-bsn = { path = "bevy_widgets/bevy_i-cant-believe-its-not-bsn" }
+bevy_menu_bar = { path = "bevy_widgets/bevy_menu_bar" }
+bevy_scroll_box = { path = "bevy_widgets/bevy_scroll_box" }
+bevy_footer_bar = { path = "bevy_widgets/bevy_footer_bar" }
+bevy_toolbar = { path = "bevy_widgets/bevy_toolbar" }
+bevy_gizmo_indicator = { path = "bevy_widgets/bevy_gizmo_indicator" }
+bevy_tooltips = { path = "bevy_widgets/bevy_tooltips" }
+bevy_text_editing = { path = "bevy_widgets/bevy_text_editing" }
+bevy_field_forms = { path = "bevy_widgets/bevy_field_forms" }
+
+# general crates
+bevy_editor_core = { path = "crates/bevy_editor_core" }
+bevy_asset_preview = { path = "crates/bevy_asset_preview" }
+bevy_proto_bsn = { path = "crates/bevy_proto_bsn" }
+bevy_editor = { path = "crates/bevy_editor" }
+bevy_editor_camera = { path = "crates/bevy_editor_camera" }
+bevy_editor_launcher = { path = "crates/bevy_editor_launcher" }
+bevy_editor_settings = { path = "crates/bevy_editor_settings" }
+bevy_editor_styles = { path = "crates/bevy_editor_styles" }
+bevy_localization = { path = "crates/bevy_localization" }
+bevy_pane_layout = { path = "crates/bevy_pane_layout" }
+bevy_transform_gizmos = { path = "crates/bevy_transform_gizmos" }
+bevy_undo = { path = "crates/bevy_undo" }
+bevy_infinite_grid = { path = "crates/bevy_infinite_grid" }
+bevy_editor_cam = { path = "crates/bevy_editor_cam" }
+bevy_clipboard = { path = "crates/bevy_clipboard" }
+
+
+[profile.dev]
+debug = 0
+
+#最快编译时间
+[profile.release]
+lto = false
+codegen-units = 256
+panic = "abort"
+debug = 0

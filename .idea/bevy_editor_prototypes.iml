@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="EMPTY_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/bevy_editor_panes/bevy_2d_viewport/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bevy_editor_panes/bevy_3d_viewport/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bevy_editor_panes/bevy_asset_browser/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bevy_editor_panes/bevy_marketplace_viewer/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bevy_editor_panes/bevy_preferences/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bevy_editor_panes/bevy_properties_pane/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bevy_editor_panes/bevy_scene_tree/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bevy_widgets/bevy_color_picker/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bevy_widgets/bevy_command_palette/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bevy_widgets/bevy_context_menu/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bevy_widgets/bevy_context_menu/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bevy_widgets/bevy_field_forms/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bevy_widgets/bevy_field_forms/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bevy_widgets/bevy_footer_bar/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bevy_widgets/bevy_gizmo_indicator/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bevy_widgets/bevy_i-cant-believe-its-not-bsn/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bevy_widgets/bevy_menu_bar/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bevy_widgets/bevy_scroll_box/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bevy_widgets/bevy_text_editing/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bevy_widgets/bevy_text_editing/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bevy_widgets/bevy_toolbar/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bevy_widgets/bevy_tooltips/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_asset_preview/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_clipboard/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_editor/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_editor_cam/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_editor_cam/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_editor_camera/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_editor_camera/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_editor_core/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_editor_launcher/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_editor_launcher/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_editor_settings/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_editor_styles/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_infinite_grid/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_infinite_grid/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_localization/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_pane_layout/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_proto_bsn/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_proto_bsn/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_proto_bsn/src/ast/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_proto_bsn/src/macros/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_transform_gizmos/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_transform_gizmos/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_undo/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bevy_undo/src" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
