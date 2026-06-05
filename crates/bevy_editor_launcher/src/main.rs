@@ -1,4 +1,4 @@
-//! The launcher for the Bevy Editor.
+//! The launcher for Bevy Sandbox Engine.
 //!
 //! The launcher provide a bunch of functionalities to manage your projects.
 
@@ -10,7 +10,7 @@ use bevy::{
     tasks::{IoTaskPool, Task, block_on, futures_lite::future},
 };
 
-use bevy_editor::project::{
+use bevy_sandbox_engine::project::{
     ProjectInfo, create_new_project, get_local_projects, set_project_list, templates::Templates,
 };
 use bevy_editor_styles::{StylesPlugin, Theme};
@@ -76,7 +76,7 @@ fn main() {
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
-                    title: "Bevy Editor Launcher".to_string(),
+                    title: "Bevy Sandbox Engine Launcher".to_string(),
                     ..default()
                 }),
                 ..default()

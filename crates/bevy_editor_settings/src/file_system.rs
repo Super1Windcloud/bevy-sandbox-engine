@@ -7,7 +7,7 @@ pub mod de;
 
 use crate::{GlobalSettingsPath, SettingsType};
 
-const SETTINGS_BASE_DIR: &str = "bevy_editor";
+const SETTINGS_BASE_DIR: &str = "bevy_sandbox_engine";
 
 pub fn global_settings_path() -> Option<PathBuf> {
     let path = directories::BaseDirs::new()?;

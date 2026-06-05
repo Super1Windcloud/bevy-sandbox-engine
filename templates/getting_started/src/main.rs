@@ -5,7 +5,7 @@ use std::f32::consts::PI;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-use bevy_editor::{bevy::prelude::*, App};
+use bevy_sandbox_engine::{bevy::prelude::*, App};
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum GameState {

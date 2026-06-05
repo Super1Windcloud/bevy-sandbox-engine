@@ -1,4 +1,4 @@
-//! Module to handle Bevy Editor's project templates.
+//! Module to handle Bevy Sandbox Engine project templates.
 
 use std::path::Path;
 

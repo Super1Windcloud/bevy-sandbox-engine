@@ -68,7 +68,7 @@ bevy_field_forms = { path = "bevy_widgets/bevy_field_forms" }
 bevy_editor_core = { path = "crates/bevy_editor_core" }
 bevy_asset_preview = { path = "crates/bevy_asset_preview" }
 bevy_proto_bsn = { path = "crates/bevy_proto_bsn" }
-bevy_editor = { path = "crates/bevy_editor" }
+bevy_sandbox_engine = { package = "bevy-sandbox-engine", path = "crates/bevy_editor" }
 bevy_editor_camera = { path = "crates/bevy_editor_camera" }
 bevy_editor_launcher = { path = "crates/bevy_editor_launcher" }
 bevy_editor_settings = { path = "crates/bevy_editor_settings" }

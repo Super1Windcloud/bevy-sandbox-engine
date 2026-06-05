@@ -1,7 +1,7 @@
-//! The main Bevy Editor application.
+//! The main Bevy Sandbox Engine application.
 //!
-//! This crate contains a standalone application that can be used to edit Bevy scenes and debug Bevy games.
-//! Virtually all of the underlying logic and functionality of the editor should be backed by the assorted crates in the `bevy_editor` workspace;
+//! This crate contains a standalone application that can be used to build sandbox game workflows on top of Bevy.
+//! Virtually all of the underlying logic and functionality of the engine should be backed by the assorted crates in the workspace;
 //! this crate is simply responsible for orchestrating those crates and providing a user interface for them.
 //!
 //! The exact nature of this crate will be in flux for a while:
@@ -62,9 +62,9 @@ pub struct EditorPlugin;
 
 impl Plugin for EditorPlugin {
     fn build(&self, bevy_app: &mut BevyApp) {
-        // Update/register this project to the editor project list
+        // Update/register this project to the local project list
         project::update_project_info();
-        info!("Loading Bevy Editor");
+        info!("Loading Bevy Sandbox Engine");
         bevy_app
             .add_plugins((
                 EditorCorePlugin,

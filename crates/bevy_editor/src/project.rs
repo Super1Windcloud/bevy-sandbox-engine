@@ -1,4 +1,4 @@
-//! This module contains project management functionalities for the Bevy Editor.
+//! This module contains project management functionalities for Bevy Sandbox Engine.
 
 use bevy::log::{error, info, warn};
 use serde::{Deserialize, Serialize};
@@ -53,7 +53,7 @@ pub async fn create_new_project(
     Ok(info)
 }
 
-/// Get all projects that have been opened in the editor.
+/// Get all projects that have been opened in the engine launcher.
 pub fn get_local_projects() -> Vec<ProjectInfo> {
     match cache::load_projects() {
         Ok(projects) => projects,

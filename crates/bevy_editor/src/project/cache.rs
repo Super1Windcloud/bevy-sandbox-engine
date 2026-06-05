@@ -5,8 +5,8 @@ use super::ProjectInfo;
 
 /// The name of the project cache file
 const CACHE_FILE: &str = "projects.ron";
-/// The name of the Bevy Editor's cache folder
-const CACHE_FOLDER_NAME: &str = "Bevy Editor";
+/// The name of the Bevy Sandbox Engine cache folder
+const CACHE_FOLDER_NAME: &str = "Bevy Sandbox Engine";
 
 /// This is the structure that is saved in the [`CACHE_FILE`]
 #[derive(Debug, Serialize, Deserialize)]
@@ -14,7 +14,7 @@ struct ProjectsCache {
     projects: Vec<ProjectInfo>,
 }
 
-/// Get Bevy Editor's cache folder path
+/// Get Bevy Sandbox Engine cache folder path
 /// `Windows`: %LOCALAPPDATA%/[`CACHE_FOLDER_NAME`]
 /// `MacOS`: ~/Library/Caches/[`CACHE_FOLDER_NAME`]
 /// `Linux`: $`XDG_DATA_HOME`/[`CACHE_FOLDER_NAME`]

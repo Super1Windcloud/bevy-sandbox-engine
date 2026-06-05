@@ -1,5 +1,5 @@
 [package]
-name = "bevy_editor_launcher"
+name = "bevy-sandbox-engine-launcher"
 version = "0.1.0"
 edition = "2024"
 
@@ -8,7 +8,7 @@ workspace = true
 
 [dependencies]
 bevy.workspace = true
-bevy_editor.workspace = true
+bevy_sandbox_engine.workspace = true
 bevy_scroll_box.workspace = true
 bevy_footer_bar.workspace = true
 bevy_editor_styles.workspace = true
