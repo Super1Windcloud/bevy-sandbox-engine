@@ -55,13 +55,10 @@ pub async fn create_new_project(
 
 /// Get all projects that have been opened in the engine launcher.
 pub fn get_local_projects() -> Vec<ProjectInfo> {
-    match cache::load_projects() {
-        Ok(projects) => projects,
-        Err(error) => {
-            warn!("Failed to load projects from cache file: {:?}", error);
-            Vec::new()
-        }
-    }
+    cache::load_projects().unwrap_or_else(|error| {
+        warn!("Failed to load projects from cache file: {:?}", error);
+        Vec::new()
+    })
 }
 
 /// Update the current project info or create new ones if doesn't exist.
@@ -100,7 +97,7 @@ pub fn set_project_list(projects: Vec<ProjectInfo>) {
 pub fn run_project(project: &ProjectInfo) -> std::io::Result<()> {
     // Make sure the project folder exist
     if !project.path.exists() {
-        return std::io::Result::Err(std::io::Error::new(
+        return Err(std::io::Error::new(
             std::io::ErrorKind::NotFound,
             "Project root folder not found",
         ));
@@ -111,7 +108,7 @@ pub fn run_project(project: &ProjectInfo) -> std::io::Result<()> {
     let src_folder = project.path.join("src");
     let main_rs = src_folder.join("main.rs");
     if !cargo_toml.exists() || !src_folder.exists() || !main_rs.exists() {
-        return std::io::Result::Err(std::io::Error::new(
+        return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
             "Project isn't a valid one of the following missing: Cargo.toml, src folder or main.rs file",
         ));

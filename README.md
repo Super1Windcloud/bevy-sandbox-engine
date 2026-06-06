@@ -2,6 +2,7 @@
 
 `bevy-sandbox-engine` is a sandbox-game-focused engine layer built on top of Bevy.
 It packages editor-facing tooling, runtime scaffolding, project templates, and reusable UI/pane crates into one workspace aimed at rapid sandbox game iteration.
+The launcher UI now uses `egui`, while the larger editor/runtime stack still contains legacy Bevy-native UI infrastructure that can be migrated incrementally.
 
 ## Positioning
 
@@ -19,7 +20,7 @@ The external identity has been renamed to `bevy-sandbox-engine`, while internal 
 ## Workspace Layout
 
 - `crates/bevy_editor`: the main `bevy-sandbox-engine` crate and engine entry point
-- `crates/bevy_editor_launcher`: launcher binary for opening and creating projects
+- `crates/bevy_editor_launcher`: `egui` launcher binary for opening and creating projects
 - `bevy_editor_panes/*`: viewport and tool panes
 - `bevy_widgets/*`: reusable UI widgets
 - `templates/*`: starter projects copied by the launcher
@@ -30,6 +31,14 @@ The external identity has been renamed to `bevy-sandbox-engine`, while internal 
 Run the launcher:
 
 ```bash
+cargo run
+```
+
+On Windows, both the launcher and the editor now default to `dx12` if `WGPU_BACKEND` is not set.
+Override it manually when you want to test another backend:
+
+```powershell
+$env:WGPU_BACKEND="vulkan"
 cargo run
 ```
 

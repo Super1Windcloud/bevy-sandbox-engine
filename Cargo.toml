@@ -28,6 +28,7 @@ unused_qualifications = "warn"
 
 [workspace.dependencies]
 bevy = { version = "0.18.1", features = ["experimental_bevy_feathers", "experimental_bevy_ui_widgets"] }
+bevy_egui = "0.39.1"
 bevy_derive = "0.18.1"
 bevy_macro_utils = "0.18.1"
 thiserror = "2"

@@ -1,334 +1,211 @@
 use std::io::ErrorKind;
 use std::path::Path;
 
-use bevy::{prelude::*, ui::RelativeCursorPosition};
-use bevy_sandbox_engine::project::{ProjectInfo, run_project, set_project_list, templates::Templates};
-use bevy_editor_styles::Theme;
-use bevy_footer_bar::FooterBarNode;
+use bevy::{prelude::*, window::PrimaryWindow};
+use bevy_egui::{EguiContexts, egui};
+use bevy_sandbox_engine::project::{run_project, set_project_list, templates::Templates};
 
-use bevy_scroll_box::spawn_scroll_box;
+use crate::{ProjectInfoList, spawn_create_new_project_task};
 
-use crate::ProjectInfoList;
-
-#[derive(Component)]
-#[require(Node)]
-pub struct ProjectList;
-
-/// Component for notification popup
-#[derive(Component)]
-pub struct NotificationPopup {
-    pub timer: Timer,
+#[derive(Resource, Default)]
+pub struct LauncherUiState {
+    pub notifications: Vec<Notification>,
 }
 
-/// System to handle notification popups
-pub fn handle_notification_popups(
-    mut commands: Commands,
-    time: Res<Time>,
-    mut query: Query<(Entity, &mut NotificationPopup)>,
-) {
-    for (entity, mut popup) in query.iter_mut() {
-        popup.timer.tick(time.delta());
-        if popup.timer.is_finished() {
-            commands.entity(entity).despawn();
-        }
+pub struct Notification {
+    pub text: String,
+    pub ttl: Timer,
+}
+
+pub fn setup(mut commands: Commands) {
+    commands.spawn(Camera2d);
+}
+
+pub fn tick_notifications(time: Res<Time>, mut ui_state: ResMut<LauncherUiState>) {
+    for notification in &mut ui_state.notifications {
+        notification.ttl.tick(time.delta());
     }
+    ui_state
+        .notifications
+        .retain(|notification| !notification.ttl.is_finished());
 }
 
-/// Spawn a notification popup with a message
-pub fn spawn_notification_popup(commands: &mut Commands, theme: &Theme, message: &str) -> Entity {
-    commands
-        .spawn((
-            Node {
-                position_type: PositionType::Absolute,
-                left: Val::Px(0.0),
-                right: Val::Px(0.0),
-                top: Val::Px(50.0),
-                margin: UiRect::horizontal(Val::Auto),
-                padding: UiRect::all(Val::Px(12.0)),
-                width: Val::Auto,
-                height: Val::Auto,
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                border_radius: BorderRadius::all(Val::Px(8.0)),
-                ..default()
-            },
-            BackgroundColor(Color::srgba(0.1, 0.1, 0.1, 0.9)),
-            NotificationPopup {
-                timer: Timer::from_seconds(3.0, TimerMode::Once),
-            },
-        ))
-        .with_child((
-            Text::new(message.to_string()),
-            TextFont {
-                font: theme.text.font.clone(),
-                font_size: 18.0,
-                ..default()
-            },
-            TextColor(Color::WHITE),
-            Outline {
-                width: Val::Px(0.5),
-                color: Color::BLACK,
-                ..default()
-            },
-        ))
-        .id()
+fn push_notification(ui_state: &mut LauncherUiState, message: impl Into<String>) {
+    ui_state.notifications.push(Notification {
+        text: message.into(),
+        ttl: Timer::from_seconds(3.0, TimerMode::Once),
+    });
 }
 
-pub fn setup(
+pub fn render_launcher_ui(
+    mut contexts: EguiContexts,
     mut commands: Commands,
-    theme: Res<Theme>,
-    asset_server: Res<AssetServer>,
-    project_list: Res<ProjectInfoList>,
-) {
-    commands.spawn((
-        Camera2d,
-        Camera {
-            order: 10,
-            ..default()
-        },
-    ));
+    mut primary_window: Query<&mut Window, With<PrimaryWindow>>,
+    mut project_list: ResMut<ProjectInfoList>,
+    mut ui_state: ResMut<LauncherUiState>,
+    mut exit: MessageWriter<AppExit>,
+) -> Result {
+    let ctx = contexts.ctx_mut()?;
 
-    let root = commands
-        .spawn((
-            Node {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                display: Display::Flex,
-                flex_direction: FlexDirection::Column,
-                ..default()
-            },
-            theme.pane.area_background_color,
-        ))
-        .id();
-
-    let main = commands
-        .spawn((
-            Node {
-                width: Val::Percent(100.0),
-                flex_grow: 1.0,
-                ..default()
-            },
-            ChildOf(root),
-        ))
-        .id();
-
-    spawn_scroll_box(
-        &mut commands,
-        &theme,
-        Overflow::scroll_y(),
-        Some(|commands: &mut Commands, content_box: Entity| {
-            let mut content_ec = commands.entity(content_box);
-            content_ec.insert(ProjectList);
-            content_ec.with_children(|parent| {
-                for project in project_list.0.iter() {
-                    spawn_project_node(parent, &theme, &asset_server, project);
-                }
-                parent
-                    .spawn((
-                        Node {
-                            display: Display::Flex,
-                            flex_direction: FlexDirection::Column,
-                            margin: UiRect::axes(
-                                Val::Px((250.0 - 100.0) / 2.0),
-                                Val::Px((200.0 - 100.0) / 2.0),
-                            ),
-                            width: Val::Px(100.0),
-                            height: Val::Px(100.0),
-                            align_items: AlignItems::Center,
-                            justify_content: JustifyContent::Center,
-                            border: UiRect::all(Val::Px(5.0)),
-                            border_radius: BorderRadius::all(Val::Px(20.0)),
-                            ..default()
-                        },
-                        BorderColor::all(theme.button.background_color.0),
-                    ))
-                    .with_child((
-                        Node {
-                            width: Val::Px(30.0),
-                            height: Val::Px(30.0),
-                            ..default()
-                        },
-                        ImageNode::new(asset_server.load("plus.png")),
-                    ))
-                    .observe(|_trigger: On<Pointer<Release>>, mut commands: Commands| {
+    egui::TopBottomPanel::top("top_bar")
+        .frame(
+            egui::Frame::new()
+                .fill(egui::Color32::from_rgb(18, 20, 24))
+                .inner_margin(egui::Margin::symmetric(16, 12)),
+        )
+        .show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.heading("Bevy Sandbox Engine");
+                ui.separator();
+                ui.label("Sandbox game engine editor");
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if ui.button("New Project").clicked() {
                         let new_project_path = rfd::FileDialog::new().pick_folder();
                         if let Some(path) = new_project_path {
-                            crate::spawn_create_new_project_task(
-                                &mut commands,
-                                Templates::Blank,
-                                path,
-                            );
-                        }
-                    });
-            });
-        }),
-    )
-    .insert(ChildOf(main));
-
-    let _footer = commands.spawn(FooterBarNode).insert(ChildOf(root)).id();
-}
-
-pub(crate) fn spawn_project_node<'a>(
-    commands: &'a mut ChildSpawnerCommands,
-    theme: &Theme,
-    asset_server: &Res<AssetServer>,
-    project: &ProjectInfo,
-) -> EntityCommands<'a> {
-    let mut root_ec = commands.spawn((
-        Node {
-            display: Display::Flex,
-            flex_direction: FlexDirection::Column,
-            margin: UiRect::all(Val::Px(5.0)),
-            width: Val::Px(250.0),
-            height: Val::Px(200.0),
-            border_radius: BorderRadius::new(
-                Val::Px(15.0),
-                Val::Px(15.0),
-                Val::Px(15.0),
-                Val::Px(15.0),
-            ),
-            ..default()
-        },
-        RelativeCursorPosition::default(),
-        theme.button.background_color,
-    ));
-
-    root_ec.observe(
-        |trigger: On<Pointer<Release>>,
-         mut commands: Commands,
-         query_children: Query<&Children>,
-         query_text: Query<&Text>,
-         mut exit: MessageWriter<AppExit>,
-         mut project_list: ResMut<ProjectInfoList>,
-         theme: Res<Theme>| {
-            let project = {
-                let text = {
-                    let project_entity = trigger.event().event_target();
-                    let project_children = query_children.get(project_entity).unwrap();
-                    let text_container = project_children.get(1).expect(
-                        "Expected project node to have 2 children, (the second being a container for the name)"
-                    );
-                    let text_container_children = query_children.get(*text_container).unwrap();
-                    let text_entity = text_container_children
-                        .first()
-                        .expect("Expected text container to have 1 child, the text entity");
-                    query_text
-                        .get(*text_entity)
-                        .expect("Expected text entity to have a Text component")
-                };
-
-                project_list
-                    .0
-                    .iter()
-                    .find(|p| p.name().unwrap() == text.0)
-                    .unwrap()
-                    .clone()
-            };
-
-            // Check if project directory exists before trying to run it
-            if !Path::new(&project.path).exists() {
-                // Show notification popup
-                let project_name = project.name().unwrap_or_else(|| "Unknown".to_string());
-                spawn_notification_popup(
-                    &mut commands,
-                    &theme,
-                    &format!("Project not found: '{project_name}'"),
-                );
-                // Remove project from list
-                project_list.0.retain(|p| p.path != project.path);
-                set_project_list(project_list.0.clone());
-                // Remove project node from UI
-                let project_entity = trigger.event().event_target();
-                commands.entity(project_entity).despawn();
-                return;
-            }
-
-            // Project exists, try to run it
-            match run_project(&project) {
-                Ok(_) => {
-                    exit.write(AppExit::Success);
-                }
-                Err(error) => {
-                    error!("Failed to run project: {:?}", error);
-                    match error.kind() {
-                        ErrorKind::NotFound | ErrorKind::InvalidData => {
-                            // Show notification popup
-                            let project_name = project.name().unwrap_or_else(|| "Unknown".to_string());
-                            spawn_notification_popup(
-                                &mut commands,
-                                &theme,
-                                &format!("Failed to run project: '{project_name}'"),
-                            );
-                            // Remove project from list
-                            project_list.0.retain(|p| p.path != project.path);
-                            set_project_list(project_list.0.clone());
-                            // Remove project node from UI
-                            let project_entity = trigger.event().event_target();
-                            commands.entity(project_entity).despawn();
-                        }
-                        _ => {
-                            // Show generic error notification
-                            spawn_notification_popup(
-                                &mut commands,
-                                &theme,
-                                &format!("Error running project: '{error}'"),
-                            );
+                            spawn_create_new_project_task(&mut commands, Templates::Blank, path);
                         }
                     }
-                }
-            }
-        },
-    );
-
-    root_ec.with_children(|parent| {
-        // Project preview (TODO: add thumbnail)
-        parent
-            .spawn((Node {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                overflow: Overflow::clip(),
-                flex_grow: 1.0,
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                ..default()
-            },))
-            .with_children(|parent| {
-                parent.spawn((
-                    ImageNode::new(asset_server.load("image-off.png")),
-                    Node {
-                        width: Val::Percent(30.0),
-                        ..default()
-                    },
-                ));
+                });
             });
-        // Project name
-        parent
-            .spawn((
-                Node {
-                    display: Display::Flex,
-                    min_height: Val::Percent(20.0),
-                    width: Val::Percent(100.0),
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    border_radius: BorderRadius::new(
-                        Val::Px(0.0),
-                        Val::Px(0.0),
-                        Val::Px(15.0),
-                        Val::Px(15.0),
-                    ),
-                    ..default()
-                },
-                BackgroundColor(Color::oklch(0.209, 0.0, 0.0)),
-            ))
-            .with_child((
-                Text::new(project.name().unwrap().to_string()),
-                TextFont {
-                    font: theme.text.font.clone(),
-                    font_size: 16.0,
-                    ..default()
-                },
-            ));
-    });
+        });
 
-    root_ec
+    egui::TopBottomPanel::bottom("status_bar")
+        .frame(
+            egui::Frame::new()
+                .fill(egui::Color32::from_rgb(14, 16, 18))
+                .inner_margin(egui::Margin::symmetric(16, 10)),
+        )
+        .show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.label(format!("Projects: {}", project_list.0.len()));
+                ui.separator();
+                ui.label("Launcher: egui");
+            });
+        });
+
+    egui::CentralPanel::default()
+        .frame(
+            egui::Frame::new()
+                .fill(egui::Color32::from_rgb(10, 12, 16))
+                .inner_margin(18),
+        )
+        .show(ctx, |ui| {
+            ui.add_space(8.0);
+            ui.heading("Project Workspace");
+            ui.label("Open an existing sandbox project or create a new one from the launcher.");
+            ui.add_space(16.0);
+
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                if project_list.0.is_empty() {
+                    ui.group(|ui| {
+                        ui.label("No projects yet.");
+                        ui.label("Use \"New Project\" to create your first sandbox workspace.");
+                    });
+                    return;
+                }
+
+                let mut remove_path = None;
+
+                for project in &project_list.0 {
+                    ui.add_space(6.0);
+                    egui::Frame::new()
+                        .fill(egui::Color32::from_rgb(24, 27, 34))
+                        .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(52, 58, 72)))
+                        .corner_radius(12)
+                        .inner_margin(16)
+                        .show(ui, |ui| {
+                            ui.horizontal(|ui| {
+                                ui.vertical(|ui| {
+                                    ui.heading(project.name().unwrap_or_else(|| "Unknown".to_string()));
+                                    ui.label(project.path.display().to_string());
+                                });
+
+                                ui.with_layout(
+                                    egui::Layout::right_to_left(egui::Align::Center),
+                                    |ui| {
+                                        if ui.button("Open").clicked() {
+                                            if !Path::new(&project.path).exists() {
+                                                let project_name = project
+                                                    .name()
+                                                    .unwrap_or_else(|| "Unknown".to_string());
+                                                push_notification(
+                                                    &mut ui_state,
+                                                    format!("Project not found: '{project_name}'"),
+                                                );
+                                                remove_path = Some(project.path.clone());
+                                                return;
+                                            }
+
+                                            match run_project(project) {
+                                                Ok(_) => {
+                                                    exit.write(AppExit::Success);
+                                                }
+                                                Err(error) => match error.kind() {
+                                                    ErrorKind::NotFound | ErrorKind::InvalidData => {
+                                                        let project_name = project
+                                                            .name()
+                                                            .unwrap_or_else(|| "Unknown".to_string());
+                                                        push_notification(
+                                                            &mut ui_state,
+                                                            format!(
+                                                                "Failed to run project: '{project_name}'"
+                                                            ),
+                                                        );
+                                                        remove_path = Some(project.path.clone());
+                                                    }
+                                                    _ => {
+                                                        push_notification(
+                                                            &mut ui_state,
+                                                            format!("Error running project: '{error}'"),
+                                                        );
+                                                    }
+                                                },
+                                            }
+                                        }
+
+                                        if ui.button("Reveal").clicked() {
+                                            push_notification(
+                                                &mut ui_state,
+                                                format!("Path: {}", project.path.display()),
+                                            );
+                                        }
+                                    },
+                                );
+                            });
+                        });
+                }
+
+                if let Some(path) = remove_path {
+                    project_list.0.retain(|project| project.path != path);
+                    set_project_list(project_list.0.clone());
+                }
+            });
+        });
+
+    if !ui_state.notifications.is_empty() {
+        egui::Area::new("notifications".into())
+            .anchor(egui::Align2::RIGHT_TOP, egui::vec2(-20.0, 20.0))
+            .show(ctx, |ui| {
+                ui.set_width(320.0);
+                for notification in &ui_state.notifications {
+                    egui::Frame::new()
+                        .fill(egui::Color32::from_rgb(32, 36, 44))
+                        .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(83, 92, 112)))
+                        .corner_radius(10)
+                        .inner_margin(12)
+                        .show(ui, |ui| {
+                            ui.label(&notification.text);
+                        });
+                    ui.add_space(8.0);
+                }
+            });
+    }
+
+    if let Ok(mut window) = primary_window.single_mut()
+        && !window.visible
+    {
+        window.visible = true;
+    }
+
+    Ok(())
 }

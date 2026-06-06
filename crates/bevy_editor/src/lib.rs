@@ -18,6 +18,10 @@ use bevy::app::App as BevyApp;
 use bevy::asset::UnapprovedPathMode;
 use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
+use bevy::render::{
+    settings::{RenderCreation, WgpuSettings},
+    RenderPlugin,
+};
 use bevy::{
     feathers::{FeathersPlugin, dark_theme::create_dark_theme, theme::UiTheme},
     input_focus::{InputDispatchPlugin, tab_navigation::TabNavigationPlugin},
@@ -27,6 +31,7 @@ use bevy::{
 pub use bevy;
 
 use bevy::winit::{UpdateMode, WinitSettings};
+use bevy_egui::EguiPlugin;
 use bevy_context_menu::ContextMenuPlugin;
 use bevy_editor_core::EditorCorePlugin;
 use bevy_editor_core::selection::Selectable;
@@ -50,10 +55,27 @@ pub struct RuntimePlugin;
 
 impl Plugin for RuntimePlugin {
     fn build(&self, bevy_app: &mut BevyApp) {
-        bevy_app.add_plugins(DefaultPlugins.set(AssetPlugin {
-            unapproved_path_mode: UnapprovedPathMode::Deny,
+        #[cfg(target_os = "windows")]
+        let render_plugin = RenderPlugin {
+            render_creation: RenderCreation::Automatic(WgpuSettings {
+                backends: Some(
+                    bevy::render::settings::Backends::from_env()
+                        .unwrap_or(bevy::render::settings::Backends::DX12),
+                ),
+                ..default()
+            }),
             ..default()
-        }));
+        };
+
+        #[cfg(not(target_os = "windows"))]
+        let render_plugin = RenderPlugin::default();
+
+        bevy_app.add_plugins(DefaultPlugins
+            .set(AssetPlugin {
+                unapproved_path_mode: UnapprovedPathMode::Deny,
+                ..default()
+            })
+            .set(render_plugin));
     }
 }
 
@@ -70,6 +92,7 @@ impl Plugin for EditorPlugin {
                 EditorCorePlugin,
                 ContextMenuPlugin,
                 StylesPlugin,
+                EguiPlugin::default(),
                 Viewport2dPanePlugin,
                 Viewport3dPanePlugin,
                 ui::EditorUIPlugin,
