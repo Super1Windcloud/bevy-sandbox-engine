@@ -142,7 +142,6 @@ fn main() {
                     primary_window: Some(Window {
                         title: "Bevy Sandbox Engine Launcher".to_string(),
                         resolution: bevy::window::WindowResolution::new(1320, 860),
-                        visible: false,
                         ..default()
                     }),
                     ..default()

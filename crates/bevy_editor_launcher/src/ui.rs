@@ -1,7 +1,7 @@
 use std::io::ErrorKind;
 use std::path::Path;
 
-use bevy::{prelude::*, window::PrimaryWindow};
+use bevy::prelude::*;
 use bevy_egui::{EguiContexts, egui};
 use bevy_sandbox_engine::project::{run_project, set_project_list, templates::Templates};
 
@@ -17,8 +17,16 @@ pub struct Notification {
     pub ttl: Timer,
 }
 
+const LAUNCHER_BG: Color = Color::srgb(0.039, 0.047, 0.063);
+
 pub fn setup(mut commands: Commands) {
-    commands.spawn(Camera2d);
+    commands.spawn((
+        Camera2d,
+        Camera {
+            clear_color: ClearColorConfig::Custom(LAUNCHER_BG),
+            ..default()
+        },
+    ));
 }
 
 pub fn tick_notifications(time: Res<Time>, mut ui_state: ResMut<LauncherUiState>) {
@@ -40,12 +48,12 @@ fn push_notification(ui_state: &mut LauncherUiState, message: impl Into<String>)
 pub fn render_launcher_ui(
     mut contexts: EguiContexts,
     mut commands: Commands,
-    mut primary_window: Query<&mut Window, With<PrimaryWindow>>,
     mut project_list: ResMut<ProjectInfoList>,
     mut ui_state: ResMut<LauncherUiState>,
     mut exit: MessageWriter<AppExit>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?;
+    ctx.set_visuals(egui::Visuals::dark());
 
     egui::TopBottomPanel::top("top_bar")
         .frame(
@@ -199,12 +207,6 @@ pub fn render_launcher_ui(
                     ui.add_space(8.0);
                 }
             });
-    }
-
-    if let Ok(mut window) = primary_window.single_mut()
-        && !window.visible
-    {
-        window.visible = true;
     }
 
     Ok(())
