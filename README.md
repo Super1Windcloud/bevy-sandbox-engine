@@ -19,10 +19,9 @@ The external identity has been renamed to `bevy-sandbox-engine`, while internal 
 
 ## Workspace Layout
 
-- `crates/bevy_editor`: the main `bevy-sandbox-engine` crate and engine entry point
-- `crates/bevy_editor_launcher`: `egui` launcher binary for opening and creating projects
-- `bevy_editor_panes/*`: viewport and tool panes
-- `bevy_widgets/*`: reusable UI widgets
+- `bevy_editor`: the main `bevy-sandbox-engine` crate and engine entry point
+- `bevy_editor_launcher`: `egui` launcher binary for opening and creating projects
+- `bevy_*`: all workspace crates now live directly under the repository root
 - `templates/*`: starter projects copied by the launcher
 - `design-book/*`: design notes and long-form architecture docs
 
@@ -54,7 +53,7 @@ Starter templates now depend on the local workspace crate:
 
 ```toml
 [dependencies]
-bevy_sandbox_engine = { package = "bevy-sandbox-engine", path = "../../crates/bevy_editor" }
+bevy_sandbox_engine = { package = "bevy-sandbox-engine", path = "../../bevy_editor" }
 ```
 
 Minimal app entry:

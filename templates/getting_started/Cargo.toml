@@ -4,6 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy_sandbox_engine = { package = "bevy-sandbox-engine", path = "../../crates/bevy_editor" }
+bevy_sandbox_engine = { package = "bevy-sandbox-engine", path = "../../bevy_editor" }
 rand = "0.8.5"
 rand_chacha = "0.3.1"

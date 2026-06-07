@@ -1,8 +1,8 @@
 [workspace]
 resolver = "3"
-members = ["crates/*", "bevy_editor_panes/*", "bevy_widgets/*"]
+members = ["bevy_*"]
 exclude = ["templates"]
-default-members = ["crates/bevy_editor_launcher"]
+default-members = ["bevy_editor_launcher"]
 
 [workspace.lints.clippy]
 doc_markdown = "warn"
@@ -42,45 +42,43 @@ variadics_please = "2.0.0"
 
 # local crates
 
-# bevy_editor_panes
-bevy_2d_viewport = { path = "bevy_editor_panes/bevy_2d_viewport" }
-bevy_3d_viewport = { path = "bevy_editor_panes/bevy_3d_viewport" }
-bevy_asset_browser = { path = "bevy_editor_panes/bevy_asset_browser" }
-bevy_marketplace_viewer = { path = "bevy_editor_panes/bevy_marketplace_viewer" }
-bevy_preferences = { path = "bevy_editor_panes/bevy_preferences" }
-bevy_properties_pane = { path = "bevy_editor_panes/bevy_properties_pane" }
-bevy_scene_tree = { path = "bevy_editor_panes/bevy_scene_tree" }
-
-# bevy_widgets
-bevy_color_picker = { path = "bevy_widgets/bevy_color_picker" }
-bevy_command_palette = { path = "bevy_widgets/bevy_command_palette" }
-bevy_context_menu = { path = "bevy_widgets/bevy_context_menu" }
-bevy_i-cant-believe-its-not-bsn = { path = "bevy_widgets/bevy_i-cant-believe-its-not-bsn" }
-bevy_menu_bar = { path = "bevy_widgets/bevy_menu_bar" }
-bevy_scroll_box = { path = "bevy_widgets/bevy_scroll_box" }
-bevy_footer_bar = { path = "bevy_widgets/bevy_footer_bar" }
-bevy_toolbar = { path = "bevy_widgets/bevy_toolbar" }
-bevy_gizmo_indicator = { path = "bevy_widgets/bevy_gizmo_indicator" }
-bevy_tooltips = { path = "bevy_widgets/bevy_tooltips" }
-bevy_text_editing = { path = "bevy_widgets/bevy_text_editing" }
-bevy_field_forms = { path = "bevy_widgets/bevy_field_forms" }
-
-# general crates
-bevy_editor_core = { path = "crates/bevy_editor_core" }
-bevy_asset_preview = { path = "crates/bevy_asset_preview" }
-bevy_proto_bsn = { path = "crates/bevy_proto_bsn" }
-bevy_sandbox_engine = { package = "bevy-sandbox-engine", path = "crates/bevy_editor" }
-bevy_editor_camera = { path = "crates/bevy_editor_camera" }
-bevy_editor_launcher = { path = "crates/bevy_editor_launcher" }
-bevy_editor_settings = { path = "crates/bevy_editor_settings" }
-bevy_editor_styles = { path = "crates/bevy_editor_styles" }
-bevy_localization = { path = "crates/bevy_localization" }
-bevy_pane_layout = { path = "crates/bevy_pane_layout" }
-bevy_transform_gizmos = { path = "crates/bevy_transform_gizmos" }
-bevy_undo = { path = "crates/bevy_undo" }
-bevy_infinite_grid = { path = "crates/bevy_infinite_grid" }
-bevy_editor_cam = { path = "crates/bevy_editor_cam" }
-bevy_clipboard = { path = "crates/bevy_clipboard" }
+# workspace crates
+bevy_2d_viewport = { path = "bevy_2d_viewport" }
+bevy_3d_viewport = { path = "bevy_3d_viewport" }
+bevy_asset_browser = { path = "bevy_asset_browser" }
+bevy_asset_preview = { path = "bevy_asset_preview" }
+bevy_clipboard = { path = "bevy_clipboard" }
+bevy_color_picker = { path = "bevy_color_picker" }
+bevy_command_palette = { path = "bevy_command_palette" }
+bevy_context_menu = { path = "bevy_context_menu" }
+bevy_editor_cam = { path = "bevy_editor_cam" }
+bevy_editor_camera = { path = "bevy_editor_camera" }
+bevy_editor_core = { path = "bevy_editor_core" }
+bevy_sandbox_engine = { package = "bevy-sandbox-engine", path = "bevy_editor" }
+bevy_editor_launcher = { path = "bevy_editor_launcher" }
+bevy_editor_settings = { path = "bevy_editor_settings" }
+bevy_editor_styles = { path = "bevy_editor_styles" }
+bevy_field_forms = { path = "bevy_field_forms" }
+bevy_footer_bar = { path = "bevy_footer_bar" }
+bevy_gizmo_indicator = { path = "bevy_gizmo_indicator" }
+bevy_i-cant-believe-its-not-bsn = { path = "bevy_i-cant-believe-its-not-bsn" }
+bevy_infinite_grid = { path = "bevy_infinite_grid" }
+bevy_localization = { path = "bevy_localization" }
+bevy_marketplace_viewer = { path = "bevy_marketplace_viewer" }
+bevy_menu_bar = { path = "bevy_menu_bar" }
+bevy_pane_layout = { path = "bevy_pane_layout" }
+bevy_preferences = { path = "bevy_preferences" }
+bevy_properties_pane = { path = "bevy_properties_pane" }
+bevy_proto_bsn = { path = "bevy_proto_bsn" }
+bevy_proto_bsn_ast = { path = "bevy_proto_bsn_ast" }
+bevy_proto_bsn_macros = { path = "bevy_proto_bsn_macros" }
+bevy_scene_tree = { path = "bevy_scene_tree" }
+bevy_scroll_box = { path = "bevy_scroll_box" }
+bevy_text_editing = { path = "bevy_text_editing" }
+bevy_toolbar = { path = "bevy_toolbar" }
+bevy_tooltips = { path = "bevy_tooltips" }
+bevy_transform_gizmos = { path = "bevy_transform_gizmos" }
+bevy_undo = { path = "bevy_undo" }
 
 
 [profile.dev]
