@@ -37,7 +37,31 @@ fn show_primary_window_when_ready(
 ) {
     if !primary_window.visible && frame_count.0 >= SHOW_WINDOW_AFTER_FRAMES {
         primary_window.visible = true;
+        primary_window.focused = true;
     }
+}
+
+fn focus_primary_window_on_show(
+    primary_window_entity: Single<Entity, With<PrimaryWindow>>,
+    primary_window: Single<&Window, With<PrimaryWindow>>,
+) {
+    if !primary_window.visible {
+        return;
+    }
+
+    WINIT_WINDOWS.with_borrow(|winit_windows| {
+        let Some(window_id) = winit_windows.entity_to_winit.get(&*primary_window_entity) else {
+            return;
+        };
+
+        let Some(window) = winit_windows.windows.get(window_id) else {
+            return;
+        };
+
+        if !window.has_focus() {
+            window.focus_window();
+        }
+    });
 }
 
 /// The Task that creates a new project
@@ -172,6 +196,10 @@ fn main() {
         .insert_resource(ui::LauncherUiState::default())
         .add_systems(Startup, ui::setup)
         .add_systems(Update, show_primary_window_when_ready)
+        .add_systems(
+            Update,
+            focus_primary_window_on_show.run_if(resource_changed::<FrameCount>),
+        )
         .add_systems(
             Update,
             (
