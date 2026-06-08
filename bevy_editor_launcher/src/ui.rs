@@ -20,6 +20,8 @@ pub struct LauncherUiState {
     pub template_tab: TemplateTab,
     pub locale: LauncherLocale,
     pub brand_texture: Option<TextureHandle>,
+    pub nav_create_texture: Option<TextureHandle>,
+    pub nav_projects_texture: Option<TextureHandle>,
     pub fonts_configured: bool,
 }
 
@@ -31,6 +33,8 @@ impl Default for LauncherUiState {
             template_tab: TemplateTab::Project,
             locale: LauncherLocale::detect(),
             brand_texture: None,
+            nav_create_texture: None,
+            nav_projects_texture: None,
             fonts_configured: false,
         }
     }
@@ -83,10 +87,9 @@ const TAB_ACTIVE: egui::Color32 = egui::Color32::from_rgb(232, 232, 232);
 const TAB_INACTIVE: egui::Color32 = egui::Color32::from_rgb(130, 130, 130);
 const BRAND_TEXTURE_NAME: &str = "launcher-brand-logo";
 const CJK_FONT_NAME: &str = "launcher-cjk-font";
-const ICON_FONT_NAME: &str = "launcher-icon-font";
 const BRAND_ICON_SIZE: f32 = 112.0;
-const NAV_ICON_CREATE: &str = "\u{e0d9}";
-const NAV_ICON_PROJECTS: &str = "\u{e247}";
+const NAV_CREATE_TEXTURE_NAME: &str = "launcher-nav-create";
+const NAV_PROJECTS_TEXTURE_NAME: &str = "launcher-nav-projects";
 const NAV_HOVER_FILL: egui::Color32 = egui::Color32::from_rgb(58, 58, 58);
 const NAV_HOVER_STROKE: egui::Color32 = egui::Color32::from_rgb(96, 96, 96);
 
@@ -277,16 +280,6 @@ fn load_cjk_font_bytes() -> Option<Vec<u8>> {
     None
 }
 
-fn load_icon_font_bytes() -> Option<Vec<u8>> {
-    let icon_font = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("bevy_editor_styles")
-        .join("assets")
-        .join("icons")
-        .join("Lucide.ttf");
-    std::fs::read(icon_font).ok()
-}
-
 fn ensure_fonts(ctx: &egui::Context, ui_state: &mut LauncherUiState) {
     if ui_state.fonts_configured {
         return;
@@ -309,18 +302,6 @@ fn ensure_fonts(ctx: &egui::Context, ui_state: &mut LauncherUiState) {
             .entry(FontFamily::Monospace)
             .or_default()
             .insert(0, CJK_FONT_NAME.to_string());
-    }
-
-    if let Some(font_bytes) = load_icon_font_bytes() {
-        fonts.font_data.insert(
-            ICON_FONT_NAME.to_string(),
-            FontData::from_owned(font_bytes).into(),
-        );
-        fonts
-            .families
-            .entry(FontFamily::Name(ICON_FONT_NAME.into()))
-            .or_default()
-            .push(ICON_FONT_NAME.to_string());
     }
 
     ctx.set_fonts(fonts);
@@ -355,7 +336,45 @@ fn ensure_brand_texture(ctx: &egui::Context, ui_state: &mut LauncherUiState) {
     ui_state.brand_texture = Some(texture);
 }
 
-fn nav_button(ui: &mut egui::Ui, selected: bool, icon: &str, label: &str) -> egui::Response {
+fn load_png_texture(
+    ctx: &egui::Context,
+    texture_name: &str,
+    path: &Path,
+) -> Option<TextureHandle> {
+    let image = image::open(path).ok()?.into_rgba8();
+    let size = [image.width() as usize, image.height() as usize];
+    let color_image = ColorImage::from_rgba_unmultiplied(size, image.as_raw());
+    Some(ctx.load_texture(texture_name, color_image, TextureOptions::LINEAR))
+}
+
+fn ensure_nav_textures(ctx: &egui::Context, ui_state: &mut LauncherUiState) {
+    if ui_state.nav_create_texture.is_some() && ui_state.nav_projects_texture.is_some() {
+        return;
+    }
+
+    let assets_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets");
+    if ui_state.nav_create_texture.is_none() {
+        ui_state.nav_create_texture = load_png_texture(
+            ctx,
+            NAV_CREATE_TEXTURE_NAME,
+            &assets_dir.join("plus.png"),
+        );
+    }
+    if ui_state.nav_projects_texture.is_none() {
+        ui_state.nav_projects_texture = load_png_texture(
+            ctx,
+            NAV_PROJECTS_TEXTURE_NAME,
+            &assets_dir.join("image-off.png"),
+        );
+    }
+}
+
+fn nav_button(
+    ui: &mut egui::Ui,
+    selected: bool,
+    icon: Option<&TextureHandle>,
+    label: &str,
+) -> egui::Response {
     let desired_size = egui::vec2(ui.available_width(), 46.0);
     let (rect, response) = ui.allocate_exact_size(desired_size, egui::Sense::click());
     let response = response.on_hover_cursor(egui::CursorIcon::PointingHand);
@@ -384,16 +403,18 @@ fn nav_button(ui: &mut egui::Ui, selected: bool, icon: &str, label: &str) -> egu
     ui.painter()
         .rect(rect, 6.0, fill, stroke, egui::StrokeKind::Inside);
 
-    let icon_pos = egui::pos2(rect.left() + 14.0, rect.center().y);
+    let icon_rect =
+        egui::Rect::from_center_size(egui::pos2(rect.left() + 24.0, rect.center().y), egui::vec2(18.0, 18.0));
     let label_pos = egui::pos2(rect.left() + 44.0, rect.center().y);
 
-    ui.painter().text(
-        icon_pos,
-        egui::Align2::LEFT_CENTER,
-        icon,
-        egui::FontId::new(18.0, FontFamily::Name(ICON_FONT_NAME.into())),
-        text_color,
-    );
+    if let Some(icon) = icon {
+        ui.painter().image(
+            icon.id(),
+            icon_rect,
+            egui::Rect::from_min_max(egui::Pos2::ZERO, egui::pos2(1.0, 1.0)),
+            text_color,
+        );
+    }
     ui.painter().text(
         label_pos,
         egui::Align2::LEFT_CENTER,
@@ -750,6 +771,7 @@ pub fn render_launcher_ui(
     ensure_fonts(ctx, &mut ui_state);
     configure_visuals(ctx);
     ensure_brand_texture(ctx, &mut ui_state);
+    ensure_nav_textures(ctx, &mut ui_state);
     let i18n = strings(ui_state.locale);
 
     egui::SidePanel::left("sidebar")
@@ -780,7 +802,7 @@ pub fn render_launcher_ui(
             if nav_button(
                 ui,
                 ui_state.page == LauncherPage::Create,
-                NAV_ICON_CREATE,
+                ui_state.nav_create_texture.as_ref(),
                 i18n.nav_create,
             )
             .clicked()
@@ -791,7 +813,7 @@ pub fn render_launcher_ui(
             if nav_button(
                 ui,
                 ui_state.page == LauncherPage::Projects,
-                NAV_ICON_PROJECTS,
+                ui_state.nav_projects_texture.as_ref(),
                 i18n.nav_projects,
             )
             .clicked()
