@@ -5,7 +5,9 @@ use std::path::Path;
 use bevy::prelude::*;
 use bevy_egui::{
     EguiContexts,
-    egui::{self, ColorImage, FontData, FontDefinitions, FontFamily, TextureHandle, TextureOptions},
+    egui::{
+        self, ColorImage, FontData, FontDefinitions, FontFamily, TextureHandle, TextureOptions,
+    },
 };
 use bevy_sandbox_engine::project::{run_project, set_project_list, templates::Templates};
 use sys_locale::get_locale;
@@ -82,6 +84,7 @@ const TAB_ACTIVE: egui::Color32 = egui::Color32::from_rgb(232, 232, 232);
 const TAB_INACTIVE: egui::Color32 = egui::Color32::from_rgb(130, 130, 130);
 const BRAND_TEXTURE_NAME: &str = "launcher-brand-logo";
 const CJK_FONT_NAME: &str = "launcher-cjk-font";
+const BRAND_ICON_SIZE: f32 = 112.0;
 
 pub struct Strings {
     pub nav_create: &'static str,
@@ -281,9 +284,10 @@ fn ensure_fonts(ctx: &egui::Context, ui_state: &mut LauncherUiState) {
     };
 
     let mut fonts = FontDefinitions::default();
-    fonts
-        .font_data
-        .insert(CJK_FONT_NAME.to_string(), FontData::from_owned(font_bytes).into());
+    fonts.font_data.insert(
+        CJK_FONT_NAME.to_string(),
+        FontData::from_owned(font_bytes).into(),
+    );
 
     fonts
         .families
@@ -321,7 +325,7 @@ fn ensure_brand_texture(ctx: &egui::Context, ui_state: &mut LauncherUiState) {
         return;
     };
     let image = image.into_rgba8();
-    let size = [image.width().mul(2) as usize, image.height().mul(2) as usize] ;
+    let size = [image.width() as usize, image.height() as usize];
     let pixels = image.as_raw();
     let color_image = ColorImage::from_rgba_unmultiplied(size, pixels);
     let texture = ctx.load_texture(BRAND_TEXTURE_NAME, color_image, TextureOptions::LINEAR);
@@ -361,9 +365,10 @@ fn nav_button(ui: &mut egui::Ui, selected: bool, icon: &str, label: &str) -> egu
 }
 
 fn template_tab(ui: &mut egui::Ui, active: bool, label: &str) -> egui::Response {
-    let text = egui::RichText::new(label)
-        .size(20.0)
-        .color(if active { TAB_ACTIVE } else { TAB_INACTIVE });
+    let text =
+        egui::RichText::new(label)
+            .size(20.0)
+            .color(if active { TAB_ACTIVE } else { TAB_INACTIVE });
     ui.add(
         egui::Button::new(text)
             .fill(egui::Color32::TRANSPARENT)
@@ -385,7 +390,10 @@ fn template_preview(ui: &mut egui::Ui, card: &TemplateCard) {
 
     let horizon = rect.top() + 70.0;
     painter.line_segment(
-        [egui::pos2(rect.left(), horizon), egui::pos2(rect.right(), horizon)],
+        [
+            egui::pos2(rect.left(), horizon),
+            egui::pos2(rect.right(), horizon),
+        ],
         egui::Stroke::new(2.0, egui::Color32::from_white_alpha(40)),
     );
 
@@ -397,7 +405,10 @@ fn template_preview(ui: &mut egui::Ui, card: &TemplateCard) {
         for i in 0..8 {
             let x = ground.left() + i as f32 * 24.0;
             painter.line_segment(
-                [egui::pos2(x, ground.top()), egui::pos2(x - 36.0, ground.bottom())],
+                [
+                    egui::pos2(x, ground.top()),
+                    egui::pos2(x - 36.0, ground.bottom()),
+                ],
                 egui::Stroke::new(1.0, egui::Color32::from_gray(230)),
             );
             painter.line_segment(
@@ -444,7 +455,10 @@ fn template_preview(ui: &mut egui::Ui, card: &TemplateCard) {
         for offset in [0.0, 10.0, 22.0, 35.0] {
             painter.line_segment(
                 [
-                    egui::pos2(rect.left() + 42.0 + offset, rect.top() + 72.0 - offset * 0.7),
+                    egui::pos2(
+                        rect.left() + 42.0 + offset,
+                        rect.top() + 72.0 - offset * 0.7,
+                    ),
                     egui::pos2(rect.left() + 46.0 + offset, rect.top() + 44.0 - offset),
                 ],
                 egui::Stroke::new(2.0, egui::Color32::from_rgb(253, 224, 84)),
@@ -624,61 +638,54 @@ fn render_projects_page(
                             );
                         });
 
-                        ui.with_layout(
-                            egui::Layout::right_to_left(egui::Align::Center),
-                            |ui| {
-                                if ui.button(i18n.open).clicked() {
-                                    if !Path::new(&project.path).exists() {
-                                        let project_name = project
-                                            .name()
-                                            .unwrap_or_else(|| "Unknown".to_string());
-                                        push_notification(
-                                            ui_state,
-                                            format!("{}: '{project_name}'", i18n.project_not_found),
-                                        );
-                                        remove_path = Some(project.path.clone());
-                                        return;
-                                    }
-
-                                    match run_project(project) {
-                                        Ok(_) => {
-                                            exit.write(AppExit::Success);
-                                        }
-                                        Err(error) => match error.kind() {
-                                            ErrorKind::NotFound | ErrorKind::InvalidData => {
-                                                let project_name = project
-                                                    .name()
-                                                    .unwrap_or_else(|| "Unknown".to_string());
-                                                push_notification(
-                                                    ui_state,
-                                                    format!(
-                                                        "{}: '{project_name}'",
-                                                        i18n.failed_to_run_project
-                                                    ),
-                                                );
-                                                remove_path = Some(project.path.clone());
-                                            }
-                                            _ => {
-                                                push_notification(
-                                                    ui_state,
-                                                    format!(
-                                                        "{}: {error}",
-                                                        i18n.error_running_project
-                                                    ),
-                                                );
-                                            }
-                                        },
-                                    }
-                                }
-
-                                if ui.button(i18n.reveal).clicked() {
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            if ui.button(i18n.open).clicked() {
+                                if !Path::new(&project.path).exists() {
+                                    let project_name =
+                                        project.name().unwrap_or_else(|| "Unknown".to_string());
                                     push_notification(
                                         ui_state,
-                                        format!("{}: {}", i18n.path_prefix, project.path.display()),
+                                        format!("{}: '{project_name}'", i18n.project_not_found),
                                     );
+                                    remove_path = Some(project.path.clone());
+                                    return;
                                 }
-                            },
-                        );
+
+                                match run_project(project) {
+                                    Ok(_) => {
+                                        exit.write(AppExit::Success);
+                                    }
+                                    Err(error) => match error.kind() {
+                                        ErrorKind::NotFound | ErrorKind::InvalidData => {
+                                            let project_name = project
+                                                .name()
+                                                .unwrap_or_else(|| "Unknown".to_string());
+                                            push_notification(
+                                                ui_state,
+                                                format!(
+                                                    "{}: '{project_name}'",
+                                                    i18n.failed_to_run_project
+                                                ),
+                                            );
+                                            remove_path = Some(project.path.clone());
+                                        }
+                                        _ => {
+                                            push_notification(
+                                                ui_state,
+                                                format!("{}: {error}", i18n.error_running_project),
+                                            );
+                                        }
+                                    },
+                                }
+                            }
+
+                            if ui.button(i18n.reveal).clicked() {
+                                push_notification(
+                                    ui_state,
+                                    format!("{}: {}", i18n.path_prefix, project.path.display()),
+                                );
+                            }
+                        });
                     });
                 });
             ui.add_space(10.0);
@@ -720,7 +727,7 @@ pub fn render_launcher_ui(
                         if let Some(texture) = &ui_state.brand_texture {
                             ui.add(
                                 egui::Image::new(texture)
-                                    .fit_to_exact_size(egui::vec2(72.0, 72.0)),
+                                    .fit_to_exact_size(egui::vec2(BRAND_ICON_SIZE, BRAND_ICON_SIZE)),
                             );
                         }
                         ui.add_space(8.0);
@@ -729,7 +736,13 @@ pub fn render_launcher_ui(
 
             ui.add_space(28.0);
 
-            if nav_button(ui, ui_state.page == LauncherPage::Create, "◈", i18n.nav_create).clicked()
+            if nav_button(
+                ui,
+                ui_state.page == LauncherPage::Create,
+                "◈",
+                i18n.nav_create,
+            )
+            .clicked()
             {
                 ui_state.page = LauncherPage::Create;
             }
@@ -748,7 +761,11 @@ pub fn render_launcher_ui(
             let remaining = (ui.available_height() - 56.0).max(0.0);
             ui.add_space(remaining);
             ui.vertical_centered(|ui| {
-                ui.label(egui::RichText::new(i18n.engine_name).size(16.0).color(TEXT_MUTED));
+                ui.label(
+                    egui::RichText::new(i18n.engine_name)
+                        .size(16.0)
+                        .color(TEXT_MUTED),
+                );
                 ui.add_space(4.0);
                 ui.label(
                     egui::RichText::new(env!("CARGO_PKG_VERSION"))
