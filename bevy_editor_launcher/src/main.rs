@@ -34,12 +34,8 @@ const SHOW_WINDOW_AFTER_FRAMES: u32 = 5;
 fn show_primary_window_when_ready(
     mut primary_window: Single<&mut Window, With<PrimaryWindow>>,
     frame_count: Res<FrameCount>,
-    app_icon_ready: Res<AppIconReady>,
 ) {
-    if !primary_window.visible
-        && frame_count.0 >= SHOW_WINDOW_AFTER_FRAMES
-        && app_icon_ready.0
-    {
+    if !primary_window.visible && frame_count.0 >= SHOW_WINDOW_AFTER_FRAMES {
         primary_window.visible = true;
         primary_window.focused = true;
     }
@@ -117,9 +113,6 @@ fn spawn_create_new_project_task(commands: &mut Commands, template: Templates, p
 #[derive(Resource)]
 struct ProjectInfoList(Vec<ProjectInfo>);
 
-#[derive(Resource, Default)]
-struct AppIconReady(bool);
-
 static APP_ICON: OnceLock<Option<Icon>> = OnceLock::new();
 
 fn load_app_icon() -> Option<Icon> {
@@ -164,24 +157,16 @@ fn set_app_icon_for_window(window_entity: Entity) -> bool {
 
 fn set_app_icon(
     mut window_created_events: MessageReader<WindowCreated>,
-    mut app_icon_ready: ResMut<AppIconReady>,
 ) {
     for event in window_created_events.read() {
-        if set_app_icon_for_window(event.window) {
-            app_icon_ready.0 = true;
-        }
+        let _ = set_app_icon_for_window(event.window);
     }
 }
 
 fn ensure_primary_window_icon(
     primary_window_entity: Single<Entity, With<PrimaryWindow>>,
-    mut app_icon_ready: ResMut<AppIconReady>,
 ) {
-    if app_icon_ready.0 {
-        return;
-    }
-
-    app_icon_ready.0 = set_app_icon_for_window(*primary_window_entity);
+    let _ = set_app_icon_for_window(*primary_window_entity);
 }
 
 fn main() {
@@ -219,7 +204,6 @@ fn main() {
             EguiPlugin::default(),
         ))
         .insert_resource(ClearColor(Color::srgb(0.039, 0.047, 0.063)))
-        .insert_resource(AppIconReady::default())
         .insert_resource(ProjectInfoList(get_local_projects()))
         .insert_resource(ui::LauncherUiState::default())
         .add_systems(Startup, ui::setup)

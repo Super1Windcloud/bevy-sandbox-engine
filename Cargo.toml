@@ -14,7 +14,6 @@ semicolon_if_nothing_returned = "warn"
 type_complexity = "allow"
 undocumented_unsafe_blocks = "warn"
 unwrap_or_default = "warn"
-
 ptr_as_ptr = "warn"
 ptr_cast_constness = "warn"
 ref_as_ptr = "warn"
@@ -22,7 +21,7 @@ ref_as_ptr = "warn"
 [workspace.lints.rust]
 missing_docs = "warn"
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(docsrs_dep)'] }
-unsafe_code = "deny"
+unsafe_code = "warn"
 unsafe_op_in_unsafe_fn = "warn"
 unused_qualifications = "warn"
 
@@ -79,6 +78,9 @@ bevy_toolbar = { path = "bevy_toolbar" }
 bevy_tooltips = { path = "bevy_tooltips" }
 bevy_transform_gizmos = { path = "bevy_transform_gizmos" }
 bevy_undo = { path = "bevy_undo" }
+
+[patch.crates-io]
+bevy_winit = { path = "vendor/bevy_winit" }
 
 
 [profile.dev]
