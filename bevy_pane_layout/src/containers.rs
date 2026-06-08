@@ -2,11 +2,14 @@
 use bevy::{
     ecs::system::ResMut,
     feathers::{
-        palette,
         theme::{ThemeToken, UiTheme},
     },
     ui::Val,
 };
+use bevy_editor_styles::{Theme, colors::EditorColors};
+
+pub mod pane;
+pub mod subpane;
 
 pub const HEADER_HEIGHT: Val = Val::Px(30.0);
 
@@ -26,15 +29,15 @@ pub const SUBPANE_BODY_BG: ThemeToken = ThemeToken::new_static("feathers.subpane
 pub const SUBPANE_BODY_BORDER: ThemeToken =
     ThemeToken::new_static("feathers.subpane.body.border");
 
-pub fn setup(mut theme: ResMut<UiTheme>) {
-    theme.set_color("feathers.pane.header.bg", palette::GRAY_0);
-    theme.set_color("feathers.pane.header.border", palette::WARM_GRAY_1);
-    theme.set_color("feathers.pane.header.text", palette::LIGHT_GRAY_1);
-    theme.set_color("feathers.pane.header.divider", palette::WARM_GRAY_1);
+pub fn setup(mut ui_theme: ResMut<UiTheme>, theme: &Theme) {
+    ui_theme.set_color("feathers.pane.header.bg", theme.pane.header_background_color.0);
+    ui_theme.set_color("feathers.pane.header.border", EditorColors::BORDER);
+    ui_theme.set_color("feathers.pane.header.text", theme.text.text_color);
+    ui_theme.set_color("feathers.pane.header.divider", EditorColors::BORDER);
 
-    theme.set_color("feathers.subpane.header.bg", palette::GRAY_2);
-    theme.set_color("feathers.subpane.header.border", palette::GRAY_3);
-    theme.set_color("feathers.subpane.header.text", palette::LIGHT_GRAY_1);
-    theme.set_color("feathers.subpane.body.bg", palette::GRAY_1);
-    theme.set_color("feathers.subpane.body.border", palette::GRAY_2);
+    ui_theme.set_color("feathers.subpane.header.bg", theme.pane.header_background_color.0);
+    ui_theme.set_color("feathers.subpane.header.border", EditorColors::BORDER);
+    ui_theme.set_color("feathers.subpane.header.text", theme.text.text_color);
+    ui_theme.set_color("feathers.subpane.body.bg", theme.pane.area_background_color.0);
+    ui_theme.set_color("feathers.subpane.body.border", EditorColors::BORDER);
 }

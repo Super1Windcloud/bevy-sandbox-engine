@@ -4,7 +4,7 @@ use bevy_editor_styles::{Theme, icons};
 
 use crate::{
     Divider, DragState, PaneAreaNode, PaneContentNode, PaneHeaderNode, PaneRootNode, ResizeHandle,
-    Size, handlers::*, registry::PaneStructure,
+    Size, containers, handlers::*, registry::PaneStructure,
 };
 
 pub fn header_context_menu() -> ContextMenu {
@@ -31,10 +31,7 @@ pub(crate) fn spawn_pane<'a>(
     // Unstyled root node
     let root = commands
         .spawn((
-            Node {
-                padding: UiRect::all(Val::Px(1.5)),
-                ..default()
-            },
+            containers::pane::root_node(),
             Size(size),
             PaneRootNode { name: name.clone() },
         ))
@@ -43,16 +40,8 @@ pub(crate) fn spawn_pane<'a>(
     // Area
     let area = commands
         .spawn((
-            Node {
-                overflow: Overflow::clip(),
-                width: Val::Percent(100.),
-                height: Val::Percent(100.),
-                flex_direction: FlexDirection::Column,
-                border_radius: theme.general.border_radius,
-                ..default()
-            },
+            containers::pane::area_node(theme),
             PaneAreaNode,
-            theme.pane.area_background_color,
             ChildOf(root),
         ))
         .id();
@@ -60,57 +49,36 @@ pub(crate) fn spawn_pane<'a>(
     // Header
     let header = commands
         .spawn((
-            Node {
-                padding: UiRect::axes(Val::Px(5.), Val::Px(3.)),
-                width: Val::Percent(100.),
-                height: Val::Px(27.),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::SpaceBetween,
-                flex_shrink: 0.,
-                border_radius: theme.pane.header_border_radius,
-                ..default()
-            },
-            theme.pane.header_background_color,
+            containers::pane::header_node(theme),
+            containers::pane::header_theme(),
             header_context_menu(),
             PaneHeaderNode,
             ChildOf(area),
-            EntityCursor::System(SystemCursorIcon::Pointer),
+            containers::pane::header_cursor(),
         ))
         .with_children(|parent| {
             parent
-                .spawn(Node {
-                    align_items: AlignItems::Center,
-                    flex_shrink: 0.0,
-                    ..default()
-                })
+                .spawn(containers::pane::header_title_row_node())
                 .with_children(|parent| {
                     // Drop down button for selecting the pane type.
                     // Once a drop down menu is implemented, this will have that added.
                     parent.spawn((
                         Text::new(icons::CHEVRON_DOWN),
-                        TextFont {
-                            font: theme.icon.font.clone(),
-                            font_size: 16.0,
-                            ..default()
-                        },
+                        containers::pane::title_font(theme),
                     ));
                     parent.spawn((
                         Text::new(format!(" {name}")),
-                        TextFont {
-                            font: theme.text.font.clone(),
-                            font_size: 14.0,
-                            ..default()
-                        },
+                        containers::pane::title_font(theme),
+                    ));
+                    parent.spawn((
+                        containers::pane::header_divider_node(),
+                        containers::pane::header_divider_theme(),
                     ));
                 });
 
             parent.spawn((
                 Text::new(icons::GRIP_VERTICAL),
-                TextFont {
-                    font: theme.icon.font.clone(),
-                    font_size: 16.0,
-                    ..default()
-                },
+                containers::pane::title_font(theme),
             ));
         })
         .id();
@@ -118,10 +86,8 @@ pub(crate) fn spawn_pane<'a>(
     // Content
     let content = commands
         .spawn((
-            Node {
-                flex_grow: 1.,
-                ..default()
-            },
+            containers::subpane::body_node(),
+            containers::subpane::body_theme(),
             PaneContentNode,
             ChildOf(area),
         ))

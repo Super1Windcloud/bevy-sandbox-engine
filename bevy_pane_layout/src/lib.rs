@@ -101,7 +101,7 @@ fn setup(
     ui_theme: ResMut<UiTheme>,
     panes_root: Single<Entity, With<RootPaneLayoutNode>>,
 ) {
-    containers::setup(ui_theme);
+    containers::setup(ui_theme, &theme);
 
     commands.entity(*panes_root).insert((
         Node {

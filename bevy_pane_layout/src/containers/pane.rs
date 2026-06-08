@@ -1,88 +1,87 @@
-use bevy::feathers::{
-    constants::fonts,
-    font_styles::InheritableFont,
-    rounded_corners::RoundedCorners,
-    theme::{ThemeBackgroundColor, ThemeBorderColor, ThemeFontColor},
+use bevy::{
+    feathers::{
+        cursor::EntityCursor,
+        theme::{ThemeBackgroundColor, ThemeBorderColor, ThemeFontColor},
+    },
+    prelude::*,
+    window::SystemCursorIcon,
 };
-use bevy::ui::{
-    AlignItems, AlignSelf, Display, FlexDirection, JustifyContent, Node, PositionType, UiRect, Val,
-};
-use bevy_proto_bsn::{ConstructPatchExt, Scene, pbsn};
+use bevy_editor_styles::Theme;
 
-use super::{
-    HEADER_HEIGHT, PANE_HEADER_BG, PANE_HEADER_BORDER, PANE_HEADER_DIVIDER, PANE_HEADER_TEXT,
-};
+use super::{HEADER_HEIGHT, PANE_HEADER_BG, PANE_HEADER_BORDER, PANE_HEADER_TEXT};
+use super::PANE_HEADER_DIVIDER;
 
-/// A standard pane
-pub fn pane() -> impl Scene {
-    pbsn! {
-        Node {
-            display: Display::Flex,
-            flex_direction: FlexDirection::Column,
-            align_items: AlignItems::Stretch,
-        }
+pub fn root_node() -> Node {
+    Node {
+        padding: UiRect::all(Val::Px(1.5)),
+        ..default()
     }
 }
 
-/// Pane header
-pub fn pane_header() -> impl Scene {
-    pbsn! {
-        (Node {
-            display: Display::Flex,
-            flex_direction: FlexDirection::Row,
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::SpaceBetween,
-            padding: UiRect::axes(Val::Px(6.0), Val::Px(6.0)),
-            border: UiRect {
-                left: Val::Px(1.0),
-                top: Val::Px(1.0),
-                right: Val::Px(1.0),
-                bottom: Val::Px(0.0),
-            },
-            min_height: HEADER_HEIGHT,
-            column_gap: Val::Px(6.0),
-        },
+pub fn area_node(theme: &Theme) -> Node {
+    Node {
+        overflow: Overflow::clip(),
+        width: Val::Percent(100.),
+        height: Val::Percent(100.),
+        flex_direction: FlexDirection::Column,
+        border_radius: theme.general.border_radius,
+        ..default()
+    }
+}
+
+pub fn header_node(theme: &Theme) -> Node {
+    Node {
+        padding: UiRect::axes(Val::Px(5.), Val::Px(3.)),
+        width: Val::Percent(100.),
+        min_height: HEADER_HEIGHT,
+        align_items: AlignItems::Center,
+        justify_content: JustifyContent::SpaceBetween,
+        flex_shrink: 0.,
+        border: UiRect::all(Val::Px(1.0)),
+        border_radius: theme.pane.header_border_radius,
+        column_gap: Val::Px(6.0),
+        ..default()
+    }
+}
+
+pub fn header_title_row_node() -> Node {
+    Node {
+        align_items: AlignItems::Center,
+        flex_shrink: 0.0,
+        column_gap: Val::Px(2.0),
+        ..default()
+    }
+}
+
+pub fn header_theme() -> (ThemeBackgroundColor, ThemeBorderColor, ThemeFontColor) {
+    (
         ThemeBackgroundColor(PANE_HEADER_BG),
         ThemeBorderColor(PANE_HEADER_BORDER),
         ThemeFontColor(PANE_HEADER_TEXT),
-        {RoundedCorners::Top.to_border_radius(4.0)},
-        InheritableFont {
-            font: fonts::REGULAR,
-            font_size: 14.0,
-        })
+    )
+}
+
+pub fn header_cursor() -> EntityCursor {
+    EntityCursor::System(SystemCursorIcon::Pointer)
+}
+
+pub fn header_divider_node() -> Node {
+    Node {
+        width: Val::Px(1.0),
+        height: Val::Px(14.0),
+        margin: UiRect::horizontal(Val::Px(4.0)),
+        ..default()
     }
 }
 
-/// Divider between groups of widgets in pane headers
-pub fn pane_header_divider() -> impl Scene {
-    pbsn! {
-        Node {
-            width: Val::Px(1.0),
-            align_self: AlignSelf::Stretch,
-        },
-        [(
-            // Because we want to extend the divider into the header padding area, we'll use
-            // an absolutely-positioned child.
-            Node {
-                position_type: PositionType::Absolute,
-                left: Val::Px(0.0),
-                right: Val::Px(0.0),
-                top: Val::Px(-6.0),
-                bottom: Val::Px(-6.0),
-            },
-            ThemeBackgroundColor(PANE_HEADER_DIVIDER)
-        )]
-    }
+pub fn header_divider_theme() -> ThemeBackgroundColor {
+    ThemeBackgroundColor(PANE_HEADER_DIVIDER)
 }
 
-/// Pane body
-pub fn pane_body() -> impl Scene {
-    pbsn! {
-        (Node {
-            display: Display::Flex,
-            flex_direction: FlexDirection::Column,
-            padding: UiRect::axes(Val::Px(6.0), Val::Px(6.0)),
-        },
-        {RoundedCorners::Bottom.to_border_radius(4.0)})
+pub fn title_font(theme: &Theme) -> TextFont {
+    TextFont {
+        font: theme.text.font.clone(),
+        font_size: 14.0,
+        ..default()
     }
 }

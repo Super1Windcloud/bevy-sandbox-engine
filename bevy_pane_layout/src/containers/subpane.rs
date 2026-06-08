@@ -1,77 +1,72 @@
-use bevy::feathers::{
-    constants::fonts,
-    font_styles::InheritableFont,
-    rounded_corners::RoundedCorners,
-    theme::{ThemeBackgroundColor, ThemeBorderColor, ThemeFontColor},
+use bevy::{
+    feathers::{
+        theme::{ThemeBackgroundColor, ThemeBorderColor, ThemeFontColor},
+    },
+    prelude::*,
 };
-use bevy::ui::{AlignItems, Display, FlexDirection, JustifyContent, Node, UiRect, Val};
-use bevy_proto_bsn::{ConstructPatchExt, Scene, pbsn};
+use bevy_editor_styles::Theme;
 
 use super::{
-    HEADER_HEIGHT, SUBPANE_BODY_BG, SUBPANE_BODY_BORDER, SUBPANE_HEADER_BG,
-    SUBPANE_HEADER_BORDER, SUBPANE_HEADER_TEXT,
+    SUBPANE_BODY_BG, SUBPANE_BODY_BORDER, SUBPANE_HEADER_BG, SUBPANE_HEADER_BORDER,
+    SUBPANE_HEADER_TEXT,
 };
 
-/// Sub-pane
-pub fn subpane() -> impl Scene {
-    pbsn! {
-        Node {
-            display: Display::Flex,
-            flex_direction: FlexDirection::Column,
-            align_items: AlignItems::Stretch,
-        }
+#[allow(dead_code)]
+pub fn header_node() -> Node {
+    Node {
+        display: Display::Flex,
+        flex_direction: FlexDirection::Row,
+        align_items: AlignItems::Center,
+        justify_content: JustifyContent::SpaceBetween,
+        border: UiRect {
+            left: Val::Px(1.0),
+            top: Val::Px(1.0),
+            right: Val::Px(1.0),
+            bottom: Val::Px(0.0),
+        },
+        padding: UiRect::axes(Val::Px(10.0), Val::Px(0.0)),
+        min_height: Val::Px(30.0),
+        column_gap: Val::Px(4.0),
+        ..default()
     }
 }
 
-/// Sub-pane header
-pub fn subpane_header() -> impl Scene {
-    pbsn! {
-        (Node {
-            display: Display::Flex,
-            flex_direction: FlexDirection::Row,
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::SpaceBetween,
-            border: UiRect {
-                left: Val::Px(1.0),
-                top: Val::Px(1.0),
-                right: Val::Px(1.0),
-                bottom: Val::Px(0.0),
-            },
-            padding: UiRect::axes(Val::Px(10.0), Val::Px(0.0)),
-            min_height: HEADER_HEIGHT,
-            column_gap: Val::Px(4.0),
-        },
+#[allow(dead_code)]
+pub fn header_theme() -> (ThemeBackgroundColor, ThemeBorderColor, ThemeFontColor) {
+    (
         ThemeBackgroundColor(SUBPANE_HEADER_BG),
         ThemeBorderColor(SUBPANE_HEADER_BORDER),
         ThemeFontColor(SUBPANE_HEADER_TEXT),
-        {RoundedCorners::Top.to_border_radius(4.0)},
-        InheritableFont {
-            font: fonts::REGULAR,
-            font_size: 14.0,
-        })
+    )
+}
+
+pub fn body_node() -> Node {
+    Node {
+        flex_grow: 1.,
+        border: UiRect {
+            left: Val::Px(1.0),
+            top: Val::Px(0.0),
+            right: Val::Px(1.0),
+            bottom: Val::Px(1.0),
+        },
+        padding: UiRect::axes(Val::Px(6.0), Val::Px(6.0)),
+        ..default()
     }
 }
 
-/// Sub-pane body
-pub fn subpane_body() -> impl Scene {
-    pbsn! {
-        (Node {
-            display: Display::Flex,
-            flex_direction: FlexDirection::Column,
-            border: UiRect {
-                left: Val::Px(1.0),
-                top: Val::Px(0.0),
-                right: Val::Px(1.0),
-                bottom: Val::Px(1.0),
-            },
-            padding: UiRect::axes(Val::Px(6.0), Val::Px(6.0)),
-        },
+pub fn body_theme() -> (ThemeBackgroundColor, ThemeBorderColor, ThemeFontColor) {
+    (
         ThemeBackgroundColor(SUBPANE_BODY_BG),
         ThemeBorderColor(SUBPANE_BODY_BORDER),
-        {RoundedCorners::Bottom.to_border_radius(4.0)},
-        InheritableFont {
-            font: fonts::REGULAR,
-            font_size: 14.0,
-        })
+        ThemeFontColor(SUBPANE_HEADER_TEXT),
+    )
+}
+
+#[allow(dead_code)]
+pub fn body_font(theme: &Theme) -> TextFont {
+    TextFont {
+        font: theme.text.font.clone(),
+        font_size: 14.0,
+        ..default()
     }
 }
