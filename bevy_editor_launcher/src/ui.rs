@@ -598,6 +598,7 @@ fn render_create_page(
     i18n: &Strings,
 ) {
     ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 20.0;
         if template_tab(
             ui,
             ui_state.template_tab == TemplateTab::Project,

@@ -8,9 +8,18 @@ default:
 launcher:
     cargo run -p bevy-sandbox-engine-launcher
 
+launcher-watch:
+    if (-not (Get-Command cargo-watch -ErrorAction SilentlyContinue)) { Write-Error "cargo-watch is required. Install it with: cargo install cargo-watch"; exit 1 }
+    cargo watch -x "run -p bevy-sandbox-engine-launcher"
+
 launcher-backend backend="vulkan":
     $env:WGPU_BACKEND = "{{backend}}"
     cargo run -p bevy-sandbox-engine-launcher
+
+launcher-watch-backend backend="vulkan":
+    if (-not (Get-Command cargo-watch -ErrorAction SilentlyContinue)) { Write-Error "cargo-watch is required. Install it with: cargo install cargo-watch"; exit 1 }
+    $env:WGPU_BACKEND = "{{backend}}"
+    cargo watch -x "run -p bevy-sandbox-engine-launcher"
 
 example:
     cargo run --example simple_editor -p bevy-sandbox-engine-launcher
