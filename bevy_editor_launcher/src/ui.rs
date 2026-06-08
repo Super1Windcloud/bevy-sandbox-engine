@@ -1,4 +1,5 @@
 use std::io::ErrorKind;
+use std::ops::Mul;
 use std::path::Path;
 
 use bevy::prelude::*;
@@ -320,7 +321,7 @@ fn ensure_brand_texture(ctx: &egui::Context, ui_state: &mut LauncherUiState) {
         return;
     };
     let image = image.into_rgba8();
-    let size = [image.width() as usize, image.height() as usize];
+    let size = [image.width().mul(2) as usize, image.height().mul(2) as usize] ;
     let pixels = image.as_raw();
     let color_image = ColorImage::from_rgba_unmultiplied(size, pixels);
     let texture = ctx.load_texture(BRAND_TEXTURE_NAME, color_image, TextureOptions::LINEAR);

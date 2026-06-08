@@ -7,6 +7,7 @@ use std::{path::PathBuf, sync::OnceLock};
 use bevy::{
     diagnostic::FrameCount,
     ecs::schedule::common_conditions::any_with_component,
+    gilrs::GilrsPlugin,
     prelude::*,
     render::{
         RenderPlugin,
@@ -162,6 +163,7 @@ fn main() {
                     }),
                     ..default()
                 })
+                .disable::<GilrsPlugin>()
                 .set(render_plugin),
             EguiPlugin::default(),
         ))

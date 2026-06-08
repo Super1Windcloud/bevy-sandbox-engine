@@ -18,6 +18,7 @@ use bevy::app::App as BevyApp;
 use bevy::asset::UnapprovedPathMode;
 use bevy::color::palettes::tailwind;
 use bevy::diagnostic::FrameCount;
+use bevy::gilrs::GilrsPlugin;
 use bevy::prelude::*;
 use bevy::render::{
     settings::{RenderCreation, WgpuSettings},
@@ -96,6 +97,7 @@ impl Plugin for RuntimePlugin {
                 }),
                 ..default()
             })
+            .disable::<GilrsPlugin>()
             .set(AssetPlugin {
                 unapproved_path_mode: UnapprovedPathMode::Deny,
                 ..default()
