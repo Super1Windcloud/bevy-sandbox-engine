@@ -2,6 +2,7 @@
 name = "bevy-sandbox-engine-launcher"
 version = "0.1.0"
 edition = "2024"
+build = "build.rs"
 
 [lints]
 workspace = true
@@ -15,3 +16,6 @@ sys-locale = "0.3"
 winit = "0.30.13"
 
 rfd.workspace = true
+
+[build-dependencies]
+winres = "0.1"
