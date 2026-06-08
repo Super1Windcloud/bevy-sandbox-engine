@@ -155,17 +155,13 @@ fn set_app_icon_for_window(window_entity: Entity) -> bool {
     })
 }
 
-fn set_app_icon(
-    mut window_created_events: MessageReader<WindowCreated>,
-) {
+fn set_app_icon(mut window_created_events: MessageReader<WindowCreated>) {
     for event in window_created_events.read() {
         let _ = set_app_icon_for_window(event.window);
     }
 }
 
-fn ensure_primary_window_icon(
-    primary_window_entity: Single<Entity, With<PrimaryWindow>>,
-) {
+fn ensure_primary_window_icon(primary_window_entity: Single<Entity, With<PrimaryWindow>>) {
     let _ = set_app_icon_for_window(*primary_window_entity);
 }
 

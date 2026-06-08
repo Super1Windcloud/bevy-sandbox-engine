@@ -83,8 +83,18 @@ fn render_editor_shell(
                         .color(egui::Color32::from_rgb(230, 230, 232)),
                 );
                 ui.separator();
-                menu_button(ui, "File", &mut shell_state.status, "File actions are not wired yet");
-                menu_button(ui, "Edit", &mut shell_state.status, "Edit actions are not wired yet");
+                menu_button(
+                    ui,
+                    "File",
+                    &mut shell_state.status,
+                    "File actions are not wired yet",
+                );
+                menu_button(
+                    ui,
+                    "Edit",
+                    &mut shell_state.status,
+                    "Edit actions are not wired yet",
+                );
                 menu_button(
                     ui,
                     "Build",
@@ -97,7 +107,12 @@ fn render_editor_shell(
                     &mut shell_state.status,
                     "Window actions are not wired yet",
                 );
-                menu_button(ui, "Help", &mut shell_state.status, "Help actions are not wired yet");
+                menu_button(
+                    ui,
+                    "Help",
+                    &mut shell_state.status,
+                    "Help actions are not wired yet",
+                );
 
                 ui.separator();
 

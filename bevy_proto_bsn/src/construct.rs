@@ -198,9 +198,7 @@ unsafe impl<B: Bundle> Bundle for ConstructTuple<B> {
         B::component_ids(components)
     }
 
-    fn get_component_ids(
-        components: &Components,
-    ) -> impl Iterator<Item = Option<ComponentId>> {
+    fn get_component_ids(components: &Components) -> impl Iterator<Item = Option<ComponentId>> {
         B::get_component_ids(components)
     }
 }

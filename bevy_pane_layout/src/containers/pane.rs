@@ -8,8 +8,8 @@ use bevy::{
 };
 use bevy_editor_styles::Theme;
 
-use super::{HEADER_HEIGHT, PANE_HEADER_BG, PANE_HEADER_BORDER, PANE_HEADER_TEXT};
 use super::PANE_HEADER_DIVIDER;
+use super::{HEADER_HEIGHT, PANE_HEADER_BG, PANE_HEADER_BORDER, PANE_HEADER_TEXT};
 
 pub fn root_node() -> Node {
     Node {

@@ -182,12 +182,20 @@ fn on_pane_creation(
     });
 
     let image_entity = commands
-        .spawn((ImageNode::new(image_handle.clone()), fit_to_parent(), ChildOf(structure.content)))
+        .spawn((
+            ImageNode::new(image_handle.clone()),
+            fit_to_parent(),
+            ChildOf(structure.content),
+        ))
         .observe(|trigger: On<Pointer<Over>>, mut commands: Commands| {
-            commands.entity(trigger.event().event_target()).insert(Active);
+            commands
+                .entity(trigger.event().event_target())
+                .insert(Active);
         })
         .observe(|trigger: On<Pointer<Out>>, mut commands: Commands| {
-            commands.entity(trigger.event().event_target()).remove::<Active>();
+            commands
+                .entity(trigger.event().event_target())
+                .remove::<Active>();
         })
         .id();
     let _ = image_entity;

@@ -21,24 +21,24 @@ use bevy::diagnostic::FrameCount;
 use bevy::gilrs::GilrsPlugin;
 use bevy::prelude::*;
 use bevy::render::{
-    settings::{RenderCreation, WgpuSettings},
     RenderPlugin,
+    settings::{RenderCreation, WgpuSettings},
 };
+use bevy::window::{MonitorSelection, PrimaryWindow, WindowMode, WindowPlugin, WindowPosition};
 use bevy::{
     feathers::{FeathersPlugin, dark_theme::create_dark_theme, theme::UiTheme},
     input_focus::{InputDispatchPlugin, tab_navigation::TabNavigationPlugin},
     ui_widgets::UiWidgetsPlugins,
 };
-use bevy::window::{MonitorSelection, PrimaryWindow, WindowMode, WindowPosition, WindowPlugin};
 // Re-export Bevy for project use
 pub use bevy;
 
 use bevy::winit::{UpdateMode, WinitSettings};
-use bevy_egui::EguiPlugin;
 use bevy_context_menu::ContextMenuPlugin;
 use bevy_editor_core::EditorCorePlugin;
 use bevy_editor_core::selection::Selectable;
 use bevy_editor_styles::StylesPlugin;
+use bevy_egui::EguiPlugin;
 use bevy_toolbar::ActiveTool;
 use bevy_transform_gizmos::{GizmoTransformable, TransformGizmoPlugin};
 
@@ -85,24 +85,27 @@ impl Plugin for RuntimePlugin {
         #[cfg(not(target_os = "windows"))]
         let render_plugin = RenderPlugin::default();
 
-        bevy_app.add_plugins(DefaultPlugins
-            .set(WindowPlugin {
-                primary_window: Some(Window {
-                    title: "Bevy Sandbox Engine".to_string(),
-                    resolution: bevy::window::WindowResolution::new(1440, 900),
-                    position: WindowPosition::Centered(MonitorSelection::Primary),
-                    mode: WindowMode::Windowed,
-                    visible: false,
-                    ..default()
-                }),
-                ..default()
-            })
-            .disable::<GilrsPlugin>()
-            .set(AssetPlugin {
-                unapproved_path_mode: UnapprovedPathMode::Deny,
-                ..default()
-            })
-            .set(render_plugin))
+        bevy_app
+            .add_plugins(
+                DefaultPlugins
+                    .set(WindowPlugin {
+                        primary_window: Some(Window {
+                            title: "Bevy Sandbox Engine".to_string(),
+                            resolution: bevy::window::WindowResolution::new(1440, 900),
+                            position: WindowPosition::Centered(MonitorSelection::Primary),
+                            mode: WindowMode::Windowed,
+                            visible: false,
+                            ..default()
+                        }),
+                        ..default()
+                    })
+                    .disable::<GilrsPlugin>()
+                    .set(AssetPlugin {
+                        unapproved_path_mode: UnapprovedPathMode::Deny,
+                        ..default()
+                    })
+                    .set(render_plugin),
+            )
             .insert_resource(ClearColor(APP_WINDOW_BG))
             .add_systems(Update, show_primary_window_when_ready);
     }

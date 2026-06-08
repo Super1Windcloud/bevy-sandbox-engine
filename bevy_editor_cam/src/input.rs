@@ -1,7 +1,7 @@
 //! Provides a default input plugin for the camera. See [`DefaultInputPlugin`].
 
-use bevy::camera::prelude::*;
 use bevy::camera::RenderTarget;
+use bevy::camera::prelude::*;
 use bevy::input::{
     mouse::{MouseScrollUnit, MouseWheel},
     prelude::*,
@@ -105,9 +105,8 @@ pub fn default_camera_inputs(
             }
         }
 
-        let Some((camera, _camera_component, _render_target, editor_cam)) = cameras
-            .iter()
-            .find(|(_, camera, render_target, _)| {
+        let Some((camera, _camera_component, _render_target, editor_cam)) =
+            cameras.iter().find(|(_, camera, render_target, _)| {
                 let render_target = render_target.cloned().unwrap_or_default();
                 pointer_location.is_in_viewport(camera, &render_target, &primary_window)
             })

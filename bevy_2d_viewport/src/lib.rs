@@ -165,7 +165,8 @@ fn update_render_target_size(
 
         for image_entity in children_query.iter_descendants(content_node_id) {
             if let Ok(image) = image_query.get(image_entity) {
-                editor_camera.enabled = image.camera_id == viewport.camera_id && editor_camera.enabled;
+                editor_camera.enabled =
+                    image.camera_id == viewport.camera_id && editor_camera.enabled;
             }
         }
     }

@@ -123,7 +123,7 @@ pub fn strings(locale: LauncherLocale) -> Strings {
             project_templates: "项目模板",
             mod_templates: "Mod模板",
             no_mod_templates: "暂时没有 Mod 模板。",
-            no_mod_templates_desc: "首页会始终显示有效内容，不会出现空白页。",
+            no_mod_templates_desc: "",
             projects_title: "项目",
             no_recent_projects: "暂无最近项目。",
             no_recent_projects_desc: "请先从创建页选择模板生成项目。",
@@ -336,11 +336,7 @@ fn ensure_brand_texture(ctx: &egui::Context, ui_state: &mut LauncherUiState) {
     ui_state.brand_texture = Some(texture);
 }
 
-fn load_png_texture(
-    ctx: &egui::Context,
-    texture_name: &str,
-    path: &Path,
-) -> Option<TextureHandle> {
+fn load_png_texture(ctx: &egui::Context, texture_name: &str, path: &Path) -> Option<TextureHandle> {
     let image = image::open(path).ok()?.into_rgba8();
     let size = [image.width() as usize, image.height() as usize];
     let color_image = ColorImage::from_rgba_unmultiplied(size, image.as_raw());
@@ -354,11 +350,8 @@ fn ensure_nav_textures(ctx: &egui::Context, ui_state: &mut LauncherUiState) {
 
     let assets_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets");
     if ui_state.nav_create_texture.is_none() {
-        ui_state.nav_create_texture = load_png_texture(
-            ctx,
-            NAV_CREATE_TEXTURE_NAME,
-            &assets_dir.join("plus.png"),
-        );
+        ui_state.nav_create_texture =
+            load_png_texture(ctx, NAV_CREATE_TEXTURE_NAME, &assets_dir.join("plus.png"));
     }
     if ui_state.nav_projects_texture.is_none() {
         ui_state.nav_projects_texture = load_png_texture(
@@ -403,8 +396,10 @@ fn nav_button(
     ui.painter()
         .rect(rect, 6.0, fill, stroke, egui::StrokeKind::Inside);
 
-    let icon_rect =
-        egui::Rect::from_center_size(egui::pos2(rect.left() + 24.0, rect.center().y), egui::vec2(18.0, 18.0));
+    let icon_rect = egui::Rect::from_center_size(
+        egui::pos2(rect.left() + 24.0, rect.center().y),
+        egui::vec2(18.0, 18.0),
+    );
     let label_pos = egui::pos2(rect.left() + 44.0, rect.center().y);
 
     if let Some(icon) = icon {
@@ -638,7 +633,7 @@ fn render_create_page(
             .inner_margin(egui::Margin::symmetric(18, 18))
             .show(ui, |ui| {
                 ui.label(egui::RichText::new(i18n.no_mod_templates).size(18.0));
-                ui.add_space(4.0);
+                ui.add_space(12.0);
                 ui.label(egui::RichText::new(i18n.no_mod_templates_desc).color(TEXT_MUTED));
             });
         return;
@@ -789,8 +784,10 @@ pub fn render_launcher_ui(
                         ui.add_space(8.0);
                         if let Some(texture) = &ui_state.brand_texture {
                             ui.add(
-                                egui::Image::new(texture)
-                                    .fit_to_exact_size(egui::vec2(BRAND_ICON_SIZE, BRAND_ICON_SIZE)),
+                                egui::Image::new(texture).fit_to_exact_size(egui::vec2(
+                                    BRAND_ICON_SIZE,
+                                    BRAND_ICON_SIZE,
+                                )),
                             );
                         }
                         ui.add_space(8.0);
@@ -847,7 +844,7 @@ pub fn render_launcher_ui(
         .show(ctx, |ui| match ui_state.page {
             LauncherPage::Create => render_create_page(ui, &mut commands, &mut ui_state, &i18n),
             LauncherPage::Projects => {
-                render_projects_page(ui, &mut project_list, &mut ui_state, &mut exit, &i18n)
+                render_projects_page(ui, &mut project_list, &mut ui_state, &mut exit, &i18n);
             }
         });
 

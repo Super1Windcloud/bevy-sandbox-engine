@@ -70,4 +70,3 @@ pub struct DragCancelClick {
 
 #[derive(Resource, Deref, DerefMut, Default)]
 struct DragCancelClickState(HashMap<Entity, Instant>);
-

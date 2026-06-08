@@ -26,10 +26,10 @@ use bevy::{
             BindGroup, BindGroupEntries, BindGroupLayout, BindGroupLayoutDescriptor,
             BindGroupLayoutEntries, BlendState, ColorTargetState, ColorWrites, CompareFunction,
             DepthBiasState, DepthStencilState, DynamicUniformBuffer, FragmentState,
-            MultisampleState, PipelineCache, PolygonMode, PrimitiveState,
-            RenderPipelineDescriptor, ShaderStages, ShaderType, SpecializedRenderPipeline,
-            SpecializedRenderPipelines, StencilFaceState, StencilState, TextureFormat,
-            VertexState, binding_types::uniform_buffer,
+            MultisampleState, PipelineCache, PolygonMode, PrimitiveState, RenderPipelineDescriptor,
+            ShaderStages, ShaderType, SpecializedRenderPipeline, SpecializedRenderPipelines,
+            StencilFaceState, StencilState, TextureFormat, VertexState,
+            binding_types::uniform_buffer,
         },
         renderer::{RenderDevice, RenderQueue},
         sync_world::RenderEntity,
@@ -42,7 +42,12 @@ use crate::InfiniteGridSettings;
 const GRID_SHADER_HANDLE: Handle<Shader> = uuid_handle!("7cd38dd1-d707-481e-b38c-0eccb706e629");
 
 pub fn render_app_builder(app: &mut App) {
-    load_internal_asset!(app, GRID_SHADER_HANDLE, "render/grid.wgsl", Shader::from_wgsl);
+    load_internal_asset!(
+        app,
+        GRID_SHADER_HANDLE,
+        "render/grid.wgsl",
+        Shader::from_wgsl
+    );
 
     let Some(render_app) = app.get_sub_app_mut(RenderApp) else {
         return;

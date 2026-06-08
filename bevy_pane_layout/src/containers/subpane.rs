@@ -1,7 +1,5 @@
 use bevy::{
-    feathers::{
-        theme::{ThemeBackgroundColor, ThemeBorderColor, ThemeFontColor},
-    },
+    feathers::theme::{ThemeBackgroundColor, ThemeBorderColor, ThemeFontColor},
     prelude::*,
 };
 use bevy_editor_styles::Theme;
