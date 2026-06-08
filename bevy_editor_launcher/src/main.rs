@@ -12,7 +12,7 @@ use bevy::{
         settings::{RenderCreation, WgpuSettings},
     },
     tasks::{IoTaskPool, Task, block_on, futures_lite::future},
-    window::WindowCreated,
+    window::{MonitorSelection, WindowCreated, WindowMode, WindowPosition},
     winit::WINIT_WINDOWS,
 };
 use bevy_egui::{EguiPlugin, EguiPrimaryContextPass};
@@ -119,6 +119,19 @@ fn set_app_icon(mut window_created_events: MessageReader<WindowCreated>) {
     }
 }
 
+fn reveal_primary_window(mut windows: Query<&mut Window>, mut done: Local<bool>) {
+    if *done {
+        return;
+    }
+
+    let Ok(mut window) = windows.single_mut() else {
+        return;
+    };
+
+    window.visible = true;
+    *done = true;
+}
+
 fn main() {
     #[cfg(target_os = "windows")]
     let render_plugin = RenderPlugin {
@@ -142,6 +155,9 @@ fn main() {
                     primary_window: Some(Window {
                         title: "Bevy Sandbox Engine Launcher".to_string(),
                         resolution: bevy::window::WindowResolution::new(1320, 860),
+                        position: WindowPosition::Centered(MonitorSelection::Primary),
+                        visible: false,
+                        mode: WindowMode::Windowed,
                         ..default()
                     }),
                     ..default()
@@ -157,6 +173,7 @@ fn main() {
             Update,
             (
                 set_app_icon,
+                reveal_primary_window,
                 poll_create_project_task.run_if(any_with_component::<CreateProjectTask>),
                 ui::tick_notifications,
             ),
