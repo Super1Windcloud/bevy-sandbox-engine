@@ -1,4 +1,49 @@
 # https://just.systems
 
+set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
+
 default:
-    echo 'Hello, world!'
+    just --list
+
+launcher:
+    cargo run -p bevy-sandbox-engine-launcher
+
+launcher-backend backend="vulkan":
+    $env:WGPU_BACKEND = "{{backend}}"
+    cargo run -p bevy-sandbox-engine-launcher
+
+example:
+    cargo run --example simple_editor -p bevy-sandbox-engine-launcher
+
+check:
+    cargo check
+
+fmt:
+    cargo fmt --all
+
+fmt-check:
+    cargo fmt --all -- --check
+
+clippy:
+    cargo clippy --workspace --all-targets --all-features -- --deny warnings
+
+test:
+    cargo test --workspace --all-features --all-targets
+    cargo test --workspace --all-features --doc
+
+doc:
+    cargo doc --workspace --all-features --document-private-items --no-deps
+
+book:
+    cd design-book; mdbook build; mdbook test
+
+ci: fmt-check clippy test doc
+
+metadata:
+    cargo metadata --no-deps --format-version 1
+
+members:
+    cargo metadata --no-deps --format-version 1 | ConvertFrom-Json | Select-Object -ExpandProperty workspace_members
+
+incoming:
+    $meta = cargo metadata --no-deps --format-version 1 | ConvertFrom-Json; $members = @{}; foreach ($id in $meta.workspace_members) { $members[$id] = $true }; $pkgs = @{}; foreach ($pkg in $meta.packages) { $pkgs[$pkg.id] = $pkg }; $incoming = @{}; foreach ($id in $meta.workspace_members) { $incoming[$id] = @() }; foreach ($pkg in $meta.packages) { if (-not $members.ContainsKey($pkg.id)) { continue }; foreach ($dep in $pkg.dependencies) { if (-not $dep.path) { continue }; $depManifest = Join-Path $dep.path 'Cargo.toml'; foreach ($candidate in $meta.packages) { if ($candidate.manifest_path -eq $depManifest -and $members.ContainsKey($candidate.id)) { $incoming[$candidate.id] += $pkg.name } } } }; $result = foreach ($id in $meta.workspace_members) { $pkg = $pkgs[$id]; $users = $incoming[$id] | Sort-Object -Unique; [PSCustomObject]@{ name = $pkg.name; manifest = $pkg.manifest_path.Replace($meta.workspace_root + '\\', ''); incoming_count = $users.Count; used_by = if ($users.Count -eq 0) { '' } else { ($users -join ', ') } } }; $result | Sort-Object incoming_count, name | Format-Table -AutoSize

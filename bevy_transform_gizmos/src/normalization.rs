@@ -46,14 +46,14 @@ pub fn normalize(
         Query<(&mut Transform, &mut GlobalTransform, &Normalize3d)>,
     )>,
 ) {
-    // TODO: can be improved by manually specifying the active camera to normalize against. The
-    // majority of cases will only use a single camera for this viewer, so this is sufficient.
-    let (camera_position, camera) = if let Ok((camera_position, camera)) = query.p0().single() {
-        (camera_position.to_owned(), camera.to_owned())
-    } else {
-        error!("More than one picking camera");
+    // Prefer the first available gizmo camera. The editor can host multiple 3D viewports,
+    // so assuming a unique camera here causes noisy logs and breaks normalization entirely.
+    let cameras = query.p0();
+    let Some((camera_position, camera)) = cameras.iter().next() else {
         return;
     };
+    let camera_position = *camera_position;
+    let camera = camera.to_owned();
     let view = camera_position.to_matrix().inverse();
 
     for (mut transform, mut global_transform, normalize) in query.p1().iter_mut() {

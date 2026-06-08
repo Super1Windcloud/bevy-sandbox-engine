@@ -733,7 +733,7 @@ fn adjust_view_translate_gizmo(
     camera: Query<&Transform, With<GizmoCamera>>,
 ) {
     if let Ok((mut global_transform, mut interaction)) = gizmo.single_mut()
-        && let Ok(cam_transform) = camera.single()
+        && let Some(cam_transform) = camera.iter().next()
     {
         let direction = cam_transform.local_z();
         *interaction = InteractionKind::TranslatePlane {
@@ -760,7 +760,7 @@ fn gizmo_cam_copy_settings(
         (With<InternalGizmoCamera>, Without<GizmoCamera>),
     >,
 ) {
-    if let Ok((main_cam, main_cam_pos, main_proj)) = main_cam.single()
+    if let Some((main_cam, main_cam_pos, main_proj)) = main_cam.iter().next()
         && let Ok((mut gizmo_cam, mut gizmo_cam_pos, mut proj)) = gizmo_cam.single_mut()
     {
         if main_cam_pos.is_changed() {
