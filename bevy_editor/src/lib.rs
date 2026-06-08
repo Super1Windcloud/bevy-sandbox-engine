@@ -17,6 +17,7 @@ use std::time::Duration;
 use bevy::app::App as BevyApp;
 use bevy::asset::UnapprovedPathMode;
 use bevy::color::palettes::tailwind;
+use bevy::diagnostic::FrameCount;
 use bevy::prelude::*;
 use bevy::render::{
     settings::{RenderCreation, WgpuSettings},
@@ -27,6 +28,7 @@ use bevy::{
     input_focus::{InputDispatchPlugin, tab_navigation::TabNavigationPlugin},
     ui_widgets::UiWidgetsPlugins,
 };
+use bevy::window::{MonitorSelection, PrimaryWindow, WindowMode, WindowPosition, WindowPlugin};
 // Re-export Bevy for project use
 pub use bevy;
 
@@ -50,6 +52,18 @@ mod load_gltf;
 pub mod project;
 mod ui;
 
+const APP_WINDOW_BG: Color = Color::srgb(0.039, 0.047, 0.063);
+const SHOW_WINDOW_AFTER_FRAMES: u32 = 3;
+
+fn show_primary_window_when_ready(
+    mut primary_window: Single<&mut Window, With<PrimaryWindow>>,
+    frame_count: Res<FrameCount>,
+) {
+    if !primary_window.visible && frame_count.0 >= SHOW_WINDOW_AFTER_FRAMES {
+        primary_window.visible = true;
+    }
+}
+
 /// The plugin that handle the bare minimum to run the application
 pub struct RuntimePlugin;
 
@@ -71,11 +85,24 @@ impl Plugin for RuntimePlugin {
         let render_plugin = RenderPlugin::default();
 
         bevy_app.add_plugins(DefaultPlugins
+            .set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: "Bevy Sandbox Engine".to_string(),
+                    resolution: bevy::window::WindowResolution::new(1440, 900),
+                    position: WindowPosition::Centered(MonitorSelection::Primary),
+                    mode: WindowMode::Windowed,
+                    visible: false,
+                    ..default()
+                }),
+                ..default()
+            })
             .set(AssetPlugin {
                 unapproved_path_mode: UnapprovedPathMode::Deny,
                 ..default()
             })
-            .set(render_plugin));
+            .set(render_plugin))
+            .insert_resource(ClearColor(APP_WINDOW_BG))
+            .add_systems(Update, show_primary_window_when_ready);
     }
 }
 

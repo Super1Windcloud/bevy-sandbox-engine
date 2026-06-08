@@ -5,6 +5,7 @@
 use std::{path::PathBuf, sync::OnceLock};
 
 use bevy::{
+    diagnostic::FrameCount,
     ecs::schedule::common_conditions::any_with_component,
     prelude::*,
     render::{
@@ -12,7 +13,7 @@ use bevy::{
         settings::{RenderCreation, WgpuSettings},
     },
     tasks::{IoTaskPool, Task, block_on, futures_lite::future},
-    window::{MonitorSelection, WindowCreated, WindowMode, WindowPosition},
+    window::{MonitorSelection, PrimaryWindow, WindowCreated, WindowMode, WindowPosition},
     winit::WINIT_WINDOWS,
 };
 use bevy_egui::{EguiPlugin, EguiPrimaryContextPass};
@@ -27,6 +28,17 @@ use bevy_sandbox_engine::project::{
 
 mod ui;
 
+const SHOW_WINDOW_AFTER_FRAMES: u32 = 5;
+
+fn show_primary_window_when_ready(
+    mut primary_window: Single<&mut Window, With<PrimaryWindow>>,
+    frame_count: Res<FrameCount>,
+) {
+    if !primary_window.visible && frame_count.0 >= SHOW_WINDOW_AFTER_FRAMES {
+        primary_window.visible = true;
+    }
+}
+
 /// The Task that creates a new project
 #[derive(Component)]
 struct CreateProjectTask(Task<std::io::Result<ProjectInfo>>);
@@ -40,13 +52,15 @@ fn poll_create_project_task(
 ) {
     let (task_entity, mut task) = task_query.single_mut().unwrap();
     if let Some(result) = block_on(future::poll_once(&mut task.0)) {
+        let locale_strings = ui::strings(ui_state.locale);
         match result {
             Ok(project_info) => {
                 project_list.0.push(project_info.clone());
                 set_project_list(project_list.0.clone());
                 ui_state.notifications.push(ui::Notification {
                     text: format!(
-                        "Created project: {}",
+                        "{}: {}",
+                        locale_strings.created_project,
                         project_info.name().unwrap_or_else(|| "Unknown".to_string())
                     ),
                     ttl: Timer::from_seconds(3.0, TimerMode::Once),
@@ -56,7 +70,7 @@ fn poll_create_project_task(
             Err(error) => {
                 error!("Failed to create new project: {:?}", error);
                 ui_state.notifications.push(ui::Notification {
-                    text: format!("Failed to create project: {error}"),
+                    text: format!("{}: {error}", locale_strings.failed_to_create_project),
                     ttl: Timer::from_seconds(3.0, TimerMode::Once),
                 });
                 commands.entity(task_entity).despawn();
@@ -78,7 +92,6 @@ static APP_ICON: OnceLock<Option<Icon>> = OnceLock::new();
 
 fn load_app_icon() -> Option<Icon> {
     let icon_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
         .join("..")
         .join("assets")
         .join("logo.png");
@@ -119,26 +132,13 @@ fn set_app_icon(mut window_created_events: MessageReader<WindowCreated>) {
     }
 }
 
-fn reveal_primary_window(mut windows: Query<&mut Window>, mut done: Local<bool>) {
-    if *done {
-        return;
-    }
-
-    let Ok(mut window) = windows.single_mut() else {
-        return;
-    };
-
-    window.visible = true;
-    *done = true;
-}
-
 fn main() {
     #[cfg(target_os = "windows")]
     let render_plugin = RenderPlugin {
         render_creation: RenderCreation::Automatic(WgpuSettings {
             backends: Some(
                 bevy::render::settings::Backends::from_env()
-                    .unwrap_or(bevy::render::settings::Backends::DX12),
+                    .unwrap_or(bevy::render::settings::Backends::VULKAN),
             ),
             ..default()
         }),
@@ -156,8 +156,8 @@ fn main() {
                         title: "Bevy Sandbox Engine Launcher".to_string(),
                         resolution: bevy::window::WindowResolution::new(1320, 860),
                         position: WindowPosition::Centered(MonitorSelection::Primary),
-                        visible: false,
                         mode: WindowMode::Windowed,
+                        visible: false,
                         ..default()
                     }),
                     ..default()
@@ -169,11 +169,12 @@ fn main() {
         .insert_resource(ProjectInfoList(get_local_projects()))
         .insert_resource(ui::LauncherUiState::default())
         .add_systems(Startup, ui::setup)
+        .add_systems(Update, show_primary_window_when_ready)
         .add_systems(
             Update,
             (
                 set_app_icon,
-                reveal_primary_window,
+                ui::sync_system_locale,
                 poll_create_project_task.run_if(any_with_component::<CreateProjectTask>),
                 ui::tick_notifications,
             ),

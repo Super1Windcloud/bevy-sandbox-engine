@@ -11,6 +11,7 @@ bevy.workspace = true
 bevy_egui.workspace = true
 bevy_sandbox_engine.workspace = true
 image = { version = "0.25", default-features = false, features = ["png"] }
+sys-locale = "0.3"
 winit = "0.30.13"
 
 rfd.workspace = true
