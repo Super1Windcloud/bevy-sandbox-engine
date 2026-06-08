@@ -83,7 +83,12 @@ const TAB_ACTIVE: egui::Color32 = egui::Color32::from_rgb(232, 232, 232);
 const TAB_INACTIVE: egui::Color32 = egui::Color32::from_rgb(130, 130, 130);
 const BRAND_TEXTURE_NAME: &str = "launcher-brand-logo";
 const CJK_FONT_NAME: &str = "launcher-cjk-font";
+const ICON_FONT_NAME: &str = "launcher-icon-font";
 const BRAND_ICON_SIZE: f32 = 112.0;
+const NAV_ICON_CREATE: &str = "\u{e0d9}";
+const NAV_ICON_PROJECTS: &str = "\u{e247}";
+const NAV_HOVER_FILL: egui::Color32 = egui::Color32::from_rgb(58, 58, 58);
+const NAV_HOVER_STROKE: egui::Color32 = egui::Color32::from_rgb(96, 96, 96);
 
 pub struct Strings {
     pub nav_create: &'static str,
@@ -272,32 +277,51 @@ fn load_cjk_font_bytes() -> Option<Vec<u8>> {
     None
 }
 
+fn load_icon_font_bytes() -> Option<Vec<u8>> {
+    let icon_font = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("bevy_editor_styles")
+        .join("assets")
+        .join("icons")
+        .join("Lucide.ttf");
+    std::fs::read(icon_font).ok()
+}
+
 fn ensure_fonts(ctx: &egui::Context, ui_state: &mut LauncherUiState) {
     if ui_state.fonts_configured {
         return;
     }
 
-    let Some(font_bytes) = load_cjk_font_bytes() else {
-        ui_state.fonts_configured = true;
-        return;
-    };
-
     let mut fonts = FontDefinitions::default();
-    fonts.font_data.insert(
-        CJK_FONT_NAME.to_string(),
-        FontData::from_owned(font_bytes).into(),
-    );
+    if let Some(font_bytes) = load_cjk_font_bytes() {
+        fonts.font_data.insert(
+            CJK_FONT_NAME.to_string(),
+            FontData::from_owned(font_bytes).into(),
+        );
 
-    fonts
-        .families
-        .entry(FontFamily::Proportional)
-        .or_default()
-        .insert(0, CJK_FONT_NAME.to_string());
-    fonts
-        .families
-        .entry(FontFamily::Monospace)
-        .or_default()
-        .insert(0, CJK_FONT_NAME.to_string());
+        fonts
+            .families
+            .entry(FontFamily::Proportional)
+            .or_default()
+            .insert(0, CJK_FONT_NAME.to_string());
+        fonts
+            .families
+            .entry(FontFamily::Monospace)
+            .or_default()
+            .insert(0, CJK_FONT_NAME.to_string());
+    }
+
+    if let Some(font_bytes) = load_icon_font_bytes() {
+        fonts.font_data.insert(
+            ICON_FONT_NAME.to_string(),
+            FontData::from_owned(font_bytes).into(),
+        );
+        fonts
+            .families
+            .entry(FontFamily::Name(ICON_FONT_NAME.into()))
+            .or_default()
+            .push(ICON_FONT_NAME.to_string());
+    }
 
     ctx.set_fonts(fonts);
     ui_state.fonts_configured = true;
@@ -332,35 +356,53 @@ fn ensure_brand_texture(ctx: &egui::Context, ui_state: &mut LauncherUiState) {
 }
 
 fn nav_button(ui: &mut egui::Ui, selected: bool, icon: &str, label: &str) -> egui::Response {
+    let desired_size = egui::vec2(ui.available_width(), 46.0);
+    let (rect, response) = ui.allocate_exact_size(desired_size, egui::Sense::click());
+    let response = response.on_hover_cursor(egui::CursorIcon::PointingHand);
+
+    let hovered = response.hovered();
     let fill = if selected {
         SURFACE_SOFT
+    } else if hovered {
+        NAV_HOVER_FILL
     } else {
         egui::Color32::TRANSPARENT
     };
+    let stroke = if selected || hovered {
+        egui::Stroke::new(1.0, NAV_HOVER_STROKE)
+    } else {
+        egui::Stroke::NONE
+    };
     let text_color = if selected {
         egui::Color32::WHITE
+    } else if hovered {
+        egui::Color32::from_rgb(236, 236, 236)
     } else {
-        egui::Color32::from_rgb(220, 220, 220)
+        egui::Color32::from_rgb(212, 212, 212)
     };
 
-    egui::Frame::new()
-        .fill(fill)
-        .corner_radius(6)
-        .inner_margin(egui::Margin::symmetric(12, 10))
-        .show(ui, |ui| {
-            ui.set_width(ui.available_width());
-            ui.add(
-                egui::Button::new(
-                    egui::RichText::new(format!("{icon}  {label}"))
-                        .size(22.0)
-                        .color(text_color),
-                )
-                .fill(egui::Color32::TRANSPARENT)
-                .stroke(egui::Stroke::NONE)
-                .frame(false),
-            )
-        })
-        .inner
+    ui.painter()
+        .rect(rect, 6.0, fill, stroke, egui::StrokeKind::Inside);
+
+    let icon_pos = egui::pos2(rect.left() + 14.0, rect.center().y);
+    let label_pos = egui::pos2(rect.left() + 44.0, rect.center().y);
+
+    ui.painter().text(
+        icon_pos,
+        egui::Align2::LEFT_CENTER,
+        icon,
+        egui::FontId::new(18.0, FontFamily::Name(ICON_FONT_NAME.into())),
+        text_color,
+    );
+    ui.painter().text(
+        label_pos,
+        egui::Align2::LEFT_CENTER,
+        label,
+        egui::FontId::proportional(18.0),
+        text_color,
+    );
+
+    response
 }
 
 fn template_tab(ui: &mut egui::Ui, active: bool, label: &str) -> egui::Response {
@@ -738,7 +780,7 @@ pub fn render_launcher_ui(
             if nav_button(
                 ui,
                 ui_state.page == LauncherPage::Create,
-                "◈",
+                NAV_ICON_CREATE,
                 i18n.nav_create,
             )
             .clicked()
@@ -749,7 +791,7 @@ pub fn render_launcher_ui(
             if nav_button(
                 ui,
                 ui_state.page == LauncherPage::Projects,
-                "◻",
+                NAV_ICON_PROJECTS,
                 i18n.nav_projects,
             )
             .clicked()
