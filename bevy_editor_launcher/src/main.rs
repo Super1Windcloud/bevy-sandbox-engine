@@ -34,8 +34,12 @@ const SHOW_WINDOW_AFTER_FRAMES: u32 = 5;
 fn show_primary_window_when_ready(
     mut primary_window: Single<&mut Window, With<PrimaryWindow>>,
     frame_count: Res<FrameCount>,
+    app_icon_ready: Res<AppIconReady>,
 ) {
-    if !primary_window.visible && frame_count.0 >= SHOW_WINDOW_AFTER_FRAMES {
+    if !primary_window.visible
+        && frame_count.0 >= SHOW_WINDOW_AFTER_FRAMES
+        && app_icon_ready.0
+    {
         primary_window.visible = true;
         primary_window.focused = true;
     }
@@ -113,6 +117,9 @@ fn spawn_create_new_project_task(commands: &mut Commands, template: Templates, p
 #[derive(Resource)]
 struct ProjectInfoList(Vec<ProjectInfo>);
 
+#[derive(Resource, Default)]
+struct AppIconReady(bool);
+
 static APP_ICON: OnceLock<Option<Icon>> = OnceLock::new();
 
 fn load_app_icon() -> Option<Icon> {
@@ -131,15 +138,15 @@ fn load_app_icon() -> Option<Icon> {
     Icon::from_rgba(image.into_raw(), width, height).ok()
 }
 
-fn set_app_icon_for_window(window_entity: Entity) {
+fn set_app_icon_for_window(window_entity: Entity) -> bool {
     let Some(icon) = APP_ICON.get_or_init(load_app_icon).clone() else {
         warn!("Failed to load app icon from assets/logo.png");
-        return;
+        return false;
     };
 
     WINIT_WINDOWS.with_borrow(|winit_windows| {
         let Some(window_id) = winit_windows.entity_to_winit.get(&window_entity) else {
-            return;
+            return false;
         };
 
         if let Some(window) = winit_windows.windows.get(window_id) {
@@ -147,14 +154,34 @@ fn set_app_icon_for_window(window_entity: Entity) {
 
             #[cfg(target_os = "windows")]
             window.set_taskbar_icon(Some(icon));
+
+            true
+        } else {
+            false
         }
-    });
+    })
 }
 
-fn set_app_icon(mut window_created_events: MessageReader<WindowCreated>) {
+fn set_app_icon(
+    mut window_created_events: MessageReader<WindowCreated>,
+    mut app_icon_ready: ResMut<AppIconReady>,
+) {
     for event in window_created_events.read() {
-        set_app_icon_for_window(event.window);
+        if set_app_icon_for_window(event.window) {
+            app_icon_ready.0 = true;
+        }
     }
+}
+
+fn ensure_primary_window_icon(
+    primary_window_entity: Single<Entity, With<PrimaryWindow>>,
+    mut app_icon_ready: ResMut<AppIconReady>,
+) {
+    if app_icon_ready.0 {
+        return;
+    }
+
+    app_icon_ready.0 = set_app_icon_for_window(*primary_window_entity);
 }
 
 fn main() {
@@ -192,6 +219,7 @@ fn main() {
             EguiPlugin::default(),
         ))
         .insert_resource(ClearColor(Color::srgb(0.039, 0.047, 0.063)))
+        .insert_resource(AppIconReady::default())
         .insert_resource(ProjectInfoList(get_local_projects()))
         .insert_resource(ui::LauncherUiState::default())
         .add_systems(Startup, ui::setup)
@@ -203,6 +231,7 @@ fn main() {
         .add_systems(
             Update,
             (
+                ensure_primary_window_icon,
                 set_app_icon,
                 ui::sync_system_locale,
                 poll_create_project_task.run_if(any_with_component::<CreateProjectTask>),
