@@ -7,7 +7,10 @@ use bevy::feathers::{
 use bevy::ui::{AlignItems, Display, FlexDirection, JustifyContent, Node, UiRect, Val};
 use bevy_proto_bsn::{ConstructPatchExt, Scene, pbsn};
 
-use super::{size, tokens};
+use super::{
+    HEADER_HEIGHT, SUBPANE_BODY_BG, SUBPANE_BODY_BORDER, SUBPANE_HEADER_BG,
+    SUBPANE_HEADER_BORDER, SUBPANE_HEADER_TEXT,
+};
 
 /// Sub-pane
 pub fn subpane() -> impl Scene {
@@ -35,12 +38,12 @@ pub fn subpane_header() -> impl Scene {
                 bottom: Val::Px(0.0),
             },
             padding: UiRect::axes(Val::Px(10.0), Val::Px(0.0)),
-            min_height: size::HEADER_HEIGHT,
+            min_height: HEADER_HEIGHT,
             column_gap: Val::Px(4.0),
         },
-        ThemeBackgroundColor(tokens::SUBPANE_HEADER_BG),
-        ThemeBorderColor(tokens::SUBPANE_HEADER_BORDER),
-        ThemeFontColor(tokens::SUBPANE_HEADER_TEXT),
+        ThemeBackgroundColor(SUBPANE_HEADER_BG),
+        ThemeBorderColor(SUBPANE_HEADER_BORDER),
+        ThemeFontColor(SUBPANE_HEADER_TEXT),
         {RoundedCorners::Top.to_border_radius(4.0)},
         InheritableFont {
             font: fonts::REGULAR,
@@ -63,8 +66,8 @@ pub fn subpane_body() -> impl Scene {
             },
             padding: UiRect::axes(Val::Px(6.0), Val::Px(6.0)),
         },
-        ThemeBackgroundColor(tokens::SUBPANE_BODY_BG),
-        ThemeBorderColor(tokens::SUBPANE_BODY_BORDER),
+        ThemeBackgroundColor(SUBPANE_BODY_BG),
+        ThemeBorderColor(SUBPANE_BODY_BORDER),
         {RoundedCorners::Bottom.to_border_radius(4.0)},
         InheritableFont {
             font: fonts::REGULAR,

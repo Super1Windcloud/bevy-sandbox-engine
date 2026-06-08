@@ -9,7 +9,9 @@ use bevy::ui::{
 };
 use bevy_proto_bsn::{ConstructPatchExt, Scene, pbsn};
 
-use super::{size, tokens};
+use super::{
+    HEADER_HEIGHT, PANE_HEADER_BG, PANE_HEADER_BORDER, PANE_HEADER_DIVIDER, PANE_HEADER_TEXT,
+};
 
 /// A standard pane
 pub fn pane() -> impl Scene {
@@ -37,12 +39,12 @@ pub fn pane_header() -> impl Scene {
                 right: Val::Px(1.0),
                 bottom: Val::Px(0.0),
             },
-            min_height: size::HEADER_HEIGHT,
+            min_height: HEADER_HEIGHT,
             column_gap: Val::Px(6.0),
         },
-        ThemeBackgroundColor(tokens::PANE_HEADER_BG),
-        ThemeBorderColor(tokens::PANE_HEADER_BORDER),
-        ThemeFontColor(tokens::PANE_HEADER_TEXT),
+        ThemeBackgroundColor(PANE_HEADER_BG),
+        ThemeBorderColor(PANE_HEADER_BORDER),
+        ThemeFontColor(PANE_HEADER_TEXT),
         {RoundedCorners::Top.to_border_radius(4.0)},
         InheritableFont {
             font: fonts::REGULAR,
@@ -68,7 +70,7 @@ pub fn pane_header_divider() -> impl Scene {
                 top: Val::Px(-6.0),
                 bottom: Val::Px(-6.0),
             },
-            ThemeBackgroundColor(tokens::PANE_HEADER_DIVIDER)
+            ThemeBackgroundColor(PANE_HEADER_DIVIDER)
         )]
     }
 }
