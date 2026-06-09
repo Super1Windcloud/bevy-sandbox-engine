@@ -128,8 +128,6 @@ pub struct Strings {
     pub open_project_folder: &'static str,
     pub remove_project: &'static str,
     pub save: &'static str,
-    pub more: &'static str,
-    pub open: &'static str,
     pub creating_from: &'static str,
     pub project_not_found: &'static str,
     pub failed_to_run_project: &'static str,
@@ -173,8 +171,6 @@ pub fn strings(locale: LauncherLocale) -> Strings {
             open_project_folder: "打开项目文件夹",
             remove_project: "删除项目",
             save: "保存",
-            more: "更多",
-            open: "打开",
             creating_from: "正在从模板创建",
             project_not_found: "项目不存在",
             failed_to_run_project: "启动项目失败",
@@ -215,8 +211,6 @@ pub fn strings(locale: LauncherLocale) -> Strings {
             open_project_folder: "Open Project Folder",
             remove_project: "Remove Project",
             save: "Save",
-            more: "More",
-            open: "Open",
             creating_from: "Creating from",
             project_not_found: "Project not found",
             failed_to_run_project: "Failed to run project",
@@ -994,7 +988,7 @@ fn render_create_project_dialog(
         return;
     };
 
-    let mut close_dialog = false;
+    let mut close_dialog = ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::Escape));
     let mut create_project = false;
     let locale = ui_state.locale;
 
