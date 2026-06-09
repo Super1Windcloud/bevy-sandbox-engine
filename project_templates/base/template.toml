@@ -1,0 +1,8 @@
+kind = "project"
+title_zh = "基础模板"
+title_en = "Base Template"
+subtitle_zh = "适合从空白工程开始搭建内容。"
+subtitle_en = "A clean starting point for building a new project."
+preview_style = "grid"
+preview_top_color = "#6D87B1"
+preview_bottom_color = "#D8DEE6"

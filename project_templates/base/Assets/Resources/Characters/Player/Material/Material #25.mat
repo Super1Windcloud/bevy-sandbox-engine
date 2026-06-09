@@ -1,0 +1,20 @@
+{
+    "head": {
+        "_name": "Material #25",
+        "_type": 2
+    },
+    "relys": [
+        "B4CF93F49D77417B9FB64658DEF0B291"
+    ],
+    "shader": "Engine/Default",
+    "textures": [
+        {
+            "name": "_MainTex",
+            "value": {
+                "type": 5,
+                "ptype": 2,
+                "id": "B4CF93F49D77417B9FB64658DEF0B291"
+            }
+        }
+    ]
+}

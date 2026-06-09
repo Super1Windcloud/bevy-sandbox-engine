@@ -1,0 +1,4523 @@
+{
+    "block_count": 0,
+    "file_map_identity": 1,
+    "objects": [
+        {
+            "type": "BLOCKMAN3.Scene",
+            "data": {
+                "instance_id": 0,
+                "render_setting": {
+                    "type": 1,
+                    "exist": true,
+                    "sig": {
+                        "type": 2,
+                        "ptype": 0
+                    },
+                    "shared": true,
+                    "data": {
+                        "head": {
+                            "_name": "",
+                            "_type": 2
+                        },
+                        "shader": "Engine/Skybox/Procedural",
+                        "name": ""
+                    },
+                    "head": {
+                        "_name": "",
+                        "_type": 20
+                    },
+                    "circle": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "outerAABB": [
+                        0,
+                        0,
+                        0,
+                        1,
+                        1,
+                        1
+                    ],
+                    "_fog_enable": false,
+                    "_fog_mode": 1,
+                    "_fog_color": [
+                        0.5,
+                        0.5,
+                        0.5,
+                        1
+                    ],
+                    "_linear_fog_start": 0,
+                    "_linear_fog_end": 300,
+                    "_exp_fog_density": 0.009999999776482601,
+                    "_ambient_color": [
+                        0.6352941393852234,
+                        0.6901960968971252,
+                        0.7921568751335144,
+                        1
+                    ],
+                    "_lightmap_blend_ambient_factor": 0
+                },
+                "navmesh_setting": {
+                    "nav_mesh_uuid": "00000000000000000000000000000000",
+                    "nav_mesh_agent_cfg": {
+                        "agent_cfg_name": "",
+                        "agent_cfg_radius": 1,
+                        "agent_cfg_height": 1,
+                        "agent_cfg_max_climb": 0.2000000029802322,
+                        "agent_cfg_max_slope": 45,
+                        "agent_cfg_uuid": "EE71F7D6E58141B087BDA8426784B4DB"
+                    },
+                    "drop_height": 0,
+                    "jump_dist": 0,
+                    "area_obj_map": {}
+                },
+                "dynamic_batch_setting": {
+                    "open_dynamic_batch": false
+                },
+                "lightmap_setting": {
+                    "bDirectionalLightmap": true,
+                    "lightmaps": []
+                }
+            }
+        }
+    ],
+    "gameobjects": {
+        "block_count": 139,
+        "file_map_identity": 140,
+        "objects": [
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "Camera",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1,
+                    "layer": 0,
+                    "t": [
+                        -16.970598220825195,
+                        3.1608099937438965,
+                        1.4351575374603271
+                    ],
+                    "r": [
+                        0,
+                        0.7338412404060364,
+                        0,
+                        0.6793209910392761
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 3,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.Camera",
+                "data": {
+                    "allow_msaa": false,
+                    "culling_mask": 4294967295,
+                    "orthographic": false,
+                    "orthographic_size": 5,
+                    "field_of_view": 60,
+                    "near_clip": 0.2000000029802322,
+                    "far_clip": 1000,
+                    "aspect": -1,
+                    "shadow_enable": true,
+                    "depth": -1,
+                    "view_port": [
+                        0,
+                        0,
+                        1,
+                        1
+                    ],
+                    "clear_color": [
+                        0.07000000029802321,
+                        0.4300000071525574,
+                        0.5,
+                        1
+                    ],
+                    "depth_texture_mode": 0,
+                    "clear_flags": 1,
+                    "require_opaque_texture": false,
+                    "require_depth_texture": false,
+                    "camera_type": 1,
+                    "inst_id": 0,
+                    "file_id": 975013747,
+                    "enabled": true
+                }
+            },
+            {
+                "type": "BLOCKMAN3.AudioListener",
+                "data": {
+                    "inst_id": 0,
+                    "file_id": 3,
+                    "enabled": true
+                }
+            },
+            {
+                "type": "BLOCKMAN3.TSComponent",
+                "data": {
+                    "com_type": "CameraController",
+                    "CameraFollow": {
+                        "CameraFollow": {
+                            "ref_type": 2,
+                            "strong_ref": 1818058212
+                        }
+                    },
+                    "MaxDistance": {
+                        "MaxDistance": 5
+                    },
+                    "MinDistance": {
+                        "MinDistance": 2
+                    },
+                    "MaxRotateAngle": {
+                        "MaxRotateAngle": 60
+                    },
+                    "MinRotateAngle": {
+                        "MinRotateAngle": -60
+                    },
+                    "RotateSensitivity": {
+                        "RotateSensitivity": 30
+                    },
+                    "HitLayerMask": {
+                        "HitLayerMask": 4
+                    },
+                    "Offset": {
+                        "Offset": 0.1
+                    },
+                    "SmoothSpeed": {
+                        "SmoothSpeed": 0.1
+                    },
+                    "inst_id": 0,
+                    "file_id": 1056940466,
+                    "enabled": true
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "Light",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 5,
+                    "layer": 0,
+                    "t": [
+                        12.768951416015625,
+                        4.961675643920898,
+                        2.3428232669830322
+                    ],
+                    "r": [
+                        0.4775209426879883,
+                        1.4251894109307273e-9,
+                        -7.745751262611122e-10,
+                        0.8786203861236572
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 1,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.Light",
+                "data": {
+                    "type": 1,
+                    "mode": 2,
+                    "baked_mode": 2,
+                    "color": [
+                        0.9921568632125854,
+                        0.9372549057006836,
+                        0.8549019694328308,
+                        1
+                    ],
+                    "intensity": 0.699999988079071,
+                    "shadow_type": 2,
+                    "shadow_strength": 0.75,
+                    "shadow_bias": 1,
+                    "shadow_normal_bias": 0,
+                    "range": 2,
+                    "inner_angle": 21,
+                    "shadow_cast_layer_mask": 4294967295,
+                    "outer_angle": 30,
+                    "inst_id": 0,
+                    "file_id": 613740367,
+                    "enabled": true
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "== Manager ==",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 7,
+                    "layer": 0,
+                    "t": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "InputManager",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 8,
+                    "layer": 0,
+                    "t": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 3,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.UIComponent",
+                "data": {
+                    "UI": {
+                        "exist": true,
+                        "sig": {
+                            "type": 10,
+                            "ptype": 2,
+                            "id": "262B6B59DFC24872F2AF05D50295B1AE"
+                        },
+                        "shared": false
+                    },
+                    "UI Mode": 0,
+                    "UI Event Camera": {},
+                    "UI OccludedBy3D": true,
+                    "UI Sorting Layer ID": 0,
+                    "UI Sorting Layer": 0,
+                    "UI Order": 0,
+                    "UI Face Camera": true,
+                    "Pixel Per Unit X": 100,
+                    "Pixel Per Unit Y": 100,
+                    "inst_id": 0,
+                    "file_id": 10,
+                    "enabled": true
+                }
+            },
+            {
+                "type": "BLOCKMAN3.TSComponent",
+                "data": {
+                    "com_type": "JoyStick",
+                    "IsJoyStickInputEnable": {
+                        "IsJoyStickInputEnable": false
+                    },
+                    "ControlTarget": {
+                        "ControlTarget": {
+                            "ref_type": 2,
+                            "strong_ref": 1602933187,
+                            "com_region": 3,
+                            "com_name": "PlayerController"
+                        }
+                    },
+                    "LeftJoyStick": {
+                        "LeftJoyStick": "LeftStick"
+                    },
+                    "LeftJoyStickCap": {
+                        "LeftJoyStickCap": "LeftStickCap"
+                    },
+                    "ScreenMoveArea": {
+                        "ScreenMoveArea": "ScreenMoveArea"
+                    },
+                    "ScreenMoveDeadZone": {
+                        "ScreenMoveDeadZone": 5
+                    },
+                    "JumpButton": {
+                        "JumpButton": "JumpButton"
+                    },
+                    "inst_id": 0,
+                    "file_id": 901870364,
+                    "enabled": true
+                }
+            },
+            {
+                "type": "BLOCKMAN3.TSComponent",
+                "data": {
+                    "com_type": "KeyBoard",
+                    "IsKeyBoardInputEnable": {
+                        "IsKeyBoardInputEnable": true
+                    },
+                    "ControlTarget": {
+                        "ControlTarget": {
+                            "ref_type": 2,
+                            "strong_ref": 1602933187,
+                            "com_region": 3,
+                            "com_name": "PlayerController"
+                        }
+                    },
+                    "inst_id": 0,
+                    "file_id": 943535894,
+                    "enabled": true
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "== StaticSceneObject ==",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 12,
+                    "layer": 0,
+                    "t": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "BaseSceneObject",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1618219509,
+                    "layer": 0,
+                    "t": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 2,
+                    "is_static": false,
+                    "prefab": {
+                        "container": {
+                            "exist": true,
+                            "sig": {
+                                "type": 1,
+                                "ptype": 2,
+                                "id": "DC8A5ABCBABF49BF39951F03003657E2"
+                            },
+                            "shared": true
+                        },
+                        "state": 1
+                    }
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "== Characters ==",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 83,
+                    "layer": 0,
+                    "t": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "r": [
+                        0,
+                        1,
+                        0,
+                        -4.371138828673793e-8
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "Player",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 2037043740,
+                    "layer": 0,
+                    "t": [
+                        0,
+                        0.5,
+                        -0.00005435943603515626
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 2,
+                    "child_count": 2
+                }
+            },
+            {
+                "type": "BLOCKMAN3.CharacterController",
+                "data": {
+                    "min_move_distance": 0.0010000000474975,
+                    "skin_width": 0.00009999999747378753,
+                    "slot_limit": 45,
+                    "step_offset": 0.300000011920929,
+                    "height": 2,
+                    "radius": 0.5,
+                    "center": [
+                        0,
+                        1,
+                        0
+                    ],
+                    "material": {
+                        "exist": false
+                    },
+                    "is_trigger": false,
+                    "inst_id": 0,
+                    "file_id": 873683198,
+                    "enabled": true
+                }
+            },
+            {
+                "type": "BLOCKMAN3.TSComponent",
+                "data": {
+                    "com_type": "PlayerController",
+                    "Gravity": {
+                        "Gravity": -9.81
+                    },
+                    "Animator": {
+                        "Animator": {
+                            "ref_type": 2,
+                            "strong_ref": 151324294,
+                            "com_region": 1,
+                            "com_name": "BLOCKMAN3.Animator"
+                        }
+                    },
+                    "Cam": {
+                        "Cam": {
+                            "ref_type": 2,
+                            "strong_ref": 975013747,
+                            "com_region": 1,
+                            "com_name": "BLOCKMAN3.Camera"
+                        }
+                    },
+                    "MoveSpeed": {
+                        "MoveSpeed": 5
+                    },
+                    "JumpSpeed": {
+                        "JumpSpeed": 5
+                    },
+                    "JumpHeight": {
+                        "JumpHeight": 7
+                    },
+                    "GroundedOffset": {
+                        "GroundedOffset": 0.2
+                    },
+                    "RotateSpeed": {
+                        "RotateSpeed": 10
+                    },
+                    "RotationSmoothTime": {
+                        "RotationSmoothTime": 0.1
+                    },
+                    "CheckRadius": {
+                        "CheckRadius": 0.1
+                    },
+                    "CheckDistance": {
+                        "CheckDistance": 0.2
+                    },
+                    "CheckMask": {
+                        "CheckMask": 4
+                    },
+                    "ShowGroundEetection": {
+                        "ShowGroundEetection": false
+                    },
+                    "inst_id": 0,
+                    "file_id": 1602933187,
+                    "enabled": true
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "boy",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 2092432010,
+                    "layer": 0,
+                    "t": [
+                        0,
+                        0,
+                        0.00005435943603515626
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 2,
+                    "child_count": 7
+                }
+            },
+            {
+                "type": "BLOCKMAN3.Animator",
+                "data": {
+                    "data": {
+                        "exist": true,
+                        "sig": {
+                            "type": 14,
+                            "ptype": 2,
+                            "id": "BAE9C1672C1441A44388E342277F6964"
+                        },
+                        "shared": true
+                    },
+                    "cull_mode": 1,
+                    "inst_id": 0,
+                    "file_id": 151324294,
+                    "enabled": true
+                }
+            },
+            {
+                "type": "BLOCKMAN3.TSComponent",
+                "data": {
+                    "com_type": "DecorationBase",
+                    "prefab_nose": {},
+                    "prefab_scarf": {},
+                    "prefab_glasses": {},
+                    "prefab_eyebrow": {},
+                    "prefab_hat": {},
+                    "prefab_crown": {},
+                    "prefab_top": {},
+                    "prefab_pants": {},
+                    "prefab_face": {},
+                    "prefab_hair": {},
+                    "prefab_shoes_r": {},
+                    "prefab_shoes_l": {},
+                    "prefab_wing": {},
+                    "prefab_tail": {},
+                    "inst_id": 0,
+                    "file_id": 1283974947,
+                    "enabled": true
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "trunk",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 370684187,
+                    "layer": 0,
+                    "t": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "r": [
+                        -0.7071067094802856,
+                        0,
+                        0,
+                        0.70710688829422
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 1,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.SkinnedMeshRenderer",
+                "data": {
+                    "mesh": {
+                        "exist": true,
+                        "sig": {
+                            "type": 3,
+                            "ptype": 2,
+                            "id": "F65BB1B626854798C9834E8EF5E4619C"
+                        },
+                        "shared": true
+                    },
+                    "root_bone": {
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 15
+                        }
+                    },
+                    "bones": {
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 46
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 18
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 15
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 16
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 17
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 73
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 78
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 22
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 21
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 28
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 42
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 23
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 24
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 25
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 29
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 26
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 27
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 35
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 34
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 41
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 36
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 37
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 38
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 39
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 40
+                        }
+                    },
+                    "materials": [
+                        {
+                            "exist": true,
+                            "sig": {
+                                "type": 2,
+                                "ptype": 2,
+                                "id": "CDE6C12194F942520E86AD78627D7202"
+                            },
+                            "shared": true
+                        }
+                    ],
+                    "shadow_casting_mode": 1,
+                    "receive_shadows": true,
+                    "inst_id": 0,
+                    "file_id": 1328935310,
+                    "enabled": true
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "trousers",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 658030112,
+                    "layer": 0,
+                    "t": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "r": [
+                        -0.7071067094802856,
+                        0,
+                        0,
+                        0.70710688829422
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 1,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.SkinnedMeshRenderer",
+                "data": {
+                    "mesh": {
+                        "exist": true,
+                        "sig": {
+                            "type": 3,
+                            "ptype": 2,
+                            "id": "0A0E43DD5DEE468D6C8169B93B171ABA"
+                        },
+                        "shared": true
+                    },
+                    "root_bone": {
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 15
+                        }
+                    },
+                    "bones": {
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 15
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 16
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 73
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 78
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 17
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 18
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 74
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 75
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 76
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 79
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 80
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 81
+                        }
+                    },
+                    "materials": [
+                        {
+                            "exist": true,
+                            "sig": {
+                                "type": 2,
+                                "ptype": 2,
+                                "id": "CDE6C12194F942520E86AD78627D7202"
+                            },
+                            "shared": true
+                        }
+                    ],
+                    "shadow_casting_mode": 1,
+                    "receive_shadows": true,
+                    "inst_id": 0,
+                    "file_id": 1893398076,
+                    "enabled": true
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "face",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1566216223,
+                    "layer": 0,
+                    "t": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "r": [
+                        -0.7071079015731813,
+                        8.429361741946195e-7,
+                        5.057635235061753e-7,
+                        0.7071056962013245
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 1,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.SkinnedMeshRenderer",
+                "data": {
+                    "mesh": {
+                        "exist": true,
+                        "sig": {
+                            "type": 3,
+                            "ptype": 2,
+                            "id": "574B3A1AD2BE41D1C4A29689B71301CD"
+                        },
+                        "shared": true
+                    },
+                    "root_bone": {
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 18
+                        }
+                    },
+                    "bones": {
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 46
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 18
+                        }
+                    },
+                    "materials": [
+                        {
+                            "exist": true,
+                            "sig": {
+                                "type": 2,
+                                "ptype": 2,
+                                "id": "D82291DA075141F329B32337AF74648E"
+                            },
+                            "shared": true
+                        }
+                    ],
+                    "shadow_casting_mode": 1,
+                    "receive_shadows": true,
+                    "inst_id": 0,
+                    "file_id": 1560903974,
+                    "enabled": true
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "hair",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1935539270,
+                    "layer": 0,
+                    "t": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "r": [
+                        -0.7071079015731813,
+                        8.429361741946195e-7,
+                        5.057635235061753e-7,
+                        0.7071056962013245
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 1,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.SkinnedMeshRenderer",
+                "data": {
+                    "mesh": {
+                        "exist": true,
+                        "sig": {
+                            "type": 3,
+                            "ptype": 2,
+                            "id": "25DF783502054C9DD180715AC33E5CA8"
+                        },
+                        "shared": true
+                    },
+                    "root_bone": {
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 18
+                        }
+                    },
+                    "bones": {
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 46
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 18
+                        }
+                    },
+                    "materials": [
+                        {
+                            "exist": true,
+                            "sig": {
+                                "type": 2,
+                                "ptype": 2,
+                                "id": "8D918F841EED491A8583938B1FB409AC"
+                            },
+                            "shared": true
+                        }
+                    ],
+                    "shadow_casting_mode": 1,
+                    "receive_shadows": true,
+                    "inst_id": 0,
+                    "file_id": 1568095846,
+                    "enabled": true
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "shoes_r",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1308652153,
+                    "layer": 0,
+                    "t": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "r": [
+                        -0.7071082592010498,
+                        -4.4597717874239606e-7,
+                        4.459752460661548e-7,
+                        0.7071053385734558
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 1,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.SkinnedMeshRenderer",
+                "data": {
+                    "mesh": {
+                        "exist": true,
+                        "sig": {
+                            "type": 3,
+                            "ptype": 2,
+                            "id": "FF80FBAECCA048463BBF538CCE39DA8C"
+                        },
+                        "shared": true
+                    },
+                    "root_bone": {
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 78
+                        }
+                    },
+                    "bones": {
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 79
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 80
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 81
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 78
+                        }
+                    },
+                    "materials": [
+                        {
+                            "exist": true,
+                            "sig": {
+                                "type": 2,
+                                "ptype": 2,
+                                "id": "4192742D4C1142FF49A20FF3FFDA26EA"
+                            },
+                            "shared": true
+                        }
+                    ],
+                    "shadow_casting_mode": 1,
+                    "receive_shadows": true,
+                    "inst_id": 0,
+                    "file_id": 754397207,
+                    "enabled": true
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "shoes_l",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 789870169,
+                    "layer": 0,
+                    "t": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "r": [
+                        -0.7071101069450378,
+                        -5.717540147998079e-7,
+                        5.717485578315973e-7,
+                        0.7071034908294678
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 1,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.SkinnedMeshRenderer",
+                "data": {
+                    "mesh": {
+                        "exist": true,
+                        "sig": {
+                            "type": 3,
+                            "ptype": 2,
+                            "id": "68A9E027BBA049BC038C304CD1A9C534"
+                        },
+                        "shared": true
+                    },
+                    "root_bone": {
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 73
+                        }
+                    },
+                    "bones": {
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 74
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 75
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 76
+                        },
+                        "NULL": {
+                            "ref_type": 2,
+                            "strong_ref": 73
+                        }
+                    },
+                    "materials": [
+                        {
+                            "exist": true,
+                            "sig": {
+                                "type": 2,
+                                "ptype": 2,
+                                "id": "4192742D4C1142FF49A20FF3FFDA26EA"
+                            },
+                            "shared": true
+                        }
+                    ],
+                    "shadow_casting_mode": 1,
+                    "receive_shadows": true,
+                    "inst_id": 0,
+                    "file_id": 1634951567,
+                    "enabled": true
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "Bip001",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 14,
+                    "layer": 0,
+                    "t": [
+                        0,
+                        0.5708094835281372,
+                        0
+                    ],
+                    "r": [
+                        -0.5000002980232239,
+                        0.49999964237213146,
+                        0.49999964237213146,
+                        0.5000004172325134
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "pelvis",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 15,
+                    "layer": 0,
+                    "t": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "r": [
+                        -0.5,
+                        0.5,
+                        0.4999992847442627,
+                        0.500000834465027
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 10
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "spine_01",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 16,
+                    "layer": 0,
+                    "t": [
+                        -0.05675899237394331,
+                        0.0012624189257622001,
+                        7.504000620883744e-8
+                    ],
+                    "r": [
+                        -0.0000020804759515158366,
+                        6.936760428288835e-7,
+                        -0.0003981590270996001,
+                        0.9999999403953552
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 3
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "spine_02",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 17,
+                    "layer": 0,
+                    "t": [
+                        -0.1758853048086166,
+                        -0.00018405503942630003,
+                        -5.104952571777233e-10
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "spine_03",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 18,
+                    "layer": 0,
+                    "t": [
+                        -0.23114532232284551,
+                        -0.0001785715576261,
+                        -4.952860899187783e-10
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 7
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "neck_01",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 19,
+                    "layer": 0,
+                    "t": [
+                        -0.17295081913471222,
+                        0.019704973325133303,
+                        2.85316712478334e-8
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 3
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "clavicle_l",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 20,
+                    "layer": 0,
+                    "t": [
+                        0.011725692078471203,
+                        -0.0210574679076672,
+                        0.09541772305965421
+                    ],
+                    "r": [
+                        0.7071077227592468,
+                        0.00028150968137200005,
+                        -0.707105815410614,
+                        0.00028151046717540004
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "upperarm_l",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 21,
+                    "layer": 0,
+                    "t": [
+                        -0.1899642944335938,
+                        4.888534022029489e-11,
+                        0
+                    ],
+                    "r": [
+                        0.0136345829814672,
+                        -0.6721387505531311,
+                        -0.007675557862967301,
+                        0.7402598857879639
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "lowerarm_l",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 22,
+                    "layer": 0,
+                    "t": [
+                        -0.2798046171665192,
+                        -2.38418573772492e-9,
+                        0
+                    ],
+                    "r": [
+                        2.970783341549321e-11,
+                        -3.7256264739937706e-9,
+                        0.023595286533236504,
+                        0.9997215867042542
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "hand_l",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 23,
+                    "layer": 0,
+                    "t": [
+                        -0.2444347739219666,
+                        0,
+                        0
+                    ],
+                    "r": [
+                        -0.7068251967430115,
+                        0,
+                        0,
+                        0.7073882222175598
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 5
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "thumb_01_l",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 24,
+                    "layer": 0,
+                    "t": [
+                        -0.05212890356779101,
+                        0.0631196573376656,
+                        -0.059249486774206196
+                    ],
+                    "r": [
+                        0.6687261462211609,
+                        -0.013716098852455602,
+                        -0.011516101658344302,
+                        0.7432930469512941
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "thumb_02_l",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 25,
+                    "layer": 0,
+                    "t": [
+                        -0.0406416691839695,
+                        9.53674295089968e-9,
+                        0
+                    ],
+                    "r": [
+                        -9.170981751793761e-10,
+                        1.6215083442627787e-10,
+                        -0.1741081178188324,
+                        0.9847265481948853
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "index_01_l",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 26,
+                    "layer": 0,
+                    "t": [
+                        -0.06127559393644331,
+                        -0.0492338165640831,
+                        -0.059908304363489207
+                    ],
+                    "r": [
+                        -0.00036904640728610007,
+                        -0.00014945304428690001,
+                        -0.3753603398799896,
+                        0.9268788695335388
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "index_02_l",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 27,
+                    "layer": 0,
+                    "t": [
+                        -0.042391203343868304,
+                        -1.9073485901799362e-8,
+                        4.76837147544984e-9
+                    ],
+                    "r": [
+                        1.323950504783511e-9,
+                        -6.446388978176287e-10,
+                        -0.1309892386198044,
+                        0.9913837909698486
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "middle_01_l",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 28,
+                    "layer": 0,
+                    "t": [
+                        -0.059187199920415906,
+                        -0.050713729113340406,
+                        -0.021562306210398702
+                    ],
+                    "r": [
+                        -0.00038274945109150003,
+                        -0.00010970213043040003,
+                        -0.2755231559276581,
+                        0.9612943530082703
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "middle_02_l",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 29,
+                    "layer": 0,
+                    "t": [
+                        -0.0419647209346294,
+                        -3.8146971803598724e-8,
+                        2.38418573772492e-9
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        -0.27145814895629883,
+                        0.9624503254890442
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "ring_l_01",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 30,
+                    "layer": 0,
+                    "t": [
+                        -0.053841054439544705,
+                        -0.041284408420324305,
+                        0.0331358052790165
+                    ],
+                    "r": [
+                        -0.00037205085391180007,
+                        -0.00014180662401490005,
+                        -0.3561597168445587,
+                        0.9344251155853271
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "ring_l_02",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 31,
+                    "layer": 0,
+                    "t": [
+                        -0.048708725720644,
+                        0,
+                        0
+                    ],
+                    "r": [
+                        -9.494641739493659e-10,
+                        1.4173773266179523e-10,
+                        -0.38311490416526794,
+                        0.9237006902694702
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "s_hand_l",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 32,
+                    "layer": 0,
+                    "t": [
+                        -0.051217801868915606,
+                        0.014296608045697198,
+                        -0.026344073936343207
+                    ],
+                    "r": [
+                        0.7343233227729797,
+                        0.6713014245033264,
+                        -0.0734234675765038,
+                        -0.0687940269708633
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "clavicle_r",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 33,
+                    "layer": 0,
+                    "t": [
+                        0.011725692078471203,
+                        -0.0210569370537996,
+                        -0.09541778266429901
+                    ],
+                    "r": [
+                        0.7071077227592468,
+                        0.00028150968137200005,
+                        0.707105815410614,
+                        -0.00028151046717540004
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "upperarm_r",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 34,
+                    "layer": 0,
+                    "t": [
+                        -0.1899642944335938,
+                        -4.8921717371586126e-11,
+                        0
+                    ],
+                    "r": [
+                        -0.0136345829814672,
+                        0.6721387505531311,
+                        -0.007675557862967301,
+                        0.7402598857879639
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "lowerarm_r",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 35,
+                    "layer": 0,
+                    "t": [
+                        -0.2798046171665192,
+                        -2.38418573772492e-9,
+                        0
+                    ],
+                    "r": [
+                        -4.061159464274766e-10,
+                        -7.462241491396071e-9,
+                        0.023595286533236504,
+                        0.9997215867042542
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "hand_r",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 36,
+                    "layer": 0,
+                    "t": [
+                        -0.2444347739219666,
+                        0,
+                        -3.8146971803598724e-8
+                    ],
+                    "r": [
+                        0.7068251967430115,
+                        0,
+                        0,
+                        0.7073882222175598
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 5
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "thumb_01_r",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 37,
+                    "layer": 0,
+                    "t": [
+                        -0.052128866314888,
+                        0.0631196573376656,
+                        0.0592494793236256
+                    ],
+                    "r": [
+                        -0.6687261462211609,
+                        0.013716100715100802,
+                        -0.011516104452312003,
+                        0.7432930469512941
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "thumb_02_r",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 38,
+                    "layer": 0,
+                    "t": [
+                        -0.04064163193106651,
+                        9.53674295089968e-9,
+                        3.8146971803598724e-8
+                    ],
+                    "r": [
+                        1.2413995387206e-9,
+                        1.6720451689877793e-9,
+                        -0.1741081178188324,
+                        0.9847265481948853
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "index_01_r",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 39,
+                    "layer": 0,
+                    "t": [
+                        -0.06127551943063741,
+                        -0.04923389479517941,
+                        0.059908293187618304
+                    ],
+                    "r": [
+                        0.00036904640728610007,
+                        0.00014945304428690001,
+                        -0.3753603398799896,
+                        0.9268788695335388
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "index_02_r",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 40,
+                    "layer": 0,
+                    "t": [
+                        -0.042391203343868304,
+                        -3.8146971803598724e-8,
+                        0
+                    ],
+                    "r": [
+                        -9.232980491269416e-10,
+                        1.2199322108052968e-10,
+                        -0.1309892386198044,
+                        0.9913837909698486
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "middle_01_r",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 41,
+                    "layer": 0,
+                    "t": [
+                        -0.05918716266751291,
+                        -0.05071384459733961,
+                        0.0215623043477535
+                    ],
+                    "r": [
+                        0.00037173079908830005,
+                        0.00014264234050640002,
+                        -0.3582569360733032,
+                        0.9336229562759399
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "middle_02_r",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 42,
+                    "layer": 0,
+                    "t": [
+                        -0.0419647209346294,
+                        0,
+                        0
+                    ],
+                    "r": [
+                        4.124690866635916e-11,
+                        1.0886330725767834e-10,
+                        -0.35430824756622314,
+                        0.9351286888122559
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "ring_r_01",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 43,
+                    "layer": 0,
+                    "t": [
+                        -0.0538409799337387,
+                        -0.04128444567322731,
+                        -0.0331358052790165
+                    ],
+                    "r": [
+                        0.0003720507666003,
+                        0.00014180765720080003,
+                        -0.3561597168445587,
+                        0.9344251155853271
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "ring_r_02",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 44,
+                    "layer": 0,
+                    "t": [
+                        -0.048708725720644,
+                        0,
+                        2.38418573772492e-9
+                    ],
+                    "r": [
+                        -8.602632495247065e-10,
+                        3.5680353116518404e-10,
+                        -0.38311490416526794,
+                        0.9237006902694702
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "s_hand_r",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 45,
+                    "layer": 0,
+                    "t": [
+                        -0.051220472902059604,
+                        0.0143006127327681,
+                        0.026338914409279802
+                    ],
+                    "r": [
+                        -0.4281650185585022,
+                        0.4784156084060669,
+                        -0.5648636817932129,
+                        0.5183842182159424
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "head",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 46,
+                    "layer": 0,
+                    "t": [
+                        -0.03856796026229861,
+                        -0.000012683867680607365,
+                        -3.518152782988615e-11
+                    ],
+                    "r": [
+                        -7.265595866915928e-14,
+                        -1.1042732284138879e-9,
+                        0.0003988305979874002,
+                        0.9999999403953552
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 2
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "hair_01",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 47,
+                    "layer": 0,
+                    "t": [
+                        -0.18229186534881592,
+                        -0.2702662348747253,
+                        -1.5258784458183072e-7
+                    ],
+                    "r": [
+                        0.2019885033369064,
+                        0.9793879389762878,
+                        6.970310550968861e-7,
+                        -5.5049614644531175e-8
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "hair_02",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 48,
+                    "layer": 0,
+                    "t": [
+                        -0.1934239119291306,
+                        0,
+                        -3.63797872577655e-14
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "hair_03",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 49,
+                    "layer": 0,
+                    "t": [
+                        -0.22166205942630768,
+                        0,
+                        -1.1069765548654686e-7
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "Bone015",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 50,
+                    "layer": 0,
+                    "t": [
+                        -0.21350401639938352,
+                        0,
+                        1.089517169816645e-7
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "s_head",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 51,
+                    "layer": 0,
+                    "t": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "b_cloakbone_1_01",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 52,
+                    "layer": 0,
+                    "t": [
+                        -0.1988794654607773,
+                        -0.11817401647567749,
+                        0.11374931037426
+                    ],
+                    "r": [
+                        -0.08604488521814352,
+                        0.016610410064458802,
+                        0.9780943393707275,
+                        0.1888171136379242
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "b_cloakbone_1_02",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 53,
+                    "layer": 0,
+                    "t": [
+                        -0.4072756767272949,
+                        7.629394360719743e-8,
+                        0
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "b_cloakbone_1_03",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 54,
+                    "layer": 0,
+                    "t": [
+                        -0.3166603147983551,
+                        7.629394360719743e-8,
+                        -3.8146971803598724e-8
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "Bone010",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 55,
+                    "layer": 0,
+                    "t": [
+                        -0.31462526321411133,
+                        -7.629394360719743e-8,
+                        0
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "b_cloakbone_2_01",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 56,
+                    "layer": 0,
+                    "t": [
+                        -0.1988795399665833,
+                        -0.1181738749146462,
+                        -2.288818308215923e-7
+                    ],
+                    "r": [
+                        -0.0004709196218755002,
+                        0.00009095374116441236,
+                        0.9818716049194336,
+                        0.1895465850830078
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "b_cloakbone_2_02",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 57,
+                    "layer": 0,
+                    "t": [
+                        -0.4007556140422821,
+                        3.8146971803598724e-8,
+                        0
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "b_cloakbone_2_03",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 58,
+                    "layer": 0,
+                    "t": [
+                        -0.3124347925186157,
+                        0,
+                        -7.450580430390374e-11
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "Bone011",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 59,
+                    "layer": 0,
+                    "t": [
+                        -0.3146253526210785,
+                        0,
+                        0
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "b_cloakbone_3_01",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 60,
+                    "layer": 0,
+                    "t": [
+                        -0.1988794654607773,
+                        -0.11817367374897002,
+                        -0.11325728893280029
+                    ],
+                    "r": [
+                        0.08604511618614202,
+                        -0.016611410304904005,
+                        0.9780943393707275,
+                        0.18881694972515112
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "b_cloakbone_3_02",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 61,
+                    "layer": 0,
+                    "t": [
+                        -0.40751853585243236,
+                        -7.629394360719743e-8,
+                        -2.6702880973061843e-7
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "b_cloakbone_3_03",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 62,
+                    "layer": 0,
+                    "t": [
+                        -0.3166181743144989,
+                        1.1444091541079615e-7,
+                        5.7220457705398076e-8
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "Bone012",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 63,
+                    "layer": 0,
+                    "t": [
+                        -0.31462526321411133,
+                        3.8146971803598724e-8,
+                        3.8146971803598724e-8
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "b_r_wingbone01",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 64,
+                    "layer": 0,
+                    "t": [
+                        -0.14598548412323,
+                        -0.227521151304245,
+                        -0.08564040809869772
+                    ],
+                    "r": [
+                        0.3530611991882324,
+                        0.6126558780670166,
+                        0.6123753190040588,
+                        -0.3535493910312653
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "b_r_wingbone02",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 65,
+                    "layer": 0,
+                    "t": [
+                        -0.3326214849948883,
+                        7.629394360719743e-8,
+                        0
+                    ],
+                    "r": [
+                        2.9838483328603616e-7,
+                        1.3079342409128003e-7,
+                        0.8056663870811462,
+                        0.5923694968223572
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "b_r_wingbone03",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 66,
+                    "layer": 0,
+                    "t": [
+                        -0.3942500948905945,
+                        -1.1444091541079615e-7,
+                        1.9073485901799362e-8
+                    ],
+                    "r": [
+                        1.5019699617369042e-7,
+                        3.944386151033541e-7,
+                        0.8893648982048035,
+                        -0.45719826221466064
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "Bone013",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 67,
+                    "layer": 0,
+                    "t": [
+                        -0.5417076349258423,
+                        1.5258788721439487e-7,
+                        -2.288818308215923e-7
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "b_l_wingbone01",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 68,
+                    "layer": 0,
+                    "t": [
+                        -0.1459851861000061,
+                        -0.2275213152170181,
+                        0.08564216643571851
+                    ],
+                    "r": [
+                        -0.3535490334033966,
+                        0.6123743653297424,
+                        0.6126565933227539,
+                        0.3530617654323578
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "b_l_wingbone02",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 69,
+                    "layer": 0,
+                    "t": [
+                        -0.33262142539024353,
+                        7.629394360719743e-8,
+                        -5.7220457705398076e-8
+                    ],
+                    "r": [
+                        -6.149007703015741e-8,
+                        -4.521081464758936e-8,
+                        -0.8056665658950806,
+                        0.5923692584037781
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "b_l_wingbone03",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 70,
+                    "layer": 0,
+                    "t": [
+                        -0.3942498564720154,
+                        -1.5258788721439487e-7,
+                        -1.9073485901799362e-8
+                    ],
+                    "r": [
+                        9.086686247883335e-8,
+                        1.4022483618703063e-8,
+                        0.8893648982048035,
+                        0.45719805359840393
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "Bone014",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 71,
+                    "layer": 0,
+                    "t": [
+                        -0.5417075753211975,
+                        -1.5258788721439487e-7,
+                        -2.47955313170678e-7
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "s_back",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 72,
+                    "layer": 0,
+                    "t": [
+                        -0.04534927383065221,
+                        0.0101424194872379,
+                        -1.5258788721439487e-7
+                    ],
+                    "r": [
+                        0.000004096843440493103,
+                        -4.2080376516651086e-8,
+                        0.0003981153422501001,
+                        0.9999999403953552
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "thigh_l",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 73,
+                    "layer": 0,
+                    "t": [
+                        0.05675994604825971,
+                        -0.0012175037991256003,
+                        0.1111848652362824
+                    ],
+                    "r": [
+                        -0.04010800644755361,
+                        0.9974372982978821,
+                        0.0592003054916859,
+                        0.0023575176019222004
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "calf_l",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 74,
+                    "layer": 0,
+                    "t": [
+                        -0.2484469711780548,
+                        0,
+                        1.9073485901799362e-8
+                    ],
+                    "r": [
+                        -4.8442512223800804e-9,
+                        4.3217471268341967e-10,
+                        0.08080129325389862,
+                        0.9967303276062012
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "foot_l",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 75,
+                    "layer": 0,
+                    "t": [
+                        -0.21202723681926733,
+                        0,
+                        -9.53674295089968e-9
+                    ],
+                    "r": [
+                        0.059196785092353814,
+                        -0.0024100227747113003,
+                        -0.041014488786459,
+                        0.9974005222320557
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 2
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "toe_l",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 76,
+                    "layer": 0,
+                    "t": [
+                        -0.10705619305372241,
+                        0.1060991659760475,
+                        9.53674295089968e-9
+                    ],
+                    "r": [
+                        -1.5454308055495858e-8,
+                        1.5454308055495858e-8,
+                        -0.7071067094802856,
+                        0.70710688829422
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "s_foot_l",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 77,
+                    "layer": 0,
+                    "t": [
+                        -0.11183734983205801,
+                        -0.0117869842797518,
+                        0.0005480289109983
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "thigh_r",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 78,
+                    "layer": 0,
+                    "t": [
+                        0.05675994604825971,
+                        -0.0012168870307505,
+                        -0.1111848652362824
+                    ],
+                    "r": [
+                        -0.0401079915463924,
+                        0.9974374771118164,
+                        -0.05919757485389711,
+                        -0.0023574940860271003
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "calf_r",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 79,
+                    "layer": 0,
+                    "t": [
+                        -0.248446986079216,
+                        0,
+                        -9.53674295089968e-9
+                    ],
+                    "r": [
+                        1.4468187758964746e-9,
+                        5.5239781499016865e-11,
+                        0.08080130070447922,
+                        0.9967303276062012
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "foot_r",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 80,
+                    "layer": 0,
+                    "t": [
+                        -0.21202720701694489,
+                        -5.960464344312301e-10,
+                        0
+                    ],
+                    "r": [
+                        -0.05919679254293441,
+                        0.0024099349975586007,
+                        -0.0410144813358784,
+                        0.9974005222320557
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 2
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "toe_r",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 81,
+                    "layer": 0,
+                    "t": [
+                        -0.10705619305372241,
+                        0.1060991659760475,
+                        9.53674295089968e-9
+                    ],
+                    "r": [
+                        1.5454309831852697e-8,
+                        -1.5454309831852697e-8,
+                        -0.7071067094802856,
+                        0.70710688829422
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "s_foot_r",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 82,
+                    "layer": 0,
+                    "t": [
+                        -0.11183732748031622,
+                        -0.0117869675159454,
+                        -0.0007243060972542001
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_side_l_01",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 712417905,
+                    "layer": 0,
+                    "t": [
+                        0.0021888350602239006,
+                        0.004471594933420401,
+                        0.2276354879140854
+                    ],
+                    "r": [
+                        -0.07908634096384051,
+                        0.7026712298393251,
+                        0.7012611627578735,
+                        0.0907263308763504
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_side_l_02",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 2007736840,
+                    "layer": 0,
+                    "t": [
+                        -0.1598566472530365,
+                        0,
+                        -2.98023217215615e-10
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_side_l_03",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 818511463,
+                    "layer": 0,
+                    "t": [
+                        -0.1529608815908432,
+                        0,
+                        -1.9371508841459217e-8
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "Bone005",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1522603649,
+                    "layer": 0,
+                    "t": [
+                        -0.1018631532788277,
+                        3.8146971803598724e-8,
+                        -1.9371508841459217e-8
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_front_l_01",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 249477883,
+                    "layer": 0,
+                    "t": [
+                        0.0021886443719268,
+                        0.1032857596874237,
+                        0.1161617562174797
+                    ],
+                    "r": [
+                        -0.15663675963878632,
+                        0.9866927266120911,
+                        0.003669319441542001,
+                        0.043463695794344004
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_front_l_02",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1813665604,
+                    "layer": 0,
+                    "t": [
+                        -0.1655450463294983,
+                        3.8146971803598724e-8,
+                        0
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_front_l_01 1",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1467764026,
+                    "layer": 0,
+                    "t": [
+                        -0.1303866505622864,
+                        -1.9073485901799362e-8,
+                        -1.9073485901799362e-8
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "Bone004",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1062948810,
+                    "layer": 0,
+                    "t": [
+                        -0.1252639293670654,
+                        9.536742595628311e-8,
+                        -1.9073485901799362e-8
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_front_m_01",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1498061287,
+                    "layer": 0,
+                    "t": [
+                        0.0021884918678552003,
+                        0.10328545421361922,
+                        -2.670287244654901e-7
+                    ],
+                    "r": [
+                        -0.15678593516349792,
+                        0.9876326322555542,
+                        -0.0000015300056475098245,
+                        -7.926943226266303e-7
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_front_m_02",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 906953436,
+                    "layer": 0,
+                    "t": [
+                        -0.16540972888469702,
+                        0,
+                        0
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_front_m_03",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 2147471764,
+                    "layer": 0,
+                    "t": [
+                        -0.1305889636278153,
+                        3.8146971803598724e-8,
+                        -1.9078470359090716e-8
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "Bone003",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 669976860,
+                    "layer": 0,
+                    "t": [
+                        -0.1251967996358872,
+                        1.9073485901799362e-8,
+                        1.9073485901799362e-8
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_front_r_01",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 824467572,
+                    "layer": 0,
+                    "t": [
+                        0.0021883009467274003,
+                        0.10328508913517001,
+                        -0.12794478237628942
+                    ],
+                    "r": [
+                        -0.15663674473762512,
+                        0.9866926074028015,
+                        -0.0036725052632391,
+                        -0.043465565890073804
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_front_r_02",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 258390546,
+                    "layer": 0,
+                    "t": [
+                        -0.1654920876026154,
+                        -1.9073485901799362e-8,
+                        1.9073485901799362e-8
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_front_r_03",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1867093453,
+                    "layer": 0,
+                    "t": [
+                        -0.1302573680877686,
+                        3.8146971803598724e-8,
+                        -1.9073485901799362e-8
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "Bone002",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 601381881,
+                    "layer": 0,
+                    "t": [
+                        -0.1254461258649826,
+                        -1.9073485901799362e-8,
+                        5.7220457705398076e-8
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_side_r_01",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1968388845,
+                    "layer": 0,
+                    "t": [
+                        0.0021881866268814005,
+                        0.003386829514056401,
+                        -0.2241677641868591
+                    ],
+                    "r": [
+                        -0.08824732899665833,
+                        0.7015768885612488,
+                        -0.700432538986206,
+                        -0.09693650156259542
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_side_r_02",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1008091857,
+                    "layer": 0,
+                    "t": [
+                        -0.16090422868728643,
+                        3.8146971803598724e-8,
+                        -7.569789772787772e-8
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_side_r_03",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1628855095,
+                    "layer": 0,
+                    "t": [
+                        -0.1528943181037903,
+                        0,
+                        1.847744002247964e-8
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "Bone001",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 504065619,
+                    "layer": 0,
+                    "t": [
+                        -0.10255126655101782,
+                        -3.8146971803598724e-8,
+                        0
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_back_r_01",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1476955163,
+                    "layer": 0,
+                    "t": [
+                        0.0021883009467274003,
+                        -0.11001546680927282,
+                        -0.1279442310333252
+                    ],
+                    "r": [
+                        0.0435483008623123,
+                        -0.0024943940807134004,
+                        0.9826599955558777,
+                        0.1802129596471787
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_back_r_02",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 405403164,
+                    "layer": 0,
+                    "t": [
+                        -0.1609212458133698,
+                        -3.8146971803598724e-8,
+                        1.9073485901799362e-8
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_back_r_03",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 169385275,
+                    "layer": 0,
+                    "t": [
+                        -0.1442822813987732,
+                        -1.9073485901799362e-8,
+                        0
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "Bone009",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1913455735,
+                    "layer": 0,
+                    "t": [
+                        -0.1381524205207825,
+                        -3.8146971803598724e-8,
+                        -1.9073485901799362e-8
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_back_m_01",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1758710171,
+                    "layer": 0,
+                    "t": [
+                        0.0021884918678552003,
+                        -0.1100151017308235,
+                        3.433227391269611e-7
+                    ],
+                    "r": [
+                        6.169627795316046e-7,
+                        0.0000014437224535868154,
+                        0.9835962057113647,
+                        0.18038451671600342
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_back_m_02",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 351783206,
+                    "layer": 0,
+                    "t": [
+                        -0.16093029081821442,
+                        1.9073485901799362e-8,
+                        0
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_back_m_03",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1128138231,
+                    "layer": 0,
+                    "t": [
+                        -0.1442729979753494,
+                        0,
+                        -1.9114331450964528e-8
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "Bone008",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 960122206,
+                    "layer": 0,
+                    "t": [
+                        -0.1381526291370392,
+                        3.8146971803598724e-8,
+                        0
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_back_l_01",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1313235740,
+                    "layer": 0,
+                    "t": [
+                        0.0021886443719268,
+                        -0.110014796257019,
+                        0.1161623746156693
+                    ],
+                    "r": [
+                        -0.0435475148260593,
+                        0.0024975028354675003,
+                        0.9826600551605225,
+                        0.1802127510309219
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_back_l_02",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1614158322,
+                    "layer": 0,
+                    "t": [
+                        -0.1609417498111725,
+                        0,
+                        0
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "p_back_l_03",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 398297773,
+                    "layer": 0,
+                    "t": [
+                        -0.1442576199769974,
+                        -1.9073485901799362e-8,
+                        -1.9073485901799362e-8
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "Bone007",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 731721202,
+                    "layer": 0,
+                    "t": [
+                        -0.13815630972385412,
+                        -1.9073485901799362e-8,
+                        3.8146971803598724e-8
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "b_tailbone01",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1692141201,
+                    "layer": 0,
+                    "t": [
+                        -0.053083378821611404,
+                        -0.10376852750778201,
+                        5.340576194612368e-7
+                    ],
+                    "r": [
+                        1.6132277380620508e-7,
+                        0.0000016352597640434396,
+                        0.9410507082939148,
+                        0.33826571702957153
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "b_tailbone02",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 2145588403,
+                    "layer": 0,
+                    "t": [
+                        -0.17487621307373052,
+                        3.8146971803598724e-8,
+                        4.522260255157562e-8
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "b_tailbone03",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1938955921,
+                    "layer": 0,
+                    "t": [
+                        -0.1812254935503006,
+                        0,
+                        -9.094946814441375e-15
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "b_tailbone04",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1101152216,
+                    "layer": 0,
+                    "t": [
+                        -0.21959121525287628,
+                        7.629394360719743e-8,
+                        1.8189893628882753e-14
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 1
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "Bone006",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1693182235,
+                    "layer": 0,
+                    "t": [
+                        -0.1951683014631271,
+                        -3.8146971803598724e-8,
+                        9.536760714468073e-9
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            },
+            {
+                "type": "BLOCKMAN3.GameObject",
+                "data": {
+                    "name": "CameraFollow",
+                    "enable": true,
+                    "inst_id": 0,
+                    "file_id": 1818058212,
+                    "layer": 0,
+                    "t": [
+                        0,
+                        1.3143792152404785,
+                        -0.047580718994140604
+                    ],
+                    "r": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "s": [
+                        1,
+                        1,
+                        1
+                    ],
+                    "flags": 0,
+                    "is_static": false,
+                    "component_count": 0,
+                    "child_count": 0
+                }
+            }
+        ]
+    },
+    "head": {
+        "_name": "Temp Scene",
+        "_type": 9
+    },
+    "relys": [
+        "B4CF93F49D77417B9FB64658DEF0B291",
+        "574B3A1AD2BE41D1C4A29689B71301CD",
+        "D82291DA075141F329B32337AF74648E",
+        "FFE15567F12042471F9C0328FA380981",
+        "CDE6C12194F942520E86AD78627D7202",
+        "4192742D4C1142FF49A20FF3FFDA26EA",
+        "DACA91FB7EFA450CA28EEB5E7A1B7C75",
+        "0A0E43DD5DEE468D6C8169B93B171ABA",
+        "CFBD6E92221D47580B9478ED41D7F753",
+        "F65BB1B626854798C9834E8EF5E4619C",
+        "FF80FBAECCA048463BBF538CCE39DA8C",
+        "262B6B59DFC24872F2AF05D50295B1AE",
+        "8D918F841EED491A8583938B1FB409AC",
+        "C1EA26463A70497ABAA68DF18CD930F8",
+        "68A9E027BBA049BC038C304CD1A9C534",
+        "DC8A5ABCBABF49BF39951F03003657E2",
+        "5C65F68982834AC7F1B4777BBF083E6C",
+        "2BB5DE06A3A04AEA2B8F7CE3DFE6A69B",
+        "53809C0254E74C6091AAE21ADCF39774",
+        "25DF783502054C9DD180715AC33E5CA8",
+        "99DFC2C5BB374EF3F194458DAA32C0CA"
+    ]
+}

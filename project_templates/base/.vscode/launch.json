@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Attach SandMod",
+            "port": 9003,
+            "request": "attach",
+            "restart": true,
+            "sourceMaps": true,
+            "protocol": "inspector",
+            "type": "node"
+        }
+    ]
+}

@@ -1,0 +1,291 @@
+{
+    "name": "JoyStick",
+    "canvasSize": [
+        1366,
+        768
+    ],
+    "win": [
+        {
+            "type": "image",
+            "image": {
+                "enable": true,
+                "visible": true,
+                "expand": false,
+                "id": 3,
+                "editorLock": false,
+                "editorHide": false,
+                "rectTransform": {
+                    "anchorMax": [
+                        1,
+                        1
+                    ],
+                    "anchorMin": [
+                        0,
+                        0
+                    ],
+                    "pivot": [
+                        0.5,
+                        0.5
+                    ],
+                    "offsetMax": [
+                        0,
+                        0
+                    ],
+                    "offsetMin": [
+                        0,
+                        0
+                    ],
+                    "scale": [
+                        1,
+                        1
+                    ],
+                    "rotation": 0
+                },
+                "name": "ScreenMoveArea",
+                "imageType": 0,
+                "preserveAspect": false,
+                "fillCenter": true,
+                "borderLeft": 0,
+                "borderRight": 0,
+                "borderTop": 0,
+                "borderBottom": 0,
+                "fillMethod": 0,
+                "fillOrigin": 0,
+                "fillStartPoint": 0,
+                "fillAmount": 0,
+                "fillClockwise": true,
+                "maskable": false,
+                "raycastTarget": true,
+                "raycastPadding": [
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                "color": [
+                    1,
+                    1,
+                    1,
+                    0
+                ],
+                "material": "",
+                "materialUUID": "",
+                "texture2D": "",
+                "textureUUID": "",
+                "atlasUUID": ""
+            }
+        },
+        {
+            "type": "image",
+            "image": {
+                "enable": true,
+                "visible": true,
+                "expand": false,
+                "id": 8,
+                "editorLock": false,
+                "editorHide": false,
+                "rectTransform": {
+                    "anchorMax": [
+                        1,
+                        1
+                    ],
+                    "anchorMin": [
+                        1,
+                        1
+                    ],
+                    "pivot": [
+                        1,
+                        1
+                    ],
+                    "offsetMax": [
+                        38.2064208984375,
+                        76.4127197265625
+                    ],
+                    "offsetMin": [
+                        -338.2064208984375,
+                        -376.4127197265625
+                    ],
+                    "scale": [
+                        1,
+                        1
+                    ],
+                    "rotation": 0
+                },
+                "name": "JumpButton",
+                "imageType": 0,
+                "preserveAspect": false,
+                "fillCenter": true,
+                "borderLeft": 0,
+                "borderRight": 0,
+                "borderTop": 0,
+                "borderBottom": 0,
+                "fillMethod": 0,
+                "fillOrigin": 0,
+                "fillStartPoint": 0,
+                "fillAmount": 0,
+                "fillClockwise": true,
+                "maskable": false,
+                "raycastTarget": true,
+                "raycastPadding": [
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                "color": [
+                    1,
+                    1,
+                    1,
+                    1
+                ],
+                "material": "",
+                "materialUUID": "",
+                "texture2D": "assets\\resources\\ui\\icon_jump.png",
+                "textureUUID": "B4D7DAF238A1455545B9FEDD07E43B8C",
+                "atlasUUID": ""
+            }
+        },
+        {
+            "type": "image",
+            "image": {
+                "enable": true,
+                "visible": true,
+                "expand": false,
+                "id": 1,
+                "editorLock": false,
+                "editorHide": false,
+                "rectTransform": {
+                    "anchorMax": [
+                        0,
+                        1
+                    ],
+                    "anchorMin": [
+                        0,
+                        1
+                    ],
+                    "pivot": [
+                        0,
+                        1
+                    ],
+                    "offsetMax": [
+                        -367.8555908203125,
+                        59.1561279296875
+                    ],
+                    "offsetMin": [
+                        67.8555908203125,
+                        -359.1561279296875
+                    ],
+                    "scale": [
+                        1,
+                        1
+                    ],
+                    "rotation": 0
+                },
+                "name": "LeftStick",
+                "imageType": 0,
+                "preserveAspect": false,
+                "fillCenter": true,
+                "borderLeft": 0,
+                "borderRight": 0,
+                "borderTop": 0,
+                "borderBottom": 0,
+                "fillMethod": 0,
+                "fillOrigin": 0,
+                "fillStartPoint": 0,
+                "fillAmount": 0,
+                "fillClockwise": true,
+                "maskable": false,
+                "raycastTarget": true,
+                "raycastPadding": [
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                "color": [
+                    1,
+                    1,
+                    1,
+                    1
+                ],
+                "material": "",
+                "materialUUID": "",
+                "texture2D": "assets\\resources\\ui\\smallhandlefilled.png",
+                "textureUUID": "9CB40ADA09B64EC83EBA2756DB098376",
+                "atlasUUID": ""
+            },
+            "children": [
+                {
+                    "type": "image",
+                    "image": {
+                        "enable": true,
+                        "visible": true,
+                        "expand": false,
+                        "id": 2,
+                        "editorLock": false,
+                        "editorHide": false,
+                        "rectTransform": {
+                            "anchorMax": [
+                                0.5,
+                                0.5
+                            ],
+                            "anchorMin": [
+                                0.5,
+                                0.5
+                            ],
+                            "pivot": [
+                                0.5,
+                                0.5
+                            ],
+                            "offsetMax": [
+                                -95,
+                                -95
+                            ],
+                            "offsetMin": [
+                                -95,
+                                -95
+                            ],
+                            "scale": [
+                                1,
+                                1
+                            ],
+                            "rotation": 0
+                        },
+                        "name": "LeftStickCap",
+                        "imageType": 0,
+                        "preserveAspect": false,
+                        "fillCenter": true,
+                        "borderLeft": 0,
+                        "borderRight": 0,
+                        "borderTop": 0,
+                        "borderBottom": 0,
+                        "fillMethod": 0,
+                        "fillOrigin": 0,
+                        "fillStartPoint": 0,
+                        "fillAmount": 0,
+                        "fillClockwise": true,
+                        "maskable": false,
+                        "raycastTarget": false,
+                        "raycastPadding": [
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        "color": [
+                            1,
+                            1,
+                            1,
+                            1
+                        ],
+                        "material": "",
+                        "materialUUID": "",
+                        "texture2D": "assets\\resources\\ui\\smallhandlefilledgrey.png",
+                        "textureUUID": "87D6809E8A2E4CE1CBA266CB3425C507",
+                        "atlasUUID": ""
+                    }
+                }
+            ]
+        }
+    ]
+}

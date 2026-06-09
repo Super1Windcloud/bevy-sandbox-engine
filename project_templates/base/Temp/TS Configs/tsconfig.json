@@ -1,0 +1,34 @@
+{
+    "compilerOptions": {
+        "outFile": "C:/Users/superuse/Downloads/Project2/Library/Assemblies/Assembly.js",
+        "downlevelIteration": true,
+        "module": "none",
+        "removeComments": true,
+        "inlineSourceMap": true,
+        "lib": [
+            "es6",
+            "es2015",
+            "es2016",
+            "es2017",
+            "es2018",
+            "es2019",
+            "es2020",
+            "es2021"
+        ],
+        "declaration": true,
+        "declarationMap": true,
+        "experimentalDecorators": true
+    },
+    "files": [
+        "C:/Users/superuse/Downloads/Project2/Cache/Engine/Engine.d.ts",
+        "C:/Users/superuse/Downloads/Project2/Assets/Scripts/Controller/CameraController.ts",
+        "C:/Users/superuse/Downloads/Project2/Assets/Scripts/Decoration/DecorationBase.ts",
+        "C:/Users/superuse/Downloads/Project2/Assets/Scripts/Controller/PlayerController.ts",
+        "C:/Users/superuse/Downloads/Project2/Assets/Scripts/Decoration/DecorationSkinLoader.ts",
+        "C:/Users/superuse/Downloads/Project2/Assets/Scripts/Decoration/DecorationStaticMeshLoader.ts",
+        "C:/Users/superuse/Downloads/Project2/Assets/Scripts/InputController/JoyStick.ts",
+        "C:/Users/superuse/Downloads/Project2/Assets/Scripts/InputController/KeyBoard.ts",
+        "C:/Users/superuse/Downloads/Project2/Assets/Scripts/Units/MathfExpand.ts",
+        "C:/Users/superuse/Downloads/Project2/Assets/Scripts/Decoration/DecorationType.ts"
+    ]
+}

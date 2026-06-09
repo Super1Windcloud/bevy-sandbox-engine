@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
@@ -30,6 +31,7 @@ pub struct LauncherUiState {
     pub brand_texture: Option<TextureHandle>,
     pub nav_create_texture: Option<TextureHandle>,
     pub nav_projects_texture: Option<TextureHandle>,
+    pub template_preview_textures: HashMap<String, TextureHandle>,
     pub fonts_configured: bool,
     project_templates: Vec<TemplateCard>,
     mod_templates: Vec<TemplateCard>,
@@ -48,6 +50,7 @@ impl Default for LauncherUiState {
             brand_texture: None,
             nav_create_texture: None,
             nav_projects_texture: None,
+            template_preview_textures: HashMap::new(),
             fonts_configured: false,
             project_templates: Vec::new(),
             mod_templates: Vec::new(),
@@ -248,6 +251,7 @@ struct TemplateCard {
     subtitle_en: String,
     top_color: egui::Color32,
     bottom_color: egui::Color32,
+    preview_image: Option<PathBuf>,
     preview_style: TemplatePreviewStyle,
 }
 
@@ -378,6 +382,7 @@ fn build_template_card(template: TemplateDefinition) -> TemplateCard {
         subtitle_en: template.subtitle_en,
         top_color,
         bottom_color,
+        preview_image: template.preview_image,
         preview_style: template.preview_style,
     }
 }
@@ -746,11 +751,44 @@ fn project_thumbnail(ui: &mut egui::Ui, texture: Option<&TextureHandle>) {
     }
 }
 
-fn template_preview(ui: &mut egui::Ui, card: &TemplateCard) {
+fn ensure_template_preview_texture(
+    ctx: &egui::Context,
+    ui_state: &mut LauncherUiState,
+    card: &TemplateCard,
+) -> Option<TextureHandle> {
+    if let Some(texture) = ui_state.template_preview_textures.get(&card.template_id) {
+        return Some(texture.clone());
+    }
+
+    let path = card.preview_image.as_ref()?;
+    let texture_name = format!("template-preview-{}", card.template_id);
+    let texture = load_png_texture(ctx, &texture_name, path)?;
+    ui_state
+        .template_preview_textures
+        .insert(card.template_id.clone(), texture.clone());
+    Some(texture)
+}
+
+fn paint_template_preview(
+    ui: &mut egui::Ui,
+    card: &TemplateCard,
+    texture: Option<&TextureHandle>,
+) {
     let width = 182.0;
     let height = 182.0;
     let (rect, _) = ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::hover());
     let painter = ui.painter_at(rect);
+
+    if let Some(texture) = texture {
+        painter.rect_filled(rect, 6.0, egui::Color32::from_rgb(28, 28, 28));
+        painter.image(
+            texture.id(),
+            rect,
+            egui::Rect::from_min_max(egui::Pos2::ZERO, egui::pos2(1.0, 1.0)),
+            egui::Color32::WHITE,
+        );
+        return;
+    }
 
     painter.rect_filled(rect, 6.0, card.bottom_color);
 
@@ -890,6 +928,11 @@ fn template_preview(ui: &mut egui::Ui, card: &TemplateCard) {
     }
 }
 
+fn template_preview(ui: &mut egui::Ui, card: &TemplateCard, ui_state: &mut LauncherUiState) {
+    let texture = ensure_template_preview_texture(ui.ctx(), ui_state, card);
+    paint_template_preview(ui, card, texture.as_ref());
+}
+
 fn template_card(ui: &mut egui::Ui, card: &TemplateCard, ui_state: &mut LauncherUiState) {
     let locale = ui_state.locale;
     ui.vertical(|ui| {
@@ -903,7 +946,7 @@ fn template_card(ui: &mut egui::Ui, card: &TemplateCard, ui_state: &mut Launcher
 
         let card_response = card_frame
             .show(ui, |ui| {
-                template_preview(ui, card);
+                template_preview(ui, card, ui_state);
             })
             .response;
         let response = ui
@@ -998,7 +1041,7 @@ fn render_create_page(ui: &mut egui::Ui, ui_state: &mut LauncherUiState, i18n: &
                     egui::RichText::new(if is_mod_tab {
                         i18n.no_mod_templates_desc
                     } else {
-                        "Add a template folder under templates/ to make it appear here."
+                        "Add a template folder under project_templates/ to make it appear here."
                     })
                     .color(TEXT_MUTED),
                 );
@@ -1020,6 +1063,15 @@ fn render_create_project_dialog(
     ui_state: &mut LauncherUiState,
     i18n: &Strings,
 ) {
+    let Some(template) = ui_state
+        .create_dialog
+        .as_ref()
+        .map(|dialog| dialog.template.clone())
+    else {
+        return;
+    };
+    let preview_texture = ensure_template_preview_texture(ctx, ui_state, &template);
+
     let Some(dialog) = ui_state.create_dialog.as_mut() else {
         return;
     };
@@ -1029,7 +1081,7 @@ fn render_create_project_dialog(
     let mut create_project = false;
     let locale = ui_state.locale;
 
-    egui::Window::new(dialog.template.title(locale))
+    egui::Window::new(template.title(locale))
         .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
         .collapsible(false)
         .resizable(false)
@@ -1042,12 +1094,12 @@ fn render_create_project_dialog(
                 .corner_radius(6),
         )
         .show(ctx, |ui| {
-            template_preview(ui, &dialog.template);
+            paint_template_preview(ui, &template, preview_texture.as_ref());
             ui.add_space(12.0);
-            ui.label(egui::RichText::new(dialog.template.title(locale)).size(22.0));
+            ui.label(egui::RichText::new(template.title(locale)).size(22.0));
             ui.add_space(10.0);
             ui.label(
-                egui::RichText::new(dialog.template.subtitle(locale))
+                egui::RichText::new(template.subtitle(locale))
                     .size(16.0)
                     .color(egui::Color32::WHITE),
             );
@@ -1259,7 +1311,7 @@ fn render_projects_page(
 
     egui::ScrollArea::vertical().show(ui, |ui| {
         for project in &project_list.0 {
-            egui::Frame::new()
+            let frame_response = egui::Frame::new()
                 .fill(SURFACE_CARD)
                 .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(70, 70, 70)))
                 .corner_radius(6)
@@ -1271,54 +1323,50 @@ fn render_projects_page(
                         ui.add_space(14.0);
 
                         let info_width = (ui.available_width() - 34.0).max(160.0);
-                        ui.allocate_ui_with_layout(
-                            egui::vec2(info_width, 0.0),
-                            egui::Layout::top_down(egui::Align::Min),
-                            |ui| {
-                                let project_name =
-                                    project.name().unwrap_or_else(|| "Unknown".to_string());
-                                let project_id = project_stable_id(project);
-                                ui.add_sized(
-                                    [info_width, 22.0],
-                                    egui::Label::new(
-                                        egui::RichText::new(format!(
-                                            "{project_name}    (ID: {project_id})"
-                                        ))
+                        ui.vertical(|ui| {
+                            ui.set_min_width(info_width);
+                            ui.set_max_width(info_width);
+                            ui.spacing_mut().item_spacing.y = 4.0;
+
+                            let project_name =
+                                project.name().unwrap_or_else(|| "Unknown".to_string());
+                            let project_id = project_stable_id(project);
+                            ui.add_sized(
+                                [info_width, 22.0],
+                                egui::Label::new(
+                                    egui::RichText::new(format!("{project_name} (ID: {project_id})"))
                                         .size(18.0)
                                         .strong(),
-                                    )
-                                    .truncate(),
-                                );
-                                ui.add_space(4.0);
-                                ui.add_sized(
-                                    [info_width, 18.0],
-                                    egui::Label::new(
-                                        egui::RichText::new(format!(
-                                            "{}:  {}",
-                                            i18n.modified_at,
-                                            project_modified_at(project)
-                                        ))
-                                        .size(14.0)
-                                        .color(TEXT_MUTED),
-                                    )
-                                    .truncate(),
-                                );
-                                ui.add_space(4.0);
-                                ui.add_sized(
-                                    [info_width, 18.0],
-                                    egui::Label::new(
-                                        egui::RichText::new(format!(
-                                            "{}:  {}",
-                                            i18n.path_prefix,
-                                            project.path.display()
-                                        ))
-                                        .size(14.0)
-                                        .color(TEXT_MUTED),
-                                    )
-                                    .truncate(),
-                                );
-                            },
-                        );
+                                )
+                                .truncate(),
+                            );
+                            ui.add_sized(
+                                [info_width, 18.0],
+                                egui::Label::new(
+                                    egui::RichText::new(format!(
+                                        "{}: {}",
+                                        i18n.modified_at,
+                                        project_modified_at(project)
+                                    ))
+                                    .size(14.0)
+                                    .color(TEXT_MUTED),
+                                )
+                                .truncate(),
+                            );
+                            ui.add_sized(
+                                [info_width, 18.0],
+                                egui::Label::new(
+                                    egui::RichText::new(format!(
+                                        "{}: {}",
+                                        i18n.path_prefix,
+                                        project.path.display()
+                                    ))
+                                    .size(14.0)
+                                    .color(TEXT_MUTED),
+                                )
+                                .truncate(),
+                            );
+                        });
 
                         ui.scope(|ui| {
                             ui.style_mut().spacing.button_padding = egui::vec2(6.0, 2.0);
@@ -1360,49 +1408,45 @@ fn render_projects_page(
                         });
                     });
 
-                    let card_response = ui
-                        .interact(
-                            ui.min_rect(),
-                            ui.make_persistent_id(("project_card", &project.path)),
-                            egui::Sense::click(),
-                        )
-                        .on_hover_cursor(egui::CursorIcon::PointingHand);
-                    if card_response.double_clicked() {
-                        if !Path::new(&project.path).exists() {
+                });
+            let card_response = frame_response
+                .response
+                .interact(egui::Sense::click())
+                .on_hover_cursor(egui::CursorIcon::PointingHand);
+            if card_response.double_clicked() {
+                if !Path::new(&project.path).exists() {
+                    let project_name = project.name().unwrap_or_else(|| "Unknown".to_string());
+                    push_notification(
+                        ui_state,
+                        format!("{}: '{project_name}'", i18n.project_not_found),
+                    );
+                    remove_path = Some(project.path.clone());
+                    return;
+                }
+
+                match run_project(project) {
+                    Ok(_) => {
+                        exit.write(AppExit::Success);
+                    }
+                    Err(error) => match error.kind() {
+                        ErrorKind::NotFound | ErrorKind::InvalidData => {
                             let project_name =
                                 project.name().unwrap_or_else(|| "Unknown".to_string());
                             push_notification(
                                 ui_state,
-                                format!("{}: '{project_name}'", i18n.project_not_found),
+                                format!("{}: '{project_name}'", i18n.failed_to_run_project),
                             );
                             remove_path = Some(project.path.clone());
-                            return;
                         }
-
-                        match run_project(project) {
-                            Ok(_) => {
-                                exit.write(AppExit::Success);
-                            }
-                            Err(error) => match error.kind() {
-                                ErrorKind::NotFound | ErrorKind::InvalidData => {
-                                    let project_name =
-                                        project.name().unwrap_or_else(|| "Unknown".to_string());
-                                    push_notification(
-                                        ui_state,
-                                        format!("{}: '{project_name}'", i18n.failed_to_run_project),
-                                    );
-                                    remove_path = Some(project.path.clone());
-                                }
-                                _ => {
-                                    push_notification(
-                                        ui_state,
-                                        format!("{}: {error}", i18n.error_running_project),
-                                    );
-                                }
-                            },
+                        _ => {
+                            push_notification(
+                                ui_state,
+                                format!("{}: {error}", i18n.error_running_project),
+                            );
                         }
-                    }
-                });
+                    },
+                }
+            }
             ui.add_space(8.0);
         }
     });

@@ -1,0 +1,21 @@
+{
+    "EditorVersion": "1.3.247",
+    "EngineVersion": "40040",
+    "JobVersion": "2188",
+    "LastScene": {
+        "DefaultScene": "Assets\\Scenes\\DefaultScene.scene",
+        "file_uuid": "2D2D488E6E1149ED20BC1A0B6D24C7D7"
+    },
+    "Project": {
+        "ColorFolder": {
+        }
+    },
+    "Projects": {
+        "ProjectId": 0,
+        "display_name": "TopDownShooter",
+        "modified_time": 0,
+        "name": "TopDownShooter",
+        "path": "D:/CodeProjects/SandModProject/TopDownShooter"
+    },
+    "SourceVersion": "8c3ab2b4c3"
+}

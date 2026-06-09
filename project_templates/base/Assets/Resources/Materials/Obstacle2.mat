@@ -1,0 +1,28 @@
+{
+    "head": {
+        "_name": "Obstacle2",
+        "_type": 2
+    },
+    "shader": "Engine/Default",
+    "vectors": [
+        {
+            "name": "_Color",
+            "value": [
+                0.615686297416687,
+                0.615686297416687,
+                0.615686297416687,
+                1
+            ]
+        }
+    ],
+    "textures": [
+        {
+            "name": "_MainTex",
+            "value": {
+                "type": 5,
+                "ptype": 1,
+                "id": "FE58B0B5E30A46E8B13254D54FAF704A"
+            }
+        }
+    ]
+}

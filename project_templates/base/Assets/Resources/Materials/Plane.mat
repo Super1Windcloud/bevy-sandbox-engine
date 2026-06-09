@@ -1,0 +1,34 @@
+{
+    "head": {
+        "_name": "Plane",
+        "_type": 2
+    },
+    "shader": "Engine/Default",
+    "floats": [
+        {
+            "name": "_Smoothness",
+            "value": 0
+        }
+    ],
+    "vectors": [
+        {
+            "name": "_Color",
+            "value": [
+                0,
+                0.5176470875740051,
+                1,
+                1
+            ]
+        }
+    ],
+    "textures": [
+        {
+            "name": "_MainTex",
+            "value": {
+                "type": 5,
+                "ptype": 1,
+                "id": "FE58B0B5E30A46E8B13254D54FAF704A"
+            }
+        }
+    ]
+}

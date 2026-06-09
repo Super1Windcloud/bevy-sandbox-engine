@@ -1,0 +1,24 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "search.exclude": {},
+        "files.exclude": {
+            "**/.svn": true,
+            "**/.git": true,
+            "**/*.meta": true,
+            "**/Library/**": true,
+            "**/ProjectSettings/**": true,
+            "**/DisasterRecovery/**": true,
+            "**/Cache/**": true,
+            "**/Saves/**": true,
+            "**/Temp/**": true,
+            "**/.vscode/**": true,
+            "**/*.code-workspace": true,
+            "tsconfig.json": true
+        }
+    }
+}

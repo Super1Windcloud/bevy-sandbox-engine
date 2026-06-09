@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use serde::Deserialize;
 
 /// The path to the folder containing the templates project
-const TEMPLATE_FOLDER_PATH: &str = "templates/";
+const TEMPLATE_FOLDER_PATH: &str = "project_templates/";
 const TEMPLATE_MANIFEST_NAME: &str = "template.toml";
 const TEMPLATE_IGNORED_DIRECTORIES: &[&str] = &["target"];
 
@@ -44,7 +44,7 @@ impl Default for TemplatePreviewStyle {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-/// A template discovered from the local `templates/` directory.
+/// A template discovered from the local `project_templates/` directory.
 pub struct TemplateDefinition {
     /// Stable template identifier derived from the directory name.
     pub id: String,
@@ -64,11 +64,13 @@ pub struct TemplateDefinition {
     pub preview_top_color: Option<String>,
     /// Preview card bottom color in hex format.
     pub preview_bottom_color: Option<String>,
+    /// Optional preview image path relative to the template directory.
+    pub preview_image: Option<PathBuf>,
     /// Preview card illustration style.
     pub preview_style: TemplatePreviewStyle,
 }
 
-/// Enumerate all project templates available under the local `templates/` directory.
+/// Enumerate all project templates available under the local `project_templates/` directory.
 pub fn list_templates() -> std::io::Result<Vec<TemplateDefinition>> {
     let template_root = Path::new(TEMPLATE_FOLDER_PATH);
     let mut templates = Vec::new();
@@ -106,6 +108,7 @@ struct TemplateManifest {
     subtitle_en: Option<String>,
     preview_top_color: Option<String>,
     preview_bottom_color: Option<String>,
+    preview_image: Option<String>,
     preview_style: TemplatePreviewStyle,
 }
 
@@ -127,6 +130,10 @@ fn read_template_definition(id: String, path: PathBuf) -> std::io::Result<Templa
     };
 
     let default_title = title_case_from_id(&id);
+    let preview_image = manifest
+        .preview_image
+        .as_deref()
+        .map(|relative_path| path.join(relative_path));
 
     Ok(TemplateDefinition {
         id,
@@ -136,12 +143,13 @@ fn read_template_definition(id: String, path: PathBuf) -> std::io::Result<Templa
         title_en: manifest.title_en.unwrap_or_else(|| default_title.clone()),
         subtitle_zh: manifest
             .subtitle_zh
-            .unwrap_or_else(|| "从 templates 目录自动加载。".to_string()),
+            .unwrap_or_else(|| "从 project_templates 目录自动加载。".to_string()),
         subtitle_en: manifest
             .subtitle_en
-            .unwrap_or_else(|| "Auto-loaded from the templates directory.".to_string()),
+            .unwrap_or_else(|| "Auto-loaded from the project_templates directory.".to_string()),
         preview_top_color: manifest.preview_top_color,
         preview_bottom_color: manifest.preview_bottom_color,
+        preview_image,
         preview_style: manifest.preview_style,
     })
 }
