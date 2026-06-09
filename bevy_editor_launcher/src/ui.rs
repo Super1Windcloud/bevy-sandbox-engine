@@ -11,7 +11,7 @@ use bevy_egui::{
 };
 use bevy_sandbox_engine::project::{
     ProjectInfo, run_project, set_project_list,
-    templates::{TemplateDefinition, TemplateKind, list_templates},
+    templates::{TemplateDefinition, TemplateKind, TemplatePreviewStyle, list_templates},
 };
 use sys_locale::get_locale;
 
@@ -216,6 +216,7 @@ struct TemplateCard {
     subtitle_en: String,
     top_color: egui::Color32,
     bottom_color: egui::Color32,
+    preview_style: TemplatePreviewStyle,
 }
 
 struct CreateProjectDialogState {
@@ -290,17 +291,17 @@ fn default_project_name() -> String {
     "Project".to_string()
 }
 
-fn card_palette(template_id: &str) -> (egui::Color32, egui::Color32) {
-    match template_id {
-        "getting_started" => (
-            egui::Color32::from_rgb(118, 82, 43),
-            egui::Color32::from_rgb(214, 157, 86),
-        ),
-        "blank_project" => (
+fn default_card_palette(style: TemplatePreviewStyle) -> (egui::Color32, egui::Color32) {
+    match style {
+        TemplatePreviewStyle::Grid => (
             egui::Color32::from_rgb(103, 140, 201),
             egui::Color32::from_rgb(208, 214, 220),
         ),
-        _ => (
+        TemplatePreviewStyle::Shooter => (
+            egui::Color32::from_rgb(118, 82, 43),
+            egui::Color32::from_rgb(214, 157, 86),
+        ),
+        TemplatePreviewStyle::Generic => (
             egui::Color32::from_rgb(86, 102, 124),
             egui::Color32::from_rgb(170, 182, 198),
         ),
@@ -320,7 +321,7 @@ fn parse_color_hex(value: &str) -> Option<egui::Color32> {
 }
 
 fn build_template_card(template: TemplateDefinition) -> TemplateCard {
-    let (default_top_color, default_bottom_color) = card_palette(&template.id);
+    let (default_top_color, default_bottom_color) = default_card_palette(template.preview_style);
     let top_color = template
         .preview_top_color
         .as_deref()
@@ -340,6 +341,7 @@ fn build_template_card(template: TemplateDefinition) -> TemplateCard {
         subtitle_en: template.subtitle_en,
         top_color,
         bottom_color,
+        preview_style: template.preview_style,
     }
 }
 
@@ -571,15 +573,27 @@ fn import_project_folder(
     if !is_valid_project_folder(&project_path) {
         push_notification(
             ui_state,
-            format!("{}: {}", i18n.invalid_project_folder, project_path.display()),
+            format!(
+                "{}: {}",
+                i18n.invalid_project_folder,
+                project_path.display()
+            ),
         );
         return;
     }
 
-    if project_list.0.iter().any(|project| project.path == project_path) {
+    if project_list
+        .0
+        .iter()
+        .any(|project| project.path == project_path)
+    {
         push_notification(
             ui_state,
-            format!("{}: {}", i18n.project_already_imported, project_path.display()),
+            format!(
+                "{}: {}",
+                i18n.project_already_imported,
+                project_path.display()
+            ),
         );
         return;
     }
@@ -588,12 +602,13 @@ fn import_project_folder(
         path: project_path,
         last_opened: SystemTime::now(),
     };
-    let project_name = project_info
-        .name()
-        .unwrap_or_else(|| "Unknown".to_string());
+    let project_name = project_info.name().unwrap_or_else(|| "Unknown".to_string());
     project_list.0.push(project_info);
     set_project_list(project_list.0.clone());
-    push_notification(ui_state, format!("{}: {project_name}", i18n.imported_project));
+    push_notification(
+        ui_state,
+        format!("{}: {project_name}", i18n.imported_project),
+    );
 }
 
 fn template_preview(ui: &mut egui::Ui, card: &TemplateCard) {
@@ -616,106 +631,131 @@ fn template_preview(ui: &mut egui::Ui, card: &TemplateCard) {
         egui::Stroke::new(2.0, egui::Color32::from_white_alpha(40)),
     );
 
-    if card.template_id == "blank_project" {
-        let ground = egui::Rect::from_min_max(
-            egui::pos2(rect.left(), horizon),
-            egui::pos2(rect.right(), rect.bottom()),
-        );
-        for i in 0..8 {
-            let x = ground.left() + i as f32 * 24.0;
-            painter.line_segment(
-                [
-                    egui::pos2(x, ground.top()),
-                    egui::pos2(x - 36.0, ground.bottom()),
-                ],
-                egui::Stroke::new(1.0, egui::Color32::from_gray(230)),
+    match card.preview_style {
+        TemplatePreviewStyle::Grid => {
+            let ground = egui::Rect::from_min_max(
+                egui::pos2(rect.left(), horizon),
+                egui::pos2(rect.right(), rect.bottom()),
             );
-            painter.line_segment(
-                [
-                    egui::pos2(ground.left(), ground.top() + i as f32 * 18.0),
-                    egui::pos2(ground.right(), ground.top() + i as f32 * 18.0),
-                ],
-                egui::Stroke::new(1.0, egui::Color32::from_gray(220)),
-            );
-        }
+            for i in 0..8 {
+                let x = ground.left() + i as f32 * 24.0;
+                painter.line_segment(
+                    [
+                        egui::pos2(x, ground.top()),
+                        egui::pos2(x - 36.0, ground.bottom()),
+                    ],
+                    egui::Stroke::new(1.0, egui::Color32::from_gray(230)),
+                );
+                painter.line_segment(
+                    [
+                        egui::pos2(ground.left(), ground.top() + i as f32 * 18.0),
+                        egui::pos2(ground.right(), ground.top() + i as f32 * 18.0),
+                    ],
+                    egui::Stroke::new(1.0, egui::Color32::from_gray(220)),
+                );
+            }
 
-        let ramp = vec![
-            egui::pos2(rect.left() + 18.0, horizon + 24.0),
-            egui::pos2(rect.left() + 84.0, horizon + 2.0),
-            egui::pos2(rect.left() + 118.0, horizon + 22.0),
-            egui::pos2(rect.left() + 40.0, horizon + 44.0),
-        ];
-        painter.add(egui::Shape::convex_polygon(
-            ramp,
-            egui::Color32::from_rgb(233, 233, 233),
-            egui::Stroke::NONE,
-        ));
+            let ramp = vec![
+                egui::pos2(rect.left() + 18.0, horizon + 24.0),
+                egui::pos2(rect.left() + 84.0, horizon + 2.0),
+                egui::pos2(rect.left() + 118.0, horizon + 22.0),
+                egui::pos2(rect.left() + 40.0, horizon + 44.0),
+            ];
+            painter.add(egui::Shape::convex_polygon(
+                ramp,
+                egui::Color32::from_rgb(233, 233, 233),
+                egui::Stroke::NONE,
+            ));
 
-        painter.rect_filled(
-            egui::Rect::from_min_size(
-                egui::pos2(rect.left() + 108.0, horizon + 18.0),
-                egui::vec2(58.0, 34.0),
-            ),
-            2.0,
-            egui::Color32::from_rgb(167, 174, 185),
-        );
-    } else {
-        painter.circle_filled(
-            egui::pos2(rect.left() + 42.0, rect.top() + 95.0),
-            16.0,
-            egui::Color32::from_rgb(210, 94, 39),
-        );
-        painter.circle_filled(
-            egui::pos2(rect.left() + 42.0, rect.top() + 95.0),
-            8.0,
-            egui::Color32::from_rgb(255, 197, 69),
-        );
-
-        for offset in [0.0, 10.0, 22.0, 35.0] {
-            painter.line_segment(
-                [
-                    egui::pos2(
-                        rect.left() + 42.0 + offset,
-                        rect.top() + 72.0 - offset * 0.7,
-                    ),
-                    egui::pos2(rect.left() + 46.0 + offset, rect.top() + 44.0 - offset),
-                ],
-                egui::Stroke::new(2.0, egui::Color32::from_rgb(253, 224, 84)),
+            painter.rect_filled(
+                egui::Rect::from_min_size(
+                    egui::pos2(rect.left() + 108.0, horizon + 18.0),
+                    egui::vec2(58.0, 34.0),
+                ),
+                2.0,
+                egui::Color32::from_rgb(167, 174, 185),
             );
         }
+        TemplatePreviewStyle::Shooter => {
+            painter.circle_filled(
+                egui::pos2(rect.left() + 42.0, rect.top() + 95.0),
+                16.0,
+                egui::Color32::from_rgb(210, 94, 39),
+            );
+            painter.circle_filled(
+                egui::pos2(rect.left() + 42.0, rect.top() + 95.0),
+                8.0,
+                egui::Color32::from_rgb(255, 197, 69),
+            );
 
-        painter.rect_filled(
-            egui::Rect::from_min_size(
-                egui::pos2(rect.left() + 18.0, rect.bottom() - 46.0),
-                egui::vec2(26.0, 18.0),
-            ),
-            2.0,
-            egui::Color32::from_rgb(126, 104, 77),
-        );
-        painter.rect_filled(
-            egui::Rect::from_min_size(
-                egui::pos2(rect.left() + 50.0, rect.bottom() - 54.0),
-                egui::vec2(22.0, 22.0),
-            ),
-            2.0,
-            egui::Color32::from_rgb(109, 88, 65),
-        );
-        painter.rect_filled(
-            egui::Rect::from_min_size(
-                egui::pos2(rect.right() - 34.0, rect.top() + 30.0),
-                egui::vec2(20.0, 52.0),
-            ),
-            1.0,
-            egui::Color32::from_rgb(103, 52, 39),
-        );
+            for offset in [0.0, 10.0, 22.0, 35.0] {
+                painter.line_segment(
+                    [
+                        egui::pos2(
+                            rect.left() + 42.0 + offset,
+                            rect.top() + 72.0 - offset * 0.7,
+                        ),
+                        egui::pos2(rect.left() + 46.0 + offset, rect.top() + 44.0 - offset),
+                    ],
+                    egui::Stroke::new(2.0, egui::Color32::from_rgb(253, 224, 84)),
+                );
+            }
+
+            painter.rect_filled(
+                egui::Rect::from_min_size(
+                    egui::pos2(rect.left() + 18.0, rect.bottom() - 46.0),
+                    egui::vec2(26.0, 18.0),
+                ),
+                2.0,
+                egui::Color32::from_rgb(126, 104, 77),
+            );
+            painter.rect_filled(
+                egui::Rect::from_min_size(
+                    egui::pos2(rect.left() + 50.0, rect.bottom() - 54.0),
+                    egui::vec2(22.0, 22.0),
+                ),
+                2.0,
+                egui::Color32::from_rgb(109, 88, 65),
+            );
+            painter.rect_filled(
+                egui::Rect::from_min_size(
+                    egui::pos2(rect.right() - 34.0, rect.top() + 30.0),
+                    egui::vec2(20.0, 52.0),
+                ),
+                1.0,
+                egui::Color32::from_rgb(103, 52, 39),
+            );
+        }
+        TemplatePreviewStyle::Generic => {
+            painter.rect_filled(
+                egui::Rect::from_min_size(
+                    egui::pos2(rect.left() + 26.0, rect.top() + 30.0),
+                    egui::vec2(128.0, 18.0),
+                ),
+                4.0,
+                egui::Color32::from_white_alpha(44),
+            );
+            painter.rect_filled(
+                egui::Rect::from_min_size(
+                    egui::pos2(rect.left() + 26.0, rect.top() + 60.0),
+                    egui::vec2(84.0, 84.0),
+                ),
+                8.0,
+                egui::Color32::from_white_alpha(30),
+            );
+            painter.rect_filled(
+                egui::Rect::from_min_size(
+                    egui::pos2(rect.left() + 120.0, rect.top() + 78.0),
+                    egui::vec2(34.0, 66.0),
+                ),
+                8.0,
+                egui::Color32::from_white_alpha(22),
+            );
+        }
     }
 }
 
-fn template_card(
-    ui: &mut egui::Ui,
-    card: &TemplateCard,
-    ui_state: &mut LauncherUiState,
-) {
+fn template_card(ui: &mut egui::Ui, card: &TemplateCard, ui_state: &mut LauncherUiState) {
     let locale = ui_state.locale;
     ui.vertical(|ui| {
         let frame_stroke = egui::Stroke::new(1.0, egui::Color32::from_rgb(72, 72, 72));
@@ -766,11 +806,7 @@ fn template_card(
     });
 }
 
-fn render_create_page(
-    ui: &mut egui::Ui,
-    ui_state: &mut LauncherUiState,
-    i18n: &Strings,
-) {
+fn render_create_page(ui: &mut egui::Ui, ui_state: &mut LauncherUiState, i18n: &Strings) {
     ensure_project_templates(ui_state);
 
     ui.horizontal(|ui| {
@@ -802,7 +838,9 @@ fn render_create_page(
         TemplateTab::Mod => Some(ui_state.mod_templates.clone()),
     };
 
-    let Some(cards) = cards else { return; };
+    let Some(cards) = cards else {
+        return;
+    };
 
     if cards.is_empty() {
         egui::Frame::new()
@@ -821,12 +859,14 @@ fn render_create_page(
                     .size(18.0),
                 );
                 ui.add_space(4.0);
-                ui.label(egui::RichText::new(if is_mod_tab {
-                    i18n.no_mod_templates_desc
-                } else {
-                    "Add a template folder under templates/ to make it appear here."
-                })
-                .color(TEXT_MUTED));
+                ui.label(
+                    egui::RichText::new(if is_mod_tab {
+                        i18n.no_mod_templates_desc
+                    } else {
+                        "Add a template folder under templates/ to make it appear here."
+                    })
+                    .color(TEXT_MUTED),
+                );
             });
         return;
     }
@@ -883,8 +923,7 @@ fn render_create_project_dialog(
             ui.label(egui::RichText::new(i18n.project_name).color(TEXT_MUTED));
             ui.add_space(6.0);
             ui.add(
-                egui::TextEdit::singleline(&mut dialog.project_name)
-                    .desired_width(f32::INFINITY),
+                egui::TextEdit::singleline(&mut dialog.project_name).desired_width(f32::INFINITY),
             );
 
             ui.add_space(14.0);
@@ -892,8 +931,7 @@ fn render_create_project_dialog(
             ui.add_space(6.0);
             ui.horizontal(|ui| {
                 ui.add(
-                    egui::TextEdit::singleline(&mut dialog.storage_location)
-                        .desired_width(250.0),
+                    egui::TextEdit::singleline(&mut dialog.storage_location).desired_width(250.0),
                 );
                 if ui.button(i18n.browse).clicked() {
                     let file_dialog = if dialog.storage_location.trim().is_empty() {

@@ -24,6 +24,24 @@ impl Default for TemplateKind {
     }
 }
 
+/// Preview illustration style used by the launcher card.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TemplatePreviewStyle {
+    /// Generic card preview.
+    Generic,
+    /// Minimal sandbox grid preview.
+    Grid,
+    /// Top-down shooter preview.
+    Shooter,
+}
+
+impl Default for TemplatePreviewStyle {
+    fn default() -> Self {
+        Self::Generic
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 /// A template discovered from the local `templates/` directory.
 pub struct TemplateDefinition {
@@ -45,6 +63,8 @@ pub struct TemplateDefinition {
     pub preview_top_color: Option<String>,
     /// Preview card bottom color in hex format.
     pub preview_bottom_color: Option<String>,
+    /// Preview card illustration style.
+    pub preview_style: TemplatePreviewStyle,
 }
 
 /// Enumerate all project templates available under the local `templates/` directory.
@@ -85,6 +105,7 @@ struct TemplateManifest {
     subtitle_en: Option<String>,
     preview_top_color: Option<String>,
     preview_bottom_color: Option<String>,
+    preview_style: TemplatePreviewStyle,
 }
 
 fn read_template_definition(id: String, path: PathBuf) -> std::io::Result<TemplateDefinition> {
@@ -94,7 +115,10 @@ fn read_template_definition(id: String, path: PathBuf) -> std::io::Result<Templa
         toml::from_str::<TemplateManifest>(&manifest_text).map_err(|error| {
             std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
-                format!("Invalid template manifest {}: {error}", manifest_path.display()),
+                format!(
+                    "Invalid template manifest {}: {error}",
+                    manifest_path.display()
+                ),
             )
         })?
     } else {
@@ -117,6 +141,7 @@ fn read_template_definition(id: String, path: PathBuf) -> std::io::Result<Templa
             .unwrap_or_else(|| "Auto-loaded from the templates directory.".to_string()),
         preview_top_color: manifest.preview_top_color,
         preview_bottom_color: manifest.preview_bottom_color,
+        preview_style: manifest.preview_style,
     })
 }
 
