@@ -171,7 +171,7 @@ pub fn strings(locale: LauncherLocale) -> Strings {
             new_project: "新建项目",
             modified_at: "最近修改",
             rename_project: "更改名称",
-            open_project_folder: "打开项目文件夹",
+            open_project_folder: "打开项目目录",
             remove_project: "删除项目",
             save: "保存",
             creating_from: "正在从模板创建",
