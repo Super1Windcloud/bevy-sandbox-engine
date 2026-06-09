@@ -7,6 +7,7 @@ use serde::Deserialize;
 /// The path to the folder containing the templates project
 const TEMPLATE_FOLDER_PATH: &str = "templates/";
 const TEMPLATE_MANIFEST_NAME: &str = "template.toml";
+const TEMPLATE_IGNORED_DIRECTORIES: &[&str] = &["target"];
 
 /// Template category displayed by the launcher.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
@@ -171,6 +172,12 @@ fn clone_directory<P: AsRef<Path>, Q: AsRef<Path>>(from: P, to: Q) -> std::io::R
         let entry = entry?;
         let path = entry.path();
         let file_name = path.file_name().unwrap();
+        let file_name_str = file_name.to_string_lossy();
+
+        if path.is_dir() && TEMPLATE_IGNORED_DIRECTORIES.contains(&file_name_str.as_ref()) {
+            continue;
+        }
+
         let new_path = to.join(file_name);
         if path.is_dir() {
             clone_directory(path, new_path)?;

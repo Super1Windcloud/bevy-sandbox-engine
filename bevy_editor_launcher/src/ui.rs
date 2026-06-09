@@ -1,4 +1,5 @@
 use std::io::ErrorKind;
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::SystemTime;
@@ -133,6 +134,7 @@ pub struct Strings {
     pub project_not_found: &'static str,
     pub failed_to_run_project: &'static str,
     pub error_running_project: &'static str,
+    pub path_prefix: &'static str,
     pub failed_to_create_project: &'static str,
     pub imported_project: &'static str,
     pub invalid_project_folder: &'static str,
@@ -177,6 +179,7 @@ pub fn strings(locale: LauncherLocale) -> Strings {
             project_not_found: "项目不存在",
             failed_to_run_project: "启动项目失败",
             error_running_project: "运行项目时出错",
+            path_prefix: "路径",
             failed_to_create_project: "创建项目失败",
             imported_project: "已导入项目",
             invalid_project_folder: "所选目录不是有效项目",
@@ -218,6 +221,7 @@ pub fn strings(locale: LauncherLocale) -> Strings {
             project_not_found: "Project not found",
             failed_to_run_project: "Failed to run project",
             error_running_project: "Error running project",
+            path_prefix: "Path",
             failed_to_create_project: "Failed to create project",
             imported_project: "Imported project",
             invalid_project_folder: "Selected folder is not a valid project",
@@ -659,6 +663,12 @@ fn project_modified_at(project: &ProjectInfo) -> String {
     modified_at.format("%Y-%m-%d %H:%M").to_string()
 }
 
+fn project_stable_id(project: &ProjectInfo) -> u32 {
+    let mut hasher = DefaultHasher::new();
+    project.path.hash(&mut hasher);
+    (hasher.finish() % 900_000 + 100_000) as u32
+}
+
 fn open_project_folder(path: &Path) -> std::io::Result<()> {
     #[cfg(target_os = "windows")]
     {
@@ -690,17 +700,17 @@ fn open_project_folder(path: &Path) -> std::io::Result<()> {
 
 fn project_thumbnail(ui: &mut egui::Ui, texture: Option<&TextureHandle>) {
     egui::Frame::new()
-        .fill(egui::Color32::from_rgb(46, 46, 46))
-        .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(70, 70, 70)))
-        .corner_radius(6)
+        .fill(egui::Color32::from_rgb(64, 64, 64))
+        .stroke(egui::Stroke::NONE)
+        .corner_radius(2)
         .inner_margin(egui::Margin::same(8))
         .show(ui, |ui| {
-            ui.set_min_size(egui::vec2(76.0, 76.0));
+            ui.set_min_size(egui::vec2(58.0, 58.0));
             ui.centered_and_justified(|ui| {
                 if let Some(texture) = texture {
-                    ui.add(egui::Image::new(texture).fit_to_exact_size(egui::vec2(48.0, 48.0)));
+                    ui.add(egui::Image::new(texture).fit_to_exact_size(egui::vec2(42.0, 42.0)));
                 } else {
-                    ui.label(egui::RichText::new("BS").size(20.0).strong());
+                    ui.label(egui::RichText::new("BS").size(18.0).strong());
                 }
             });
         });
@@ -1220,9 +1230,9 @@ fn render_projects_page(
         for project in &project_list.0 {
             egui::Frame::new()
                 .fill(SURFACE_CARD)
-                .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(74, 74, 74)))
-                .corner_radius(6)
-                .inner_margin(egui::Margin::symmetric(14, 12))
+                .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(70, 70, 70)))
+                .corner_radius(0)
+                .inner_margin(egui::Margin::symmetric(12, 10))
                 .show(ui, |ui| {
                     ui.horizontal(|ui| {
                         project_thumbnail(ui, ui_state.brand_texture.as_ref());
@@ -1230,16 +1240,24 @@ fn render_projects_page(
 
                         ui.vertical(|ui| {
                             ui.horizontal(|ui| {
-                                ui.label(
-                                    egui::RichText::new(
-                                        project.name().unwrap_or_else(|| "Unknown".to_string()),
-                                    )
-                                    .size(18.0),
-                                );
+                                let project_name =
+                                    project.name().unwrap_or_else(|| "Unknown".to_string());
+                                let project_id = project_stable_id(project);
+                                ui.horizontal(|ui| {
+                                    ui.label(egui::RichText::new(project_name).size(20.0).strong());
+                                    ui.add_space(4.0);
+                                    ui.label(
+                                        egui::RichText::new(format!("(ID: {project_id})"))
+                                            .size(14.0)
+                                            .color(TEXT_MUTED),
+                                    );
+                                });
                                 ui.with_layout(
                                     egui::Layout::right_to_left(egui::Align::Min),
                                     |ui| {
-                                        ui.menu_button(i18n.more, |ui| {
+                                        ui.menu_button(
+                                            egui::RichText::new("⋮").size(18.0).color(TEXT_MUTED),
+                                            |ui| {
                                             if ui.button(i18n.rename_project).clicked() {
                                                 ui_state.rename_dialog =
                                                     Some(RenameProjectDialogState {
@@ -1270,70 +1288,79 @@ fn render_projects_page(
                                                 remove_path = Some(project.path.clone());
                                                 ui.close();
                                             }
-                                        });
+                                            },
+                                        );
                                     },
                                 );
                             });
 
-                            ui.add_space(6.0);
+                            ui.add_space(4.0);
                             ui.label(
                                 egui::RichText::new(format!(
-                                    "{}: {}",
+                                    "{}:  {}",
                                     i18n.modified_at,
                                     project_modified_at(project)
                                 ))
+                                .size(14.0)
                                 .color(TEXT_MUTED),
                             );
                             ui.add_space(4.0);
                             ui.label(
-                                egui::RichText::new(project.path.display().to_string())
-                                    .color(TEXT_MUTED),
+                                egui::RichText::new(format!(
+                                    "{}:  {}",
+                                    i18n.path_prefix,
+                                    project.path.display()
+                                ))
+                                .size(14.0)
+                                .color(TEXT_MUTED),
                             );
-                            ui.add_space(10.0);
+                        });
+                    });
 
-                            if ui.button(i18n.open).clicked() {
-                                if !Path::new(&project.path).exists() {
+                    let card_response = ui
+                        .interact(
+                        ui.min_rect(),
+                        ui.make_persistent_id(("project_card", &project.path)),
+                        egui::Sense::click(),
+                    )
+                        .on_hover_cursor(egui::CursorIcon::PointingHand);
+                    if card_response.double_clicked() {
+                        if !Path::new(&project.path).exists() {
+                            let project_name =
+                                project.name().unwrap_or_else(|| "Unknown".to_string());
+                            push_notification(
+                                ui_state,
+                                format!("{}: '{project_name}'", i18n.project_not_found),
+                            );
+                            remove_path = Some(project.path.clone());
+                            return;
+                        }
+
+                        match run_project(project) {
+                            Ok(_) => {
+                                exit.write(AppExit::Success);
+                            }
+                            Err(error) => match error.kind() {
+                                ErrorKind::NotFound | ErrorKind::InvalidData => {
                                     let project_name =
                                         project.name().unwrap_or_else(|| "Unknown".to_string());
                                     push_notification(
                                         ui_state,
-                                        format!("{}: '{project_name}'", i18n.project_not_found),
+                                        format!("{}: '{project_name}'", i18n.failed_to_run_project),
                                     );
                                     remove_path = Some(project.path.clone());
-                                    return;
                                 }
-
-                                match run_project(project) {
-                                    Ok(_) => {
-                                        exit.write(AppExit::Success);
-                                    }
-                                    Err(error) => match error.kind() {
-                                        ErrorKind::NotFound | ErrorKind::InvalidData => {
-                                            let project_name = project
-                                                .name()
-                                                .unwrap_or_else(|| "Unknown".to_string());
-                                            push_notification(
-                                                ui_state,
-                                                format!(
-                                                    "{}: '{project_name}'",
-                                                    i18n.failed_to_run_project
-                                                ),
-                                            );
-                                            remove_path = Some(project.path.clone());
-                                        }
-                                        _ => {
-                                            push_notification(
-                                                ui_state,
-                                                format!("{}: {error}", i18n.error_running_project),
-                                            );
-                                        }
-                                    },
+                                _ => {
+                                    push_notification(
+                                        ui_state,
+                                        format!("{}: {error}", i18n.error_running_project),
+                                    );
                                 }
-                            }
-                        });
-                    });
+                            },
+                        }
+                    }
                 });
-            ui.add_space(10.0);
+            ui.add_space(8.0);
         }
     });
 
