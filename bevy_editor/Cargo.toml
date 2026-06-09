@@ -26,6 +26,7 @@ bevy_asset_browser.workspace = true
 # Third party
 serde.workspace = true
 ron.workspace = true
+toml.workspace = true
 rfd.workspace = true
 
 [lints]

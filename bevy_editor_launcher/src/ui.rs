@@ -1,5 +1,6 @@
 use std::io::ErrorKind;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::time::SystemTime;
 
 use bevy::prelude::*;
 use bevy_egui::{
@@ -8,7 +9,10 @@ use bevy_egui::{
         self, ColorImage, FontData, FontDefinitions, FontFamily, TextureHandle, TextureOptions,
     },
 };
-use bevy_sandbox_engine::project::{run_project, set_project_list, templates::Templates};
+use bevy_sandbox_engine::project::{
+    ProjectInfo, run_project, set_project_list,
+    templates::{TemplateDefinition, TemplateKind, list_templates},
+};
 use sys_locale::get_locale;
 
 use crate::{ProjectInfoList, spawn_create_new_project_task};
@@ -23,6 +27,10 @@ pub struct LauncherUiState {
     pub nav_create_texture: Option<TextureHandle>,
     pub nav_projects_texture: Option<TextureHandle>,
     pub fonts_configured: bool,
+    project_templates: Vec<TemplateCard>,
+    mod_templates: Vec<TemplateCard>,
+    templates_loaded: bool,
+    create_dialog: Option<CreateProjectDialogState>,
 }
 
 impl Default for LauncherUiState {
@@ -36,6 +44,10 @@ impl Default for LauncherUiState {
             nav_create_texture: None,
             nav_projects_texture: None,
             fonts_configured: false,
+            project_templates: Vec::new(),
+            mod_templates: Vec::new(),
+            templates_loaded: false,
+            create_dialog: None,
         }
     }
 }
@@ -101,8 +113,8 @@ pub struct Strings {
     pub no_mod_templates: &'static str,
     pub no_mod_templates_desc: &'static str,
     pub projects_title: &'static str,
-    pub no_recent_projects: &'static str,
-    pub no_recent_projects_desc: &'static str,
+    pub import_project: &'static str,
+    pub new_project: &'static str,
     pub open: &'static str,
     pub reveal: &'static str,
     pub creating_from: &'static str,
@@ -112,7 +124,18 @@ pub struct Strings {
     pub path_prefix: &'static str,
     pub created_project: &'static str,
     pub failed_to_create_project: &'static str,
+    pub imported_project: &'static str,
+    pub invalid_project_folder: &'static str,
+    pub project_already_imported: &'static str,
     pub engine_name: &'static str,
+    pub project_name: &'static str,
+    pub storage_location: &'static str,
+    pub browse: &'static str,
+    pub cancel: &'static str,
+    pub create: &'static str,
+    pub invalid_project_name: &'static str,
+    pub invalid_storage_location: &'static str,
+    pub project_already_exists: &'static str,
 }
 
 pub fn strings(locale: LauncherLocale) -> Strings {
@@ -124,9 +147,9 @@ pub fn strings(locale: LauncherLocale) -> Strings {
             mod_templates: "Mod模板",
             no_mod_templates: "暂时没有 Mod 模板。",
             no_mod_templates_desc: "",
-            projects_title: "项目",
-            no_recent_projects: "暂无最近项目。",
-            no_recent_projects_desc: "请先从创建页选择模板生成项目。",
+            projects_title: "我的项目",
+            import_project: "导入项目",
+            new_project: "新建项目",
             open: "打开",
             reveal: "定位",
             creating_from: "正在从模板创建",
@@ -136,7 +159,18 @@ pub fn strings(locale: LauncherLocale) -> Strings {
             path_prefix: "路径",
             created_project: "已创建项目",
             failed_to_create_project: "创建项目失败",
+            imported_project: "已导入项目",
+            invalid_project_folder: "所选目录不是有效项目",
+            project_already_imported: "项目已在列表中",
             engine_name: "SandBox Engine",
+            project_name: "项目名称",
+            storage_location: "存储位置",
+            browse: "浏览",
+            cancel: "取消",
+            create: "创建",
+            invalid_project_name: "项目名称不能为空",
+            invalid_storage_location: "存储位置无效",
+            project_already_exists: "目标项目目录已存在",
         },
         LauncherLocale::EnUs => Strings {
             nav_create: "Create",
@@ -146,8 +180,8 @@ pub fn strings(locale: LauncherLocale) -> Strings {
             no_mod_templates: "No mod templates yet.",
             no_mod_templates_desc: "The home page always keeps meaningful content instead of rendering blank.",
             projects_title: "Projects",
-            no_recent_projects: "No recent projects.",
-            no_recent_projects_desc: "Create a project from a template first.",
+            import_project: "Import Project",
+            new_project: "New Project",
             open: "Open",
             reveal: "Reveal",
             creating_from: "Creating from",
@@ -157,59 +191,54 @@ pub fn strings(locale: LauncherLocale) -> Strings {
             path_prefix: "Path",
             created_project: "Created project",
             failed_to_create_project: "Failed to create project",
+            imported_project: "Imported project",
+            invalid_project_folder: "Selected folder is not a valid project",
+            project_already_imported: "Project is already in the list",
             engine_name: "SandBox Engine",
+            project_name: "Project Name",
+            storage_location: "Location",
+            browse: "Browse",
+            cancel: "Cancel",
+            create: "Create",
+            invalid_project_name: "Project name is required",
+            invalid_storage_location: "Storage location is invalid",
+            project_already_exists: "Target project directory already exists",
         },
     }
 }
 
+#[derive(Clone)]
 struct TemplateCard {
-    template: Templates,
-    title_zh: &'static str,
-    title_en: &'static str,
-    subtitle_zh: &'static str,
-    subtitle_en: &'static str,
+    template_id: String,
+    title_zh: String,
+    title_en: String,
+    subtitle_zh: String,
+    subtitle_en: String,
     top_color: egui::Color32,
     bottom_color: egui::Color32,
 }
 
+struct CreateProjectDialogState {
+    template: TemplateCard,
+    project_name: String,
+    storage_location: String,
+}
+
 impl TemplateCard {
-    fn title(&self, locale: LauncherLocale) -> &'static str {
+    fn title(&self, locale: LauncherLocale) -> &str {
         match locale {
-            LauncherLocale::ZhCn => self.title_zh,
-            LauncherLocale::EnUs => self.title_en,
+            LauncherLocale::ZhCn => &self.title_zh,
+            LauncherLocale::EnUs => &self.title_en,
         }
     }
 
-    fn subtitle(&self, locale: LauncherLocale) -> &'static str {
+    fn subtitle(&self, locale: LauncherLocale) -> &str {
         match locale {
-            LauncherLocale::ZhCn => self.subtitle_zh,
-            LauncherLocale::EnUs => self.subtitle_en,
+            LauncherLocale::ZhCn => &self.subtitle_zh,
+            LauncherLocale::EnUs => &self.subtitle_en,
         }
     }
 }
-
-const PROJECT_TEMPLATES: &[TemplateCard] = &[
-    TemplateCard {
-        template: Templates::GettingStarted,
-        title_zh: "俯视射击模板",
-        title_en: "Shooter Template",
-        subtitle_zh: "适合快速开始俯视角战斗玩法。",
-        subtitle_en: "Top-down combat starter.",
-        top_color: egui::Color32::from_rgb(118, 82, 43),
-        bottom_color: egui::Color32::from_rgb(214, 157, 86),
-    },
-    TemplateCard {
-        template: Templates::Blank,
-        title_zh: "基础模板",
-        title_en: "Base Template",
-        subtitle_zh: "最小化的沙盒项目结构。",
-        subtitle_en: "Minimal sandbox workspace.",
-        top_color: egui::Color32::from_rgb(103, 140, 201),
-        bottom_color: egui::Color32::from_rgb(208, 214, 220),
-    },
-];
-
-const MOD_TEMPLATES: &[TemplateCard] = &[];
 
 pub fn setup(mut commands: Commands) {
     commands.spawn((
@@ -239,6 +268,99 @@ fn push_notification(ui_state: &mut LauncherUiState, message: impl Into<String>)
         text: message.into(),
         ttl: Timer::from_seconds(3.0, TimerMode::Once),
     });
+}
+
+fn default_project_location() -> String {
+    if let Some(user_profile) = std::env::var_os("USERPROFILE") {
+        let downloads = Path::new(&user_profile).join("Downloads");
+        if downloads.exists() {
+            return downloads.display().to_string();
+        }
+        return Path::new(&user_profile).display().to_string();
+    }
+
+    std::env::current_dir()
+        .ok()
+        .unwrap_or_else(|| Path::new(".").to_path_buf())
+        .display()
+        .to_string()
+}
+
+fn default_project_name() -> String {
+    "Project".to_string()
+}
+
+fn card_palette(template_id: &str) -> (egui::Color32, egui::Color32) {
+    match template_id {
+        "getting_started" => (
+            egui::Color32::from_rgb(118, 82, 43),
+            egui::Color32::from_rgb(214, 157, 86),
+        ),
+        "blank_project" => (
+            egui::Color32::from_rgb(103, 140, 201),
+            egui::Color32::from_rgb(208, 214, 220),
+        ),
+        _ => (
+            egui::Color32::from_rgb(86, 102, 124),
+            egui::Color32::from_rgb(170, 182, 198),
+        ),
+    }
+}
+
+fn parse_color_hex(value: &str) -> Option<egui::Color32> {
+    let value = value.trim().trim_start_matches('#');
+    if value.len() != 6 {
+        return None;
+    }
+
+    let r = u8::from_str_radix(&value[0..2], 16).ok()?;
+    let g = u8::from_str_radix(&value[2..4], 16).ok()?;
+    let b = u8::from_str_radix(&value[4..6], 16).ok()?;
+    Some(egui::Color32::from_rgb(r, g, b))
+}
+
+fn build_template_card(template: TemplateDefinition) -> TemplateCard {
+    let (default_top_color, default_bottom_color) = card_palette(&template.id);
+    let top_color = template
+        .preview_top_color
+        .as_deref()
+        .and_then(parse_color_hex)
+        .unwrap_or(default_top_color);
+    let bottom_color = template
+        .preview_bottom_color
+        .as_deref()
+        .and_then(parse_color_hex)
+        .unwrap_or(default_bottom_color);
+
+    TemplateCard {
+        template_id: template.id,
+        title_zh: template.title_zh,
+        title_en: template.title_en,
+        subtitle_zh: template.subtitle_zh,
+        subtitle_en: template.subtitle_en,
+        top_color,
+        bottom_color,
+    }
+}
+
+fn ensure_project_templates(ui_state: &mut LauncherUiState) {
+    if ui_state.templates_loaded {
+        return;
+    }
+
+    let templates = list_templates().unwrap_or_default();
+    ui_state.project_templates = templates
+        .iter()
+        .filter(|template| template.kind == TemplateKind::Project)
+        .cloned()
+        .map(build_template_card)
+        .collect();
+    ui_state.mod_templates = templates
+        .into_iter()
+        .filter(|template| template.kind == TemplateKind::Mod)
+        .map(build_template_card)
+        .collect();
+    ui_state.templates_loaded = true;
 }
 
 fn configure_visuals(ctx: &egui::Context) {
@@ -434,6 +556,46 @@ fn template_tab(ui: &mut egui::Ui, active: bool, label: &str) -> egui::Response 
     )
 }
 
+fn is_valid_project_folder(path: &Path) -> bool {
+    path.join("Cargo.toml").exists()
+        && path.join("src").is_dir()
+        && path.join("src").join("main.rs").exists()
+}
+
+fn import_project_folder(
+    project_list: &mut ProjectInfoList,
+    ui_state: &mut LauncherUiState,
+    i18n: &Strings,
+    project_path: PathBuf,
+) {
+    if !is_valid_project_folder(&project_path) {
+        push_notification(
+            ui_state,
+            format!("{}: {}", i18n.invalid_project_folder, project_path.display()),
+        );
+        return;
+    }
+
+    if project_list.0.iter().any(|project| project.path == project_path) {
+        push_notification(
+            ui_state,
+            format!("{}: {}", i18n.project_already_imported, project_path.display()),
+        );
+        return;
+    }
+
+    let project_info = ProjectInfo {
+        path: project_path,
+        last_opened: SystemTime::now(),
+    };
+    let project_name = project_info
+        .name()
+        .unwrap_or_else(|| "Unknown".to_string());
+    project_list.0.push(project_info);
+    set_project_list(project_list.0.clone());
+    push_notification(ui_state, format!("{}: {project_name}", i18n.imported_project));
+}
+
 fn template_preview(ui: &mut egui::Ui, card: &TemplateCard) {
     let width = 182.0;
     let height = 182.0;
@@ -454,7 +616,7 @@ fn template_preview(ui: &mut egui::Ui, card: &TemplateCard) {
         egui::Stroke::new(2.0, egui::Color32::from_white_alpha(40)),
     );
 
-    if matches!(card.template, Templates::Blank) {
+    if card.template_id == "blank_project" {
         let ground = egui::Rect::from_min_max(
             egui::pos2(rect.left(), horizon),
             egui::pos2(rect.right(), rect.bottom()),
@@ -551,34 +713,47 @@ fn template_preview(ui: &mut egui::Ui, card: &TemplateCard) {
 
 fn template_card(
     ui: &mut egui::Ui,
-    commands: &mut Commands,
     card: &TemplateCard,
     ui_state: &mut LauncherUiState,
-    i18n: &Strings,
 ) {
     let locale = ui_state.locale;
     ui.vertical(|ui| {
+        let frame_stroke = egui::Stroke::new(1.0, egui::Color32::from_rgb(72, 72, 72));
+        let hovered_stroke = egui::Stroke::new(1.0, egui::Color32::from_rgb(244, 178, 47));
         let card_frame = egui::Frame::new()
             .fill(SURFACE_CARD)
-            .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(72, 72, 72)))
+            .stroke(frame_stroke)
             .corner_radius(6)
             .inner_margin(0);
 
-        let response = card_frame
+        let card_response = card_frame
             .show(ui, |ui| {
                 template_preview(ui, card);
             })
             .response;
+        let response = ui
+            .interact(
+                card_response.rect,
+                ui.make_persistent_id(("template_card", card.template_id.as_str())),
+                egui::Sense::click(),
+            )
+            .on_hover_cursor(egui::CursorIcon::PointingHand);
+
+        if response.hovered() {
+            ui.painter().rect_stroke(
+                card_response.rect,
+                6.0,
+                hovered_stroke,
+                egui::StrokeKind::Inside,
+            );
+        }
 
         if response.clicked() {
-            let new_project_path = rfd::FileDialog::new().pick_folder();
-            if let Some(path) = new_project_path {
-                spawn_create_new_project_task(commands, card.template, path);
-                push_notification(
-                    ui_state,
-                    format!("{} {}", i18n.creating_from, card.title(locale)),
-                );
-            }
+            ui_state.create_dialog = Some(CreateProjectDialogState {
+                template: card.clone(),
+                project_name: default_project_name(),
+                storage_location: default_project_location(),
+            });
         }
 
         ui.add_space(6.0);
@@ -593,10 +768,11 @@ fn template_card(
 
 fn render_create_page(
     ui: &mut egui::Ui,
-    commands: &mut Commands,
     ui_state: &mut LauncherUiState,
     i18n: &Strings,
 ) {
+    ensure_project_templates(ui_state);
+
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 20.0;
         if template_tab(
@@ -622,9 +798,11 @@ fn render_create_page(
     ui.add_space(18.0);
 
     let cards = match ui_state.template_tab {
-        TemplateTab::Project => PROJECT_TEMPLATES,
-        TemplateTab::Mod => MOD_TEMPLATES,
+        TemplateTab::Project => Some(ui_state.project_templates.clone()),
+        TemplateTab::Mod => Some(ui_state.mod_templates.clone()),
     };
+
+    let Some(cards) = cards else { return; };
 
     if cards.is_empty() {
         egui::Frame::new()
@@ -633,19 +811,158 @@ fn render_create_page(
             .corner_radius(6)
             .inner_margin(egui::Margin::symmetric(18, 18))
             .show(ui, |ui| {
-                ui.label(egui::RichText::new(i18n.no_mod_templates).size(18.0));
-                ui.add_space(12.0);
-                ui.label(egui::RichText::new(i18n.no_mod_templates_desc).color(TEXT_MUTED));
+                let is_mod_tab = ui_state.template_tab == TemplateTab::Mod;
+                ui.label(
+                    egui::RichText::new(if is_mod_tab {
+                        i18n.no_mod_templates
+                    } else {
+                        "No templates found."
+                    })
+                    .size(18.0),
+                );
+                ui.add_space(4.0);
+                ui.label(egui::RichText::new(if is_mod_tab {
+                    i18n.no_mod_templates_desc
+                } else {
+                    "Add a template folder under templates/ to make it appear here."
+                })
+                .color(TEXT_MUTED));
             });
         return;
     }
 
     ui.horizontal_wrapped(|ui| {
         ui.spacing_mut().item_spacing = egui::vec2(16.0, 16.0);
-        for card in cards {
-            template_card(ui, commands, card, ui_state, i18n);
+        for card in &cards {
+            template_card(ui, card, ui_state);
         }
     });
+}
+
+fn render_create_project_dialog(
+    ctx: &egui::Context,
+    commands: &mut Commands,
+    ui_state: &mut LauncherUiState,
+    i18n: &Strings,
+) {
+    let Some(dialog) = ui_state.create_dialog.as_mut() else {
+        return;
+    };
+
+    let mut close_dialog = false;
+    let mut create_project = false;
+    let locale = ui_state.locale;
+
+    egui::Window::new(dialog.template.title(locale))
+        .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
+        .collapsible(false)
+        .resizable(false)
+        .movable(false)
+        .default_width(360.0)
+        .frame(
+            egui::Frame::window(&ctx.style())
+                .fill(SURFACE_BG)
+                .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(78, 78, 78)))
+                .corner_radius(6),
+        )
+        .show(ctx, |ui| {
+            template_preview(ui, &dialog.template);
+            ui.add_space(12.0);
+            ui.label(egui::RichText::new(dialog.template.title(locale)).size(22.0));
+            ui.add_space(10.0);
+            ui.label(
+                egui::RichText::new(dialog.template.subtitle(locale))
+                    .size(16.0)
+                    .color(egui::Color32::WHITE),
+            );
+
+            ui.add_space(18.0);
+            ui.separator();
+            ui.add_space(18.0);
+
+            ui.label(egui::RichText::new(i18n.project_name).color(TEXT_MUTED));
+            ui.add_space(6.0);
+            ui.add(
+                egui::TextEdit::singleline(&mut dialog.project_name)
+                    .desired_width(f32::INFINITY),
+            );
+
+            ui.add_space(14.0);
+            ui.label(egui::RichText::new(i18n.storage_location).color(TEXT_MUTED));
+            ui.add_space(6.0);
+            ui.horizontal(|ui| {
+                ui.add(
+                    egui::TextEdit::singleline(&mut dialog.storage_location)
+                        .desired_width(250.0),
+                );
+                if ui.button(i18n.browse).clicked() {
+                    let file_dialog = if dialog.storage_location.trim().is_empty() {
+                        rfd::FileDialog::new()
+                    } else {
+                        rfd::FileDialog::new().set_directory(&dialog.storage_location)
+                    };
+
+                    if let Some(path) = file_dialog.pick_folder() {
+                        dialog.storage_location = path.display().to_string();
+                    }
+                }
+            });
+
+            ui.add_space(18.0);
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 12.0;
+                if ui
+                    .add_sized([140.0, 34.0], egui::Button::new(i18n.cancel))
+                    .clicked()
+                {
+                    close_dialog = true;
+                }
+                if ui
+                    .add_sized([140.0, 34.0], egui::Button::new(i18n.create))
+                    .clicked()
+                {
+                    create_project = true;
+                }
+            });
+        });
+
+    if close_dialog {
+        ui_state.create_dialog = None;
+        return;
+    }
+
+    if !create_project {
+        return;
+    }
+
+    let Some(dialog) = ui_state.create_dialog.as_ref() else {
+        return;
+    };
+
+    let project_name = dialog.project_name.trim();
+    if project_name.is_empty() {
+        push_notification(ui_state, i18n.invalid_project_name);
+        return;
+    }
+
+    let storage_root = PathBuf::from(dialog.storage_location.trim());
+    if dialog.storage_location.trim().is_empty() || !storage_root.is_dir() {
+        push_notification(ui_state, i18n.invalid_storage_location);
+        return;
+    }
+
+    let target_path = storage_root.join(project_name);
+    if target_path.exists() {
+        push_notification(ui_state, i18n.project_already_exists);
+        return;
+    }
+
+    spawn_create_new_project_task(commands, dialog.template.template_id.clone(), target_path);
+    push_notification(
+        ui_state,
+        format!("{} {}", i18n.creating_from, dialog.template.title(locale)),
+    );
+    ui_state.create_dialog = None;
 }
 
 fn render_projects_page(
@@ -655,20 +972,25 @@ fn render_projects_page(
     exit: &mut MessageWriter<AppExit>,
     i18n: &Strings,
 ) {
-    ui.label(egui::RichText::new(i18n.projects_title).size(24.0));
+    ui.horizontal(|ui| {
+        ui.label(egui::RichText::new(i18n.projects_title).size(24.0));
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            ui.spacing_mut().item_spacing.x = 10.0;
+
+            if ui.button(i18n.new_project).clicked() {
+                ui_state.page = LauncherPage::Create;
+            }
+
+            if ui.button(i18n.import_project).clicked() {
+                if let Some(project_path) = rfd::FileDialog::new().pick_folder() {
+                    import_project_folder(project_list, ui_state, i18n, project_path);
+                }
+            }
+        });
+    });
     ui.add_space(14.0);
 
     if project_list.0.is_empty() {
-        egui::Frame::new()
-            .fill(SURFACE_BG)
-            .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(76, 76, 76)))
-            .corner_radius(6)
-            .inner_margin(egui::Margin::symmetric(18, 18))
-            .show(ui, |ui| {
-                ui.label(egui::RichText::new(i18n.no_recent_projects).size(18.0));
-                ui.add_space(4.0);
-                ui.label(egui::RichText::new(i18n.no_recent_projects_desc).color(TEXT_MUTED));
-            });
         return;
     }
 
@@ -843,11 +1165,13 @@ pub fn render_launcher_ui(
                 .inner_margin(egui::Margin::symmetric(34, 36)),
         )
         .show(ctx, |ui| match ui_state.page {
-            LauncherPage::Create => render_create_page(ui, &mut commands, &mut ui_state, &i18n),
+            LauncherPage::Create => render_create_page(ui, &mut ui_state, &i18n),
             LauncherPage::Projects => {
                 render_projects_page(ui, &mut project_list, &mut ui_state, &mut exit, &i18n);
             }
         });
+
+    render_create_project_dialog(ctx, &mut commands, &mut ui_state, &i18n);
 
     if !ui_state.notifications.is_empty() {
         egui::Area::new("notifications".into())

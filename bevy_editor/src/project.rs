@@ -3,7 +3,7 @@
 use bevy::log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, time::SystemTime};
-use templates::{Templates, copy_template};
+use templates::copy_template;
 
 mod cache;
 pub mod templates;
@@ -33,7 +33,7 @@ impl ProjectInfo {
 /// Create a new project with the given name and path.
 /// Copy the blank project template from the local templates folder
 pub async fn create_new_project(
-    template: Templates,
+    template_id: String,
     path: PathBuf,
 ) -> std::io::Result<ProjectInfo> {
     let info = ProjectInfo {
@@ -41,7 +41,7 @@ pub async fn create_new_project(
         last_opened: SystemTime::now(),
     };
 
-    if let Err(error) = copy_template(template, info.path.as_path()).await {
+    if let Err(error) = copy_template(&template_id, info.path.as_path()).await {
         error!("Failed to create new project");
         return Err(error);
     }

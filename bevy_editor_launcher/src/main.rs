@@ -24,7 +24,7 @@ use winit::platform::windows::WindowExtWindows;
 use winit::window::Icon;
 
 use bevy_sandbox_engine::project::{
-    ProjectInfo, create_new_project, get_local_projects, set_project_list, templates::Templates,
+    ProjectInfo, create_new_project, get_local_projects, set_project_list,
 };
 
 mod ui;
@@ -105,8 +105,8 @@ fn poll_create_project_task(
 }
 
 /// Spawn a new [`CreateProjectTask`] to create a new project
-fn spawn_create_new_project_task(commands: &mut Commands, template: Templates, path: PathBuf) {
-    let task = IoTaskPool::get().spawn(async move { create_new_project(template, path).await });
+fn spawn_create_new_project_task(commands: &mut Commands, template_id: String, path: PathBuf) {
+    let task = IoTaskPool::get().spawn(async move { create_new_project(template_id, path).await });
     commands.spawn(CreateProjectTask(task));
 }
 
