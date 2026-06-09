@@ -1,5 +1,6 @@
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::time::SystemTime;
 
 use bevy::prelude::*;
@@ -10,9 +11,10 @@ use bevy_egui::{
     },
 };
 use bevy_sandbox_engine::project::{
-    ProjectInfo, run_project, set_project_list,
+    ProjectInfo, get_local_projects, run_project, set_project_list,
     templates::{TemplateDefinition, TemplateKind, TemplatePreviewStyle, list_templates},
 };
+use chrono::{DateTime, Local};
 use sys_locale::get_locale;
 
 use crate::{ProjectInfoList, spawn_create_new_project_task};
@@ -31,6 +33,7 @@ pub struct LauncherUiState {
     mod_templates: Vec<TemplateCard>,
     templates_loaded: bool,
     create_dialog: Option<CreateProjectDialogState>,
+    rename_dialog: Option<RenameProjectDialogState>,
 }
 
 impl Default for LauncherUiState {
@@ -48,6 +51,7 @@ impl Default for LauncherUiState {
             mod_templates: Vec::new(),
             templates_loaded: false,
             create_dialog: None,
+            rename_dialog: None,
         }
     }
 }
@@ -113,20 +117,29 @@ pub struct Strings {
     pub no_mod_templates: &'static str,
     pub no_mod_templates_desc: &'static str,
     pub projects_title: &'static str,
+    pub no_recent_projects: &'static str,
+    pub no_recent_projects_desc: &'static str,
+    pub refresh: &'static str,
     pub import_project: &'static str,
     pub new_project: &'static str,
+    pub modified_at: &'static str,
+    pub rename_project: &'static str,
+    pub open_project_folder: &'static str,
+    pub remove_project: &'static str,
+    pub save: &'static str,
+    pub more: &'static str,
     pub open: &'static str,
-    pub reveal: &'static str,
     pub creating_from: &'static str,
     pub project_not_found: &'static str,
     pub failed_to_run_project: &'static str,
     pub error_running_project: &'static str,
-    pub path_prefix: &'static str,
-    pub created_project: &'static str,
     pub failed_to_create_project: &'static str,
     pub imported_project: &'static str,
     pub invalid_project_folder: &'static str,
     pub project_already_imported: &'static str,
+    pub open_folder_failed: &'static str,
+    pub rename_project_failed: &'static str,
+    pub project_removed: &'static str,
     pub engine_name: &'static str,
     pub project_name: &'static str,
     pub storage_location: &'static str,
@@ -148,20 +161,29 @@ pub fn strings(locale: LauncherLocale) -> Strings {
             no_mod_templates: "暂时没有 Mod 模板。",
             no_mod_templates_desc: "",
             projects_title: "我的项目",
+            no_recent_projects: "暂无最近项目。",
+            no_recent_projects_desc: "请先创建或导入项目。",
+            refresh: "刷新",
             import_project: "导入项目",
             new_project: "新建项目",
+            modified_at: "最近修改",
+            rename_project: "更改名称",
+            open_project_folder: "打开项目文件夹",
+            remove_project: "删除项目",
+            save: "保存",
+            more: "更多",
             open: "打开",
-            reveal: "定位",
             creating_from: "正在从模板创建",
             project_not_found: "项目不存在",
             failed_to_run_project: "启动项目失败",
             error_running_project: "运行项目时出错",
-            path_prefix: "路径",
-            created_project: "已创建项目",
             failed_to_create_project: "创建项目失败",
             imported_project: "已导入项目",
             invalid_project_folder: "所选目录不是有效项目",
             project_already_imported: "项目已在列表中",
+            open_folder_failed: "打开项目文件夹失败",
+            rename_project_failed: "项目名称不能为空",
+            project_removed: "已删除项目",
             engine_name: "SandBox Engine",
             project_name: "项目名称",
             storage_location: "存储位置",
@@ -180,20 +202,29 @@ pub fn strings(locale: LauncherLocale) -> Strings {
             no_mod_templates: "No mod templates yet.",
             no_mod_templates_desc: "The home page always keeps meaningful content instead of rendering blank.",
             projects_title: "Projects",
+            no_recent_projects: "No recent projects.",
+            no_recent_projects_desc: "Create or import a project first.",
+            refresh: "Refresh",
             import_project: "Import Project",
             new_project: "New Project",
+            modified_at: "Modified",
+            rename_project: "Rename",
+            open_project_folder: "Open Project Folder",
+            remove_project: "Remove Project",
+            save: "Save",
+            more: "More",
             open: "Open",
-            reveal: "Reveal",
             creating_from: "Creating from",
             project_not_found: "Project not found",
             failed_to_run_project: "Failed to run project",
             error_running_project: "Error running project",
-            path_prefix: "Path",
-            created_project: "Created project",
             failed_to_create_project: "Failed to create project",
             imported_project: "Imported project",
             invalid_project_folder: "Selected folder is not a valid project",
             project_already_imported: "Project is already in the list",
+            open_folder_failed: "Failed to open project folder",
+            rename_project_failed: "Project name is required",
+            project_removed: "Removed project",
             engine_name: "SandBox Engine",
             project_name: "Project Name",
             storage_location: "Location",
@@ -223,6 +254,11 @@ struct CreateProjectDialogState {
     template: TemplateCard,
     project_name: String,
     storage_location: String,
+}
+
+struct RenameProjectDialogState {
+    project_path: PathBuf,
+    project_name: String,
 }
 
 impl TemplateCard {
@@ -600,6 +636,7 @@ fn import_project_folder(
 
     let project_info = ProjectInfo {
         path: project_path,
+        display_name: None,
         last_opened: SystemTime::now(),
     };
     let project_name = project_info.name().unwrap_or_else(|| "Unknown".to_string());
@@ -609,6 +646,64 @@ fn import_project_folder(
         ui_state,
         format!("{}: {project_name}", i18n.imported_project),
     );
+}
+
+fn project_modified_at(project: &ProjectInfo) -> String {
+    let Some(timestamp) =
+        std::fs::metadata(&project.path).ok().and_then(|metadata| metadata.modified().ok())
+    else {
+        return "-".to_string();
+    };
+
+    let modified_at: DateTime<Local> = timestamp.into();
+    modified_at.format("%Y-%m-%d %H:%M").to_string()
+}
+
+fn open_project_folder(path: &Path) -> std::io::Result<()> {
+    #[cfg(target_os = "windows")]
+    {
+        return Command::new("explorer")
+            .arg(path)
+            .spawn()
+            .map(|_| ())
+            .map_err(|error| std::io::Error::other(format!("Failed to open folder: {error}")));
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        return Command::new("open")
+            .arg(path)
+            .spawn()
+            .map(|_| ())
+            .map_err(|error| std::io::Error::other(format!("Failed to open folder: {error}")));
+    }
+
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        return Command::new("xdg-open")
+            .arg(path)
+            .spawn()
+            .map(|_| ())
+            .map_err(|error| std::io::Error::other(format!("Failed to open folder: {error}")));
+    }
+}
+
+fn project_thumbnail(ui: &mut egui::Ui, texture: Option<&TextureHandle>) {
+    egui::Frame::new()
+        .fill(egui::Color32::from_rgb(46, 46, 46))
+        .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(70, 70, 70)))
+        .corner_radius(6)
+        .inner_margin(egui::Margin::same(8))
+        .show(ui, |ui| {
+            ui.set_min_size(egui::vec2(76.0, 76.0));
+            ui.centered_and_justified(|ui| {
+                if let Some(texture) = texture {
+                    ui.add(egui::Image::new(texture).fit_to_exact_size(egui::vec2(48.0, 48.0)));
+                } else {
+                    ui.label(egui::RichText::new("BS").size(20.0).strong());
+                }
+            });
+        });
 }
 
 fn template_preview(ui: &mut egui::Ui, card: &TemplateCard) {
@@ -1003,6 +1098,86 @@ fn render_create_project_dialog(
     ui_state.create_dialog = None;
 }
 
+fn render_rename_project_dialog(
+    ctx: &egui::Context,
+    project_list: &mut ProjectInfoList,
+    ui_state: &mut LauncherUiState,
+    i18n: &Strings,
+) {
+    let Some(dialog) = ui_state.rename_dialog.as_mut() else {
+        return;
+    };
+
+    let mut close_dialog = false;
+    let mut save_name = false;
+
+    egui::Window::new(i18n.rename_project)
+        .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
+        .collapsible(false)
+        .resizable(false)
+        .movable(false)
+        .default_width(320.0)
+        .frame(
+            egui::Frame::window(&ctx.style())
+                .fill(SURFACE_BG)
+                .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(78, 78, 78)))
+                .corner_radius(6),
+        )
+        .show(ctx, |ui| {
+            ui.label(egui::RichText::new(i18n.project_name).color(TEXT_MUTED));
+            ui.add_space(6.0);
+            ui.add(
+                egui::TextEdit::singleline(&mut dialog.project_name).desired_width(f32::INFINITY),
+            );
+
+            ui.add_space(18.0);
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 12.0;
+                if ui
+                    .add_sized([120.0, 34.0], egui::Button::new(i18n.cancel))
+                    .clicked()
+                {
+                    close_dialog = true;
+                }
+                if ui
+                    .add_sized([120.0, 34.0], egui::Button::new(i18n.save))
+                    .clicked()
+                {
+                    save_name = true;
+                }
+            });
+        });
+
+    if close_dialog {
+        ui_state.rename_dialog = None;
+        return;
+    }
+
+    if !save_name {
+        return;
+    }
+
+    let Some(dialog) = ui_state.rename_dialog.as_ref() else {
+        return;
+    };
+    let project_name = dialog.project_name.trim();
+    if project_name.is_empty() {
+        push_notification(ui_state, i18n.rename_project_failed);
+        return;
+    }
+
+    if let Some(project) = project_list
+        .0
+        .iter_mut()
+        .find(|project| project.path == dialog.project_path)
+    {
+        project.display_name = Some(project_name.to_string());
+        set_project_list(project_list.0.clone());
+    }
+
+    ui_state.rename_dialog = None;
+}
+
 fn render_projects_page(
     ui: &mut egui::Ui,
     project_list: &mut ProjectInfoList,
@@ -1024,11 +1199,18 @@ fn render_projects_page(
                     import_project_folder(project_list, ui_state, i18n, project_path);
                 }
             }
+
+            if ui.button(i18n.refresh).clicked() {
+                project_list.0 = get_local_projects();
+            }
         });
     });
     ui.add_space(14.0);
 
     if project_list.0.is_empty() {
+        ui.label(egui::RichText::new(i18n.no_recent_projects).size(18.0));
+        ui.add_space(4.0);
+        ui.label(egui::RichText::new(i18n.no_recent_projects_desc).color(TEXT_MUTED));
         return;
     }
 
@@ -1043,20 +1225,72 @@ fn render_projects_page(
                 .inner_margin(egui::Margin::symmetric(14, 12))
                 .show(ui, |ui| {
                     ui.horizontal(|ui| {
+                        project_thumbnail(ui, ui_state.brand_texture.as_ref());
+                        ui.add_space(12.0);
+
                         ui.vertical(|ui| {
+                            ui.horizontal(|ui| {
+                                ui.label(
+                                    egui::RichText::new(
+                                        project.name().unwrap_or_else(|| "Unknown".to_string()),
+                                    )
+                                    .size(18.0),
+                                );
+                                ui.with_layout(
+                                    egui::Layout::right_to_left(egui::Align::Min),
+                                    |ui| {
+                                        ui.menu_button(i18n.more, |ui| {
+                                            if ui.button(i18n.rename_project).clicked() {
+                                                ui_state.rename_dialog =
+                                                    Some(RenameProjectDialogState {
+                                                        project_path: project.path.clone(),
+                                                        project_name: project.name().unwrap_or_else(
+                                                            || "Unknown".to_string(),
+                                                        ),
+                                                    });
+                                                ui.close();
+                                            }
+
+                                            if ui.button(i18n.open_project_folder).clicked() {
+                                                if let Err(error) =
+                                                    open_project_folder(&project.path)
+                                                {
+                                                    push_notification(
+                                                        ui_state,
+                                                        format!(
+                                                            "{}: {error}",
+                                                            i18n.open_folder_failed
+                                                        ),
+                                                    );
+                                                }
+                                                ui.close();
+                                            }
+
+                                            if ui.button(i18n.remove_project).clicked() {
+                                                remove_path = Some(project.path.clone());
+                                                ui.close();
+                                            }
+                                        });
+                                    },
+                                );
+                            });
+
+                            ui.add_space(6.0);
                             ui.label(
-                                egui::RichText::new(
-                                    project.name().unwrap_or_else(|| "Unknown".to_string()),
-                                )
-                                .size(18.0),
+                                egui::RichText::new(format!(
+                                    "{}: {}",
+                                    i18n.modified_at,
+                                    project_modified_at(project)
+                                ))
+                                .color(TEXT_MUTED),
                             );
+                            ui.add_space(4.0);
                             ui.label(
                                 egui::RichText::new(project.path.display().to_string())
                                     .color(TEXT_MUTED),
                             );
-                        });
+                            ui.add_space(10.0);
 
-                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                             if ui.button(i18n.open).clicked() {
                                 if !Path::new(&project.path).exists() {
                                     let project_name =
@@ -1096,13 +1330,6 @@ fn render_projects_page(
                                     },
                                 }
                             }
-
-                            if ui.button(i18n.reveal).clicked() {
-                                push_notification(
-                                    ui_state,
-                                    format!("{}: {}", i18n.path_prefix, project.path.display()),
-                                );
-                            }
                         });
                     });
                 });
@@ -1113,6 +1340,7 @@ fn render_projects_page(
     if let Some(path) = remove_path {
         project_list.0.retain(|project| project.path != path);
         set_project_list(project_list.0.clone());
+        push_notification(ui_state, i18n.project_removed);
     }
 }
 
@@ -1210,6 +1438,7 @@ pub fn render_launcher_ui(
         });
 
     render_create_project_dialog(ctx, &mut commands, &mut ui_state, &i18n);
+    render_rename_project_dialog(ctx, &mut project_list, &mut ui_state, &i18n);
 
     if !ui_state.notifications.is_empty() {
         egui::Area::new("notifications".into())

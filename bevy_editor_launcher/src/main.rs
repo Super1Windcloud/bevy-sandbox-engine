@@ -24,7 +24,7 @@ use winit::platform::windows::WindowExtWindows;
 use winit::window::Icon;
 
 use bevy_sandbox_engine::project::{
-    ProjectInfo, create_new_project, get_local_projects, set_project_list,
+    ProjectInfo, create_new_project, get_local_projects, run_project, set_project_list,
 };
 
 mod ui;
@@ -74,6 +74,7 @@ fn poll_create_project_task(
     mut task_query: Query<(Entity, &mut CreateProjectTask)>,
     mut project_list: ResMut<ProjectInfoList>,
     mut ui_state: ResMut<ui::LauncherUiState>,
+    mut exit: MessageWriter<AppExit>,
 ) {
     let (task_entity, mut task) = task_query.single_mut().unwrap();
     if let Some(result) = block_on(future::poll_once(&mut task.0)) {
@@ -82,15 +83,18 @@ fn poll_create_project_task(
             Ok(project_info) => {
                 project_list.0.push(project_info.clone());
                 set_project_list(project_list.0.clone());
-                ui_state.notifications.push(ui::Notification {
-                    text: format!(
-                        "{}: {}",
-                        locale_strings.created_project,
-                        project_info.name().unwrap_or_else(|| "Unknown".to_string())
-                    ),
-                    ttl: Timer::from_seconds(3.0, TimerMode::Once),
-                });
-                commands.entity(task_entity).despawn();
+                match run_project(&project_info) {
+                    Ok(_) => {
+                        exit.write(AppExit::Success);
+                    }
+                    Err(error) => {
+                        error!("Failed to run new project after creation: {:?}", error);
+                        ui_state.notifications.push(ui::Notification {
+                            text: format!("{}: {}", locale_strings.failed_to_run_project, error),
+                            ttl: Timer::from_seconds(3.0, TimerMode::Once),
+                        });
+                    }
+                }
             }
             Err(error) => {
                 error!("Failed to create new project: {:?}", error);
@@ -101,6 +105,7 @@ fn poll_create_project_task(
                 commands.entity(task_entity).despawn();
             }
         }
+        commands.entity(task_entity).despawn();
     }
 }
 

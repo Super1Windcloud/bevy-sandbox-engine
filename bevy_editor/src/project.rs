@@ -4,6 +4,7 @@ use bevy::log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, time::SystemTime};
 use templates::copy_template;
+use toml::{Table, Value};
 
 mod cache;
 pub mod templates;
@@ -13,6 +14,9 @@ pub mod templates;
 pub struct ProjectInfo {
     /// The path to the root of the project.
     pub path: PathBuf,
+    /// Optional display name used by the launcher.
+    #[serde(default)]
+    pub display_name: Option<String>,
     /// The last time the project was opened.
     pub last_opened: SystemTime,
 }
@@ -26,7 +30,9 @@ impl PartialEq for ProjectInfo {
 impl ProjectInfo {
     /// Get the name of the project.
     pub fn name(&self) -> Option<String> {
-        Some(self.path.file_name()?.to_str()?.to_string())
+        self.display_name
+            .clone()
+            .or_else(|| Some(self.path.file_name()?.to_str()?.to_string()))
     }
 }
 
@@ -38,11 +44,17 @@ pub async fn create_new_project(
 ) -> std::io::Result<ProjectInfo> {
     let info = ProjectInfo {
         path,
+        display_name: None,
         last_opened: SystemTime::now(),
     };
 
     if let Err(error) = copy_template(&template_id, info.path.as_path()).await {
         error!("Failed to create new project");
+        return Err(error);
+    }
+
+    if let Err(error) = rewrite_template_dependency_paths(info.path.as_path()) {
+        error!("Failed to rewrite template dependency paths");
         return Err(error);
     }
 
@@ -55,10 +67,20 @@ pub async fn create_new_project(
 
 /// Get all projects that have been opened in the engine launcher.
 pub fn get_local_projects() -> Vec<ProjectInfo> {
-    cache::load_projects().unwrap_or_else(|error| {
+    let mut projects = cache::load_projects().unwrap_or_else(|error| {
         warn!("Failed to load projects from cache file: {:?}", error);
         Vec::new()
-    })
+    });
+    let original_len = projects.len();
+    projects.retain(|project| project.path.is_dir());
+
+    if projects.len() != original_len {
+        if let Err(error) = cache::save_projects(projects.clone()) {
+            error!("Couldn't prune missing projects from cache: {:?}", error);
+        }
+    }
+
+    projects
 }
 
 /// Update the current project info or create new ones if doesn't exist.
@@ -75,6 +97,7 @@ pub fn update_project_info() {
             // Create new info
             let project = ProjectInfo {
                 path: current_dir.clone(),
+                display_name: None,
                 last_opened: SystemTime::now(),
             };
             projects.push(project);
@@ -129,5 +152,40 @@ pub fn run_project(project: &ProjectInfo) -> std::io::Result<()> {
         .map_err(|error| std::io::Error::other(format!("Failed to run project: {error}")))?;
 
     info!("Project started successfully");
+    Ok(())
+}
+
+fn rewrite_template_dependency_paths(project_root: &std::path::Path) -> std::io::Result<()> {
+    let cargo_toml_path = project_root.join("Cargo.toml");
+    if !cargo_toml_path.exists() {
+        return Ok(());
+    }
+
+    let cargo_toml_text = std::fs::read_to_string(&cargo_toml_path)?;
+    let mut cargo_toml = cargo_toml_text.parse::<Table>().map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!("Failed to parse {}: {error}", cargo_toml_path.display()),
+        )
+    })?;
+
+    let Some(Value::Table(dependencies)) = cargo_toml.get_mut("dependencies") else {
+        return Ok(());
+    };
+
+    let Some(Value::Table(engine_dependency)) = dependencies.get_mut("bevy_sandbox_engine") else {
+        return Ok(());
+    };
+
+    let engine_path = std::fs::canonicalize(env!("CARGO_MANIFEST_DIR"))?;
+    engine_dependency.insert(
+        "path".to_string(),
+        Value::String(engine_path.display().to_string()),
+    );
+
+    let updated_text = toml::to_string_pretty(&cargo_toml).map_err(|error| {
+        std::io::Error::other(format!("Failed to serialize Cargo.toml: {error}"))
+    })?;
+    std::fs::write(cargo_toml_path, updated_text)?;
     Ok(())
 }
