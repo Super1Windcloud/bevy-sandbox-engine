@@ -697,12 +697,12 @@ fn project_thumbnail(ui: &mut egui::Ui, texture: Option<&TextureHandle>) {
         .fill(egui::Color32::from_rgb(64, 64, 64))
         .stroke(egui::Stroke::NONE)
         .corner_radius(2)
-        .inner_margin(egui::Margin::same(8))
+        .inner_margin(egui::Margin::same(0))
         .show(ui, |ui| {
-            ui.set_min_size(egui::vec2(58.0, 58.0));
+            ui.set_min_size(egui::vec2(72.0, 72.0));
             ui.centered_and_justified(|ui| {
                 if let Some(texture) = texture {
-                    ui.add(egui::Image::new(texture).fit_to_exact_size(egui::vec2(42.0, 42.0)));
+                    ui.add(egui::Image::new(texture).fit_to_exact_size(egui::vec2(72.0, 72.0)));
                 } else {
                     ui.label(egui::RichText::new("BS").size(18.0).strong());
                 }
@@ -1225,20 +1225,29 @@ fn render_projects_page(
             egui::Frame::new()
                 .fill(SURFACE_CARD)
                 .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(70, 70, 70)))
-                .corner_radius(0)
-                .inner_margin(egui::Margin::symmetric(12, 10))
+                .corner_radius(6)
+                .inner_margin(egui::Margin::symmetric(14, 14))
                 .show(ui, |ui| {
-                    ui.horizontal(|ui| {
+                    ui.set_min_height(72.0);
+                    ui.horizontal_top(|ui| {
                         project_thumbnail(ui, ui_state.brand_texture.as_ref());
-                        ui.add_space(12.0);
+                        ui.add_space(14.0);
 
-                        ui.vertical(|ui| {
-                            ui.horizontal(|ui| {
+                        let info_width = (ui.available_width() - 34.0).max(160.0);
+                        ui.allocate_ui_with_layout(
+                            egui::vec2(info_width, 0.0),
+                            egui::Layout::top_down(egui::Align::Min),
+                            |ui| {
                                 let project_name =
                                     project.name().unwrap_or_else(|| "Unknown".to_string());
                                 let project_id = project_stable_id(project);
                                 ui.horizontal(|ui| {
-                                    ui.label(egui::RichText::new(project_name).size(20.0).strong());
+                                    ui.add(
+                                        egui::Label::new(
+                                            egui::RichText::new(project_name).size(18.0).strong(),
+                                        )
+                                        .truncate(),
+                                    );
                                     ui.add_space(4.0);
                                     ui.label(
                                         egui::RichText::new(format!("(ID: {project_id})"))
@@ -1246,68 +1255,70 @@ fn render_projects_page(
                                             .color(TEXT_MUTED),
                                     );
                                 });
-                                ui.with_layout(
-                                    egui::Layout::right_to_left(egui::Align::Min),
+                                ui.add_space(4.0);
+                                ui.add_sized(
+                                    [info_width, 18.0],
+                                    egui::Label::new(
+                                        egui::RichText::new(format!(
+                                            "{}:  {}",
+                                            i18n.modified_at,
+                                            project_modified_at(project)
+                                        ))
+                                        .size(14.0)
+                                        .color(TEXT_MUTED),
+                                    )
+                                    .truncate(),
+                                );
+                                ui.add_space(4.0);
+                                ui.add_sized(
+                                    [info_width, 18.0],
+                                    egui::Label::new(
+                                        egui::RichText::new(format!(
+                                            "{}:  {}",
+                                            i18n.path_prefix,
+                                            project.path.display()
+                                        ))
+                                        .size(14.0)
+                                        .color(TEXT_MUTED),
+                                    )
+                                    .truncate(),
+                                );
+                            },
+                        );
+
+                        ui.scope(|ui| {
+                            ui.style_mut().spacing.button_padding = egui::vec2(6.0, 2.0);
+                            ui.with_layout(egui::Layout::top_down(egui::Align::Max), |ui| {
+                                ui.menu_button(
+                                    egui::RichText::new("⋮").size(18.0).color(TEXT_MUTED),
                                     |ui| {
-                                        ui.menu_button(
-                                            egui::RichText::new("⋮").size(18.0).color(TEXT_MUTED),
-                                            |ui| {
-                                            if ui.button(i18n.rename_project).clicked() {
-                                                ui_state.rename_dialog =
-                                                    Some(RenameProjectDialogState {
-                                                        project_path: project.path.clone(),
-                                                        project_name: project.name().unwrap_or_else(
-                                                            || "Unknown".to_string(),
-                                                        ),
-                                                    });
-                                                ui.close();
-                                            }
+                                        if ui.button(i18n.rename_project).clicked() {
+                                            ui_state.rename_dialog = Some(RenameProjectDialogState {
+                                                project_path: project.path.clone(),
+                                                project_name: project
+                                                    .name()
+                                                    .unwrap_or_else(|| "Unknown".to_string()),
+                                            });
+                                            ui.close();
+                                        }
 
-                                            if ui.button(i18n.open_project_folder).clicked() {
-                                                if let Err(error) =
-                                                    open_project_folder(&project.path)
-                                                {
-                                                    push_notification(
-                                                        ui_state,
-                                                        format!(
-                                                            "{}: {error}",
-                                                            i18n.open_folder_failed
-                                                        ),
-                                                    );
-                                                }
-                                                ui.close();
+                                        if ui.button(i18n.open_project_folder).clicked() {
+                                            if let Err(error) = open_project_folder(&project.path) {
+                                                push_notification(
+                                                    ui_state,
+                                                    format!("{}: {error}", i18n.open_folder_failed),
+                                                );
                                             }
+                                            ui.close();
+                                        }
 
-                                            if ui.button(i18n.remove_project).clicked() {
-                                                remove_path = Some(project.path.clone());
-                                                ui.close();
-                                            }
-                                            },
-                                        );
+                                        if ui.button(i18n.remove_project).clicked() {
+                                            remove_path = Some(project.path.clone());
+                                            ui.close();
+                                        }
                                     },
                                 );
                             });
-
-                            ui.add_space(4.0);
-                            ui.label(
-                                egui::RichText::new(format!(
-                                    "{}:  {}",
-                                    i18n.modified_at,
-                                    project_modified_at(project)
-                                ))
-                                .size(14.0)
-                                .color(TEXT_MUTED),
-                            );
-                            ui.add_space(4.0);
-                            ui.label(
-                                egui::RichText::new(format!(
-                                    "{}:  {}",
-                                    i18n.path_prefix,
-                                    project.path.display()
-                                ))
-                                .size(14.0)
-                                .color(TEXT_MUTED),
-                            );
                         });
                     });
 

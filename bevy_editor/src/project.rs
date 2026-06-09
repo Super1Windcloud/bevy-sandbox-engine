@@ -2,9 +2,12 @@
 
 use bevy::log::{error, info, warn};
 use serde::{Deserialize, Serialize};
-use std::{path::PathBuf, time::SystemTime};
+use std::{path::PathBuf, process::Command, time::SystemTime};
 use templates::copy_template;
 use toml::{Table, Value};
+
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
 
 mod cache;
 pub mod templates;
@@ -138,20 +141,22 @@ pub fn run_project(project: &ProjectInfo) -> std::io::Result<()> {
     }
 
     #[cfg(target_os = "windows")]
-    std::process::Command::new("cmd")
-        .current_dir(&project.path)
-        .args(["/C", "cargo", "run"])
+    const CREATE_NEW_CONSOLE: u32 = 0x0000_0010;
+
+    let mut command = Command::new("cargo");
+    command.current_dir(&project.path).arg("run");
+
+    #[cfg(target_os = "windows")]
+    command.creation_flags(CREATE_NEW_CONSOLE);
+
+    let child = command
         .spawn()
         .map_err(|error| std::io::Error::other(format!("Failed to run project: {error}")))?;
 
-    #[cfg(not(target_os = "windows"))]
-    std::process::Command::new("sh")
-        .current_dir(&project.path)
-        .args(["-c", "cargo run"])
-        .spawn()
-        .map_err(|error| std::io::Error::other(format!("Failed to run project: {error}")))?;
-
-    info!("Project started successfully");
+    info!(
+        "Project process started successfully (pid: {})",
+        child.id()
+    );
     Ok(())
 }
 

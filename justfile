@@ -21,7 +21,7 @@ launcher-watch-backend backend="vulkan":
     $env:WGPU_BACKEND = "{{backend}}"
     cargo watch -x "run -p bevy-sandbox-engine-launcher"
 
-example:
+editor:
     cargo run --example simple_editor -p bevy-sandbox-engine-launcher
 
 check:

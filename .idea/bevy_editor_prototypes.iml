@@ -94,7 +94,9 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/bevy_transform_gizmos/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/bevy_undo/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/bevy_undo/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/templates/getting_started/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
+      <excludeFolder url="file://$MODULE_DIR$/templates/getting_started/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

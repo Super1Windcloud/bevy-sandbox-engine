@@ -1,8 +1,0 @@
-kind = "project"
-title_zh = "俯视射击模板"
-title_en = "Shooter Template"
-subtitle_zh = "适合快速开始俯视角战斗玩法。"
-subtitle_en = "Top-down combat starter."
-preview_top_color = "#76522B"
-preview_bottom_color = "#D69D56"
-preview_style = "shooter"
