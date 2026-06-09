@@ -2,21 +2,39 @@
 
 use bevy::log::{error, info, warn};
 use serde::{Deserialize, Serialize};
-use std::{path::PathBuf, process::Command, time::SystemTime};
+use std::{
+    path::{Path, PathBuf},
+    process::Command,
+    time::SystemTime,
+};
 use templates::copy_template;
 use toml::{Table, Value};
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 
+use crate::compat::{COMPAT_PROJECT_ROOT_ENV, is_compat_project_root};
+
 mod cache;
 pub mod templates;
+
+/// Supported project kinds in the launcher.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum ProjectKind {
+    #[default]
+    Rust,
+    BlockmanCompat,
+}
 
 /// Basic information about a project.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProjectInfo {
     /// The path to the root of the project.
     pub path: PathBuf,
+    /// The detected project kind.
+    #[serde(default)]
+    pub kind: ProjectKind,
     /// Optional display name used by the launcher.
     #[serde(default)]
     pub display_name: Option<String>,
@@ -47,6 +65,7 @@ pub async fn create_new_project(
 ) -> std::io::Result<ProjectInfo> {
     let info = ProjectInfo {
         path,
+        kind: ProjectKind::Rust,
         display_name: None,
         last_opened: SystemTime::now(),
     };
@@ -75,7 +94,17 @@ pub fn get_local_projects() -> Vec<ProjectInfo> {
         Vec::new()
     });
     let original_len = projects.len();
-    projects.retain(|project| project.path.is_dir());
+    projects.retain_mut(|project| {
+        if !project.path.is_dir() {
+            return false;
+        }
+
+        let Some(kind) = detect_project_kind(&project.path) else {
+            return false;
+        };
+        project.kind = kind;
+        true
+    });
 
     if projects.len() != original_len {
         if let Err(error) = cache::save_projects(projects.clone()) {
@@ -95,11 +124,13 @@ pub fn update_project_info() {
         Some(project) => {
             // Update info
             project.last_opened = SystemTime::now();
+            project.kind = detect_project_kind(&current_dir).unwrap_or(ProjectKind::Rust);
         }
         None => {
             // Create new info
             let project = ProjectInfo {
                 path: current_dir.clone(),
+                kind: detect_project_kind(&current_dir).unwrap_or(ProjectKind::Rust),
                 display_name: None,
                 last_opened: SystemTime::now(),
             };
@@ -119,8 +150,26 @@ pub fn set_project_list(projects: Vec<ProjectInfo>) {
     }
 }
 
+/// Detect the project kind for a path.
+pub fn detect_project_kind(path: &Path) -> Option<ProjectKind> {
+    if is_rust_project(path) {
+        Some(ProjectKind::Rust)
+    } else if is_compat_project_root(path) {
+        Some(ProjectKind::BlockmanCompat)
+    } else {
+        None
+    }
+}
+
 /// Run a project in editor mode.
 pub fn run_project(project: &ProjectInfo) -> std::io::Result<()> {
+    match project.kind {
+        ProjectKind::Rust => run_rust_project(project),
+        ProjectKind::BlockmanCompat => run_compat_project(project),
+    }
+}
+
+fn run_rust_project(project: &ProjectInfo) -> std::io::Result<()> {
     // Make sure the project folder exist
     if !project.path.exists() {
         return Err(std::io::Error::new(
@@ -153,14 +202,63 @@ pub fn run_project(project: &ProjectInfo) -> std::io::Result<()> {
         .spawn()
         .map_err(|error| std::io::Error::other(format!("Failed to run project: {error}")))?;
 
+    info!("Project process started successfully (pid: {})", child.id());
+    Ok(())
+}
+
+fn run_compat_project(project: &ProjectInfo) -> std::io::Result<()> {
+    if !project.path.exists() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "Compatibility project root folder not found",
+        ));
+    }
+
+    if !is_compat_project_root(&project.path) {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "Project isn't a valid compatibility project: missing Assets/Scripts, ProjectSettings or tsconfig.json",
+        ));
+    }
+
+    #[cfg(target_os = "windows")]
+    const CREATE_NEW_CONSOLE: u32 = 0x0000_0010;
+
+    let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .ok_or_else(|| std::io::Error::other("Unable to locate workspace root"))?;
+
+    let mut command = Command::new("cargo");
+    command
+        .current_dir(workspace_root)
+        .arg("run")
+        .arg("-p")
+        .arg("bevy_editor_launcher")
+        .arg("--example")
+        .arg("simple_editor")
+        .env(COMPAT_PROJECT_ROOT_ENV, &project.path);
+
+    #[cfg(target_os = "windows")]
+    command.creation_flags(CREATE_NEW_CONSOLE);
+
+    let child = command.spawn().map_err(|error| {
+        std::io::Error::other(format!("Failed to run compatibility project: {error}"))
+    })?;
+
     info!(
-        "Project process started successfully (pid: {})",
+        "Compatibility project process started successfully (pid: {})",
         child.id()
     );
     Ok(())
 }
 
-fn rewrite_template_dependency_paths(project_root: &std::path::Path) -> std::io::Result<()> {
+fn is_rust_project(path: &Path) -> bool {
+    path.join("Cargo.toml").exists()
+        && path.join("src").is_dir()
+        && path.join("src").join("main.rs").exists()
+}
+
+fn rewrite_template_dependency_paths(project_root: &Path) -> std::io::Result<()> {
     let cargo_toml_path = project_root.join("Cargo.toml");
     if !cargo_toml_path.exists() {
         return Ok(());

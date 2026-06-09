@@ -47,8 +47,10 @@ use bevy_2d_viewport::Viewport2dPanePlugin;
 use bevy_3d_viewport::Viewport3dPanePlugin;
 use bevy_asset_browser::AssetBrowserPanePlugin;
 
+use crate::compat::CompatProjectPlugin;
 use crate::load_gltf::LoadGltfPlugin;
 
+mod compat;
 mod load_gltf;
 pub mod project;
 mod ui;
@@ -137,6 +139,7 @@ impl Plugin for EditorPlugin {
                 TabNavigationPlugin,
                 FeathersPlugin,
             ))
+            .add_plugins(CompatProjectPlugin)
             .insert_resource(WinitSettings {
                 focused_mode: UpdateMode::reactive(Duration::from_secs_f64(1.0 / 60.0)),
                 unfocused_mode: UpdateMode::reactive_low_power(Duration::from_secs(1)),

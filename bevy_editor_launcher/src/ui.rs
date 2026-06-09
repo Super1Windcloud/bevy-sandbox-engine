@@ -1,5 +1,5 @@
-use std::io::ErrorKind;
 use std::hash::{DefaultHasher, Hash, Hasher};
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::SystemTime;
@@ -12,7 +12,8 @@ use bevy_egui::{
     },
 };
 use bevy_sandbox_engine::project::{
-    ProjectInfo, get_local_projects, run_project, set_project_list,
+    ProjectInfo, ProjectKind, detect_project_kind, get_local_projects, run_project,
+    set_project_list,
     templates::{TemplateDefinition, TemplateKind, TemplatePreviewStyle, list_templates},
 };
 use chrono::{DateTime, Local};
@@ -481,10 +482,13 @@ fn ensure_fonts(ctx: &egui::Context, ui_state: &mut LauncherUiState) {
             ICON_FONT_NAME.to_string(),
             FontData::from_owned(icon_font_bytes).into(),
         );
-        fonts.families.insert(
-            FontFamily::Name(ICON_FONT_NAME.into()),
-            vec![ICON_FONT_NAME.to_string()],
-        );
+        let mut icon_family = vec![ICON_FONT_NAME.to_string()];
+        if let Some(proportional_fonts) = fonts.families.get(&FontFamily::Proportional) {
+            icon_family.extend(proportional_fonts.iter().cloned());
+        }
+        fonts
+            .families
+            .insert(FontFamily::Name(ICON_FONT_NAME.into()), icon_family);
     }
 
     ctx.set_fonts(fonts);
@@ -618,9 +622,7 @@ fn template_tab(ui: &mut egui::Ui, active: bool, label: &str) -> egui::Response 
 }
 
 fn is_valid_project_folder(path: &Path) -> bool {
-    path.join("Cargo.toml").exists()
-        && path.join("src").is_dir()
-        && path.join("src").join("main.rs").exists()
+    detect_project_kind(path).is_some()
 }
 
 fn import_project_folder(
@@ -657,8 +659,10 @@ fn import_project_folder(
         return;
     }
 
+    let kind = detect_project_kind(&project_path).unwrap_or(ProjectKind::Rust);
     let project_info = ProjectInfo {
         path: project_path,
+        kind,
         display_name: None,
         last_opened: SystemTime::now(),
     };
@@ -672,8 +676,9 @@ fn import_project_folder(
 }
 
 fn project_modified_at(project: &ProjectInfo) -> String {
-    let Some(timestamp) =
-        std::fs::metadata(&project.path).ok().and_then(|metadata| metadata.modified().ok())
+    let Some(timestamp) = std::fs::metadata(&project.path)
+        .ok()
+        .and_then(|metadata| metadata.modified().ok())
     else {
         return "-".to_string();
     };
@@ -1019,7 +1024,8 @@ fn render_create_project_dialog(
         return;
     };
 
-    let mut close_dialog = ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::Escape));
+    let mut close_dialog =
+        ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::Escape));
     let mut create_project = false;
     let locale = ui_state.locale;
 
@@ -1324,12 +1330,13 @@ fn render_projects_page(
                                         .color(TEXT_MUTED),
                                     |ui| {
                                         if ui.button(i18n.rename_project).clicked() {
-                                            ui_state.rename_dialog = Some(RenameProjectDialogState {
-                                                project_path: project.path.clone(),
-                                                project_name: project
-                                                    .name()
-                                                    .unwrap_or_else(|| "Unknown".to_string()),
-                                            });
+                                            ui_state.rename_dialog =
+                                                Some(RenameProjectDialogState {
+                                                    project_path: project.path.clone(),
+                                                    project_name: project
+                                                        .name()
+                                                        .unwrap_or_else(|| "Unknown".to_string()),
+                                                });
                                             ui.close();
                                         }
 
@@ -1355,10 +1362,10 @@ fn render_projects_page(
 
                     let card_response = ui
                         .interact(
-                        ui.min_rect(),
-                        ui.make_persistent_id(("project_card", &project.path)),
-                        egui::Sense::click(),
-                    )
+                            ui.min_rect(),
+                            ui.make_persistent_id(("project_card", &project.path)),
+                            egui::Sense::click(),
+                        )
                         .on_hover_cursor(egui::CursorIcon::PointingHand);
                     if card_response.double_clicked() {
                         if !Path::new(&project.path).exists() {

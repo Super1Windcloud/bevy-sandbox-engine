@@ -192,7 +192,7 @@ fn main() {
                 .set(WindowPlugin {
                     primary_window: Some(Window {
                         title: "Bevy Sandbox Engine Launcher".to_string(),
-                        resolution: bevy::window::WindowResolution::new(1180, 760),
+                        resolution: bevy::window::WindowResolution::new(800, 600),
                         position: WindowPosition::Centered(MonitorSelection::Primary),
                         mode: WindowMode::Windowed,
                         visible: false,
