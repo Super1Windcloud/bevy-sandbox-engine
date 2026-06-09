@@ -104,11 +104,13 @@ const TAB_ACTIVE: egui::Color32 = egui::Color32::from_rgb(232, 232, 232);
 const TAB_INACTIVE: egui::Color32 = egui::Color32::from_rgb(130, 130, 130);
 const BRAND_TEXTURE_NAME: &str = "launcher-brand-logo";
 const CJK_FONT_NAME: &str = "launcher-cjk-font";
+const ICON_FONT_NAME: &str = "launcher-icon-font";
 const BRAND_ICON_SIZE: f32 = 112.0;
 const NAV_CREATE_TEXTURE_NAME: &str = "launcher-nav-create";
 const NAV_PROJECTS_TEXTURE_NAME: &str = "launcher-nav-projects";
 const NAV_HOVER_FILL: egui::Color32 = egui::Color32::from_rgb(58, 58, 58);
 const NAV_HOVER_STROKE: egui::Color32 = egui::Color32::from_rgb(96, 96, 96);
+const ICON_MORE_VERTICAL: &str = "\u{e0b7}";
 
 pub struct Strings {
     pub nav_create: &'static str,
@@ -438,6 +440,18 @@ fn load_cjk_font_bytes() -> Option<Vec<u8>> {
     None
 }
 
+fn load_icon_font_bytes() -> Option<Vec<u8>> {
+    let icon_font = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("bevy_editor_styles")
+        .join("src")
+        .join("assets")
+        .join("icons")
+        .join("Lucide.ttf");
+
+    std::fs::read(icon_font).ok()
+}
+
 fn ensure_fonts(ctx: &egui::Context, ui_state: &mut LauncherUiState) {
     if ui_state.fonts_configured {
         return;
@@ -460,6 +474,17 @@ fn ensure_fonts(ctx: &egui::Context, ui_state: &mut LauncherUiState) {
             .entry(FontFamily::Monospace)
             .or_default()
             .insert(0, CJK_FONT_NAME.to_string());
+    }
+
+    if let Some(icon_font_bytes) = load_icon_font_bytes() {
+        fonts.font_data.insert(
+            ICON_FONT_NAME.to_string(),
+            FontData::from_owned(icon_font_bytes).into(),
+        );
+        fonts.families.insert(
+            FontFamily::Name(ICON_FONT_NAME.into()),
+            vec![ICON_FONT_NAME.to_string()],
+        );
     }
 
     ctx.set_fonts(fonts);
@@ -693,21 +718,27 @@ fn open_project_folder(path: &Path) -> std::io::Result<()> {
 }
 
 fn project_thumbnail(ui: &mut egui::Ui, texture: Option<&TextureHandle>) {
-    egui::Frame::new()
-        .fill(egui::Color32::from_rgb(64, 64, 64))
-        .stroke(egui::Stroke::NONE)
-        .corner_radius(2)
-        .inner_margin(egui::Margin::same(0))
-        .show(ui, |ui| {
-            ui.set_min_size(egui::vec2(72.0, 72.0));
-            ui.centered_and_justified(|ui| {
-                if let Some(texture) = texture {
-                    ui.add(egui::Image::new(texture).fit_to_exact_size(egui::vec2(72.0, 72.0)));
-                } else {
-                    ui.label(egui::RichText::new("BS").size(18.0).strong());
-                }
-            });
-        });
+    let size = egui::vec2(72.0, 72.0);
+    let (rect, _) = ui.allocate_exact_size(size, egui::Sense::hover());
+    let painter = ui.painter();
+    painter.rect_filled(rect, 2.0, egui::Color32::from_rgb(64, 64, 64));
+
+    if let Some(texture) = texture {
+        painter.image(
+            texture.id(),
+            rect,
+            egui::Rect::from_min_max(egui::Pos2::ZERO, egui::pos2(1.0, 1.0)),
+            egui::Color32::WHITE,
+        );
+    } else {
+        painter.text(
+            rect.center(),
+            egui::Align2::CENTER_CENTER,
+            "BS",
+            egui::FontId::proportional(18.0),
+            egui::Color32::from_rgb(220, 220, 220),
+        );
+    }
 }
 
 fn template_preview(ui: &mut egui::Ui, card: &TemplateCard) {
@@ -1241,20 +1272,17 @@ fn render_projects_page(
                                 let project_name =
                                     project.name().unwrap_or_else(|| "Unknown".to_string());
                                 let project_id = project_stable_id(project);
-                                ui.horizontal(|ui| {
-                                    ui.add(
-                                        egui::Label::new(
-                                            egui::RichText::new(project_name).size(18.0).strong(),
-                                        )
-                                        .truncate(),
-                                    );
-                                    ui.add_space(4.0);
-                                    ui.label(
-                                        egui::RichText::new(format!("(ID: {project_id})"))
-                                            .size(14.0)
-                                            .color(TEXT_MUTED),
-                                    );
-                                });
+                                ui.add_sized(
+                                    [info_width, 22.0],
+                                    egui::Label::new(
+                                        egui::RichText::new(format!(
+                                            "{project_name}    (ID: {project_id})"
+                                        ))
+                                        .size(18.0)
+                                        .strong(),
+                                    )
+                                    .truncate(),
+                                );
                                 ui.add_space(4.0);
                                 ui.add_sized(
                                     [info_width, 18.0],
@@ -1290,7 +1318,10 @@ fn render_projects_page(
                             ui.style_mut().spacing.button_padding = egui::vec2(6.0, 2.0);
                             ui.with_layout(egui::Layout::top_down(egui::Align::Max), |ui| {
                                 ui.menu_button(
-                                    egui::RichText::new("⋮").size(18.0).color(TEXT_MUTED),
+                                    egui::RichText::new(ICON_MORE_VERTICAL)
+                                        .family(FontFamily::Name(ICON_FONT_NAME.into()))
+                                        .size(18.0)
+                                        .color(TEXT_MUTED),
                                     |ui| {
                                         if ui.button(i18n.rename_project).clicked() {
                                             ui_state.rename_dialog = Some(RenameProjectDialogState {
