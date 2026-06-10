@@ -549,8 +549,11 @@ fn ensure_nav_textures(ctx: &egui::Context, ui_state: &mut LauncherUiState) {
             load_png_texture(ctx, NAV_CREATE_TEXTURE_NAME, &assets_dir.join("plus.png"));
     }
     if ui_state.nav_projects_texture.is_none() {
-        ui_state.nav_projects_texture =
-            load_png_texture(ctx, NAV_PROJECTS_TEXTURE_NAME, &assets_dir.join("image-off.png"));
+        ui_state.nav_projects_texture = load_png_texture(
+            ctx,
+            NAV_PROJECTS_TEXTURE_NAME,
+            &assets_dir.join("image-off.png"),
+        );
     }
 }
 
@@ -573,13 +576,8 @@ fn nav_button(
     } else {
         egui::Stroke::NONE
     };
-    ui.painter().rect(
-        rect,
-        8.0,
-        fill,
-        stroke,
-        egui::StrokeKind::Inside,
-    );
+    ui.painter()
+        .rect(rect, 8.0, fill, stroke, egui::StrokeKind::Inside);
 
     let icon_rect = egui::Rect::from_center_size(
         egui::pos2(rect.left() + 24.0, rect.center().y),
@@ -626,15 +624,27 @@ pub(super) fn import_project_folder(
     if !is_valid_project_folder(&project_path) {
         push_notification(
             ui_state,
-            format!("{}: {}", i18n.invalid_project_folder, project_path.display()),
+            format!(
+                "{}: {}",
+                i18n.invalid_project_folder,
+                project_path.display()
+            ),
         );
         return;
     }
 
-    if project_list.0.iter().any(|project| project.path == project_path) {
+    if project_list
+        .0
+        .iter()
+        .any(|project| project.path == project_path)
+    {
         push_notification(
             ui_state,
-            format!("{}: {}", i18n.project_already_imported, project_path.display()),
+            format!(
+                "{}: {}",
+                i18n.project_already_imported,
+                project_path.display()
+            ),
         );
         return;
     }
@@ -649,7 +659,10 @@ pub(super) fn import_project_folder(
     let project_name = project_info.name().unwrap_or_else(|| "Unknown".to_string());
     project_list.0.push(project_info);
     set_project_list(project_list.0.clone());
-    push_notification(ui_state, format!("{}: {project_name}", i18n.imported_project));
+    push_notification(
+        ui_state,
+        format!("{}: {project_name}", i18n.imported_project),
+    );
 }
 
 pub(super) fn project_modified_at(project: &ProjectInfo) -> String {
@@ -728,8 +741,10 @@ pub fn render_launcher_ui(
                         ui.add_space(8.0);
                         if let Some(texture) = &ui_state.brand_texture {
                             ui.add(
-                                egui::Image::new(texture)
-                                    .fit_to_exact_size(egui::vec2(BRAND_ICON_SIZE, BRAND_ICON_SIZE)),
+                                egui::Image::new(texture).fit_to_exact_size(egui::vec2(
+                                    BRAND_ICON_SIZE,
+                                    BRAND_ICON_SIZE,
+                                )),
                             );
                         }
                         ui.add_space(8.0);
@@ -786,7 +801,13 @@ pub fn render_launcher_ui(
         .show(ctx, |ui| match ui_state.page {
             LauncherPage::Create => templates::render_create_page(ui, &mut ui_state, &i18n),
             LauncherPage::Projects => {
-                projects::render_projects_page(ui, &mut project_list, &mut ui_state, &mut exit, &i18n);
+                projects::render_projects_page(
+                    ui,
+                    &mut project_list,
+                    &mut ui_state,
+                    &mut exit,
+                    &i18n,
+                );
             }
         });
 

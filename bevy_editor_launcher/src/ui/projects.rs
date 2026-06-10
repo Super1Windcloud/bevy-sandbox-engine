@@ -59,15 +59,15 @@ fn render_project_card_menu(
     project_list: &ProjectInfoList,
     i18n: &Strings,
 ) -> Option<PathBuf> {
-    let Some((project_path, anchor, just_opened)) = ui_state.project_card_menu.as_ref().map(
-        |menu_state| {
+    let Some((project_path, anchor, just_opened)) =
+        ui_state.project_card_menu.as_ref().map(|menu_state| {
             (
                 menu_state.project_path.clone(),
                 menu_state.anchor,
                 menu_state.just_opened,
             )
-        },
-    ) else {
+        })
+    else {
         return None;
     };
 
@@ -145,10 +145,16 @@ fn render_project_card(
     i18n: &Strings,
 ) -> (egui::Response, Option<egui::Rect>) {
     let card_rect = ui
-        .allocate_exact_size(egui::vec2(ui.available_width(), 100.0), egui::Sense::hover())
+        .allocate_exact_size(
+            egui::vec2(ui.available_width(), 100.0),
+            egui::Sense::hover(),
+        )
         .0;
 
-    let pointer_pos = ui.ctx().pointer_hover_pos().filter(|pos| card_rect.contains(*pos));
+    let pointer_pos = ui
+        .ctx()
+        .pointer_hover_pos()
+        .filter(|pos| card_rect.contains(*pos));
     let normalized = pointer_pos.map(|pointer| {
         let local = pointer - card_rect.min;
         let nx = ((local.x / card_rect.width()) - 0.5).clamp(-0.5, 0.5);
@@ -190,7 +196,11 @@ fn render_project_card(
     ui.allocate_ui_at_rect(inner_rect.translate(text_offset), |ui| {
         ui.set_clip_rect(card_rect.shrink(2.0));
         ui.horizontal_top(|ui| {
-            project_thumbnail(ui, ui_state.brand_texture.as_ref(), thumb_offset - text_offset);
+            project_thumbnail(
+                ui,
+                ui_state.brand_texture.as_ref(),
+                thumb_offset - text_offset,
+            );
             ui.add_space(14.0);
 
             let info_width = (ui.available_width() - 34.0).max(160.0);
@@ -258,7 +268,10 @@ fn render_project_card(
     let clickable_rect = if let Some(menu_rect) = menu_rect {
         egui::Rect::from_min_max(
             card_rect.min,
-            egui::pos2((menu_rect.min.x - 8.0).max(card_rect.min.x), card_rect.max.y),
+            egui::pos2(
+                (menu_rect.min.x - 8.0).max(card_rect.min.x),
+                card_rect.max.y,
+            ),
         )
     } else {
         card_rect

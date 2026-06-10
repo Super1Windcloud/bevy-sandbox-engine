@@ -54,7 +54,7 @@ impl Plugin for Viewport2dPanePlugin {
                 },
             );
 
-        app.register_pane("Viewport 2D", on_pane_creation);
+        app.register_pane("Game", on_pane_creation);
     }
 }
 
@@ -103,7 +103,7 @@ fn on_pane_creation(
         .id();
 
     commands.entity(structure.header).with_children(|parent| {
-        parent.spawn((Text::new("2D Viewport"), ThemedText));
+        parent.spawn((Text::new("游戏"), ThemedText));
     });
 
     commands.entity(structure.content).insert(Node {

@@ -6,9 +6,10 @@ use bevy_egui::egui::{self, TextureHandle};
 use super::*;
 
 fn template_tab(ui: &mut egui::Ui, active: bool, label: &str) -> egui::Response {
-    let text = egui::RichText::new(label)
-        .size(20.0)
-        .color(if active { TAB_ACTIVE } else { TAB_INACTIVE });
+    let text =
+        egui::RichText::new(label)
+            .size(20.0)
+            .color(if active { TAB_ACTIVE } else { TAB_INACTIVE });
     ui.add(
         egui::Button::new(text)
             .fill(egui::Color32::TRANSPARENT)
@@ -108,7 +109,11 @@ fn template_card(ui: &mut egui::Ui, card: &TemplateCard, ui_state: &mut Launcher
     });
 }
 
-pub(super) fn render_create_page(ui: &mut egui::Ui, ui_state: &mut LauncherUiState, i18n: &Strings) {
+pub(super) fn render_create_page(
+    ui: &mut egui::Ui,
+    ui_state: &mut LauncherUiState,
+    i18n: &Strings,
+) {
     ensure_project_templates(ui_state);
 
     ui.horizontal(|ui| {

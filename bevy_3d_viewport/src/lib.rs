@@ -74,7 +74,7 @@ impl Plugin for Viewport3dPanePlugin {
                 },
             );
 
-        app.register_pane("Viewport 3D", on_pane_creation);
+        app.register_pane("Scene", on_pane_creation);
     }
 }
 
@@ -178,7 +178,7 @@ fn on_pane_creation(
     commands.spawn((pointer_id, ChildOf(structure.root)));
 
     commands.entity(structure.header).with_children(|parent| {
-        parent.spawn(Text::new("3D Viewport"));
+        parent.spawn(Text::new("场景"));
     });
 
     let image_entity = commands

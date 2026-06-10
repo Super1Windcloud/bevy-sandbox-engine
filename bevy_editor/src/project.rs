@@ -275,9 +275,10 @@ fn run_compat_project(project: &ProjectInfo) -> std::io::Result<()> {
 
 fn find_editor_binary() -> Option<PathBuf> {
     let current_exe = std::env::current_exe().ok()?;
-    let candidate = current_exe
-        .parent()?
-        .join(format!("bevy-sandbox-engine{}", std::env::consts::EXE_SUFFIX));
+    let candidate = current_exe.parent()?.join(format!(
+        "bevy-sandbox-engine{}",
+        std::env::consts::EXE_SUFFIX
+    ));
 
     candidate.is_file().then_some(candidate)
 }

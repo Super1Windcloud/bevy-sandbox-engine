@@ -26,7 +26,7 @@ impl Plugin for AssetBrowserPanePlugin {
         embedded_asset!(app, "assets/source_icon.png");
         embedded_asset!(app, "assets/file_icon.png");
 
-        app.register_pane("Asset Browser", ui::on_pane_creation);
+        app.register_pane("Project", ui::on_pane_creation);
 
         // Fetch the AssetPlugin file path, this is used to create assets at the correct location
         let default_source_absolute_file_path = {

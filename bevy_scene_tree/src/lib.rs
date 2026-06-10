@@ -10,7 +10,7 @@ pub struct SceneTreePlugin;
 
 impl Plugin for SceneTreePlugin {
     fn build(&self, app: &mut App) {
-        app.register_pane("Scene Tree", setup_pane)
+        app.register_pane("Hierarchy", setup_pane)
             .add_systems(PostUpdate, update_scene_tree);
     }
 }
@@ -20,6 +20,14 @@ impl Plugin for SceneTreePlugin {
 struct SceneTreeRoot;
 
 fn setup_pane(pane: In<PaneStructure>, mut commands: Commands) {
+    commands.entity(pane.header).with_children(|parent| {
+        parent.spawn((
+            Text::new("层级"),
+            TextFont::from_font_size(12.0),
+            TextColor(Color::srgb(0.86, 0.86, 0.88)),
+        ));
+    });
+
     commands
         .entity(pane.content)
         .insert((
@@ -31,7 +39,7 @@ fn setup_pane(pane: In<PaneStructure>, mut commands: Commands) {
                 padding: UiRect::all(Val::Px(8.0)),
                 ..Default::default()
             },
-            BackgroundColor(tailwind::NEUTRAL_600.into()),
+            BackgroundColor(Color::srgb(0.14, 0.14, 0.15)),
         ))
         .observe(
             |mut trigger: On<Pointer<Click>>, mut selection: ResMut<EditorSelection>| {
@@ -88,10 +96,10 @@ fn scene_tree_row_for_entity(
                 padding: UiRect::new(Val::Px(4.0 + indentation_px as f32), Val::Px(4.0), Val::Px(2.0), Val::Px(2.0)),
                 align_items: AlignItems::Center,
                 flex_direction: FlexDirection::Row,
-                border_radius: BorderRadius::all(Val::Px(4.0)),
+                border_radius: BorderRadius::all(Val::Px(3.0)),
                 ..default()
             },
-            BackgroundColor(if selection.contains(entity) { tailwind::BLUE_600.into() } else { Color::NONE }),
+            BackgroundColor(if selection.contains(entity) { Color::srgb(0.24, 0.30, 0.38) } else { Color::NONE }),
         ) => [
             on(selection_handler);
             // Indentation spacer

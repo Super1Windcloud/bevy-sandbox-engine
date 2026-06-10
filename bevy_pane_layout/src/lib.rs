@@ -120,23 +120,41 @@ fn setup(
         .insert(ChildOf(*panes_root))
         .id();
 
-    let sub_divider = spawn_divider(&mut commands, Divider::Vertical, 0.2)
+    let left_sidebar = spawn_divider(&mut commands, Divider::Vertical, 0.18)
         .insert(ChildOf(divider))
         .id();
 
-    spawn_pane(&mut commands, &theme, 0.4, "Scene Tree").insert(ChildOf(sub_divider));
-    spawn_resize_handle(&mut commands, Divider::Vertical).insert(ChildOf(sub_divider));
-    spawn_pane(&mut commands, &theme, 0.6, "Properties").insert(ChildOf(sub_divider));
+    spawn_pane(&mut commands, &theme, 0.50, "Hierarchy").insert(ChildOf(left_sidebar));
+    spawn_resize_handle(&mut commands, Divider::Vertical).insert(ChildOf(left_sidebar));
+    spawn_pane(&mut commands, &theme, 0.50, "Asset Store").insert(ChildOf(left_sidebar));
 
     spawn_resize_handle(&mut commands, Divider::Horizontal).insert(ChildOf(divider));
 
-    let asset_browser_divider = spawn_divider(&mut commands, Divider::Vertical, 0.8)
+    let center_workspace = spawn_divider(&mut commands, Divider::Vertical, 0.62)
         .insert(ChildOf(divider))
         .id();
 
-    spawn_pane(&mut commands, &theme, 0.70, "Viewport 3D").insert(ChildOf(asset_browser_divider));
-    spawn_resize_handle(&mut commands, Divider::Vertical).insert(ChildOf(asset_browser_divider));
-    spawn_pane(&mut commands, &theme, 0.30, "Asset Browser").insert(ChildOf(asset_browser_divider));
+    let viewport_stack = spawn_divider(&mut commands, Divider::Horizontal, 0.70)
+        .insert(ChildOf(center_workspace))
+        .id();
+
+    spawn_pane(&mut commands, &theme, 0.67, "Scene").insert(ChildOf(viewport_stack));
+    spawn_resize_handle(&mut commands, Divider::Horizontal).insert(ChildOf(viewport_stack));
+    spawn_pane(&mut commands, &theme, 0.33, "Game").insert(ChildOf(viewport_stack));
+
+    spawn_resize_handle(&mut commands, Divider::Vertical).insert(ChildOf(center_workspace));
+
+    let bottom_stack = spawn_divider(&mut commands, Divider::Horizontal, 0.30)
+        .insert(ChildOf(center_workspace))
+        .id();
+
+    spawn_pane(&mut commands, &theme, 0.72, "Project").insert(ChildOf(bottom_stack));
+    spawn_resize_handle(&mut commands, Divider::Horizontal).insert(ChildOf(bottom_stack));
+    spawn_pane(&mut commands, &theme, 0.28, "Console").insert(ChildOf(bottom_stack));
+
+    spawn_resize_handle(&mut commands, Divider::Horizontal).insert(ChildOf(divider));
+
+    spawn_pane(&mut commands, &theme, 0.20, "Inspector").insert(ChildOf(divider));
 }
 
 /// Removes a divider from the hierarchy when it has only one child left, replacing itself with that child.

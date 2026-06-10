@@ -11,7 +11,7 @@ pub struct PropertiesPanePlugin;
 
 impl Plugin for PropertiesPanePlugin {
     fn build(&self, app: &mut App) {
-        app.register_pane("Properties", setup_pane).add_systems(
+        app.register_pane("Inspector", setup_pane).add_systems(
             Update,
             (update_properties_pane.run_if(
                 primary_selection_changed.or(any_match_filter::<Added<PropertiesPaneBody>>),
@@ -26,7 +26,7 @@ struct PropertiesPaneBody;
 
 fn setup_pane(pane: In<PaneStructure>, mut commands: Commands) {
     commands.entity(pane.header).with_children(|parent| {
-        parent.spawn((Text::new("Properties"), ThemedText));
+        parent.spawn((Text::new("检查器"), ThemedText));
     });
 
     commands.entity(pane.content).insert((
