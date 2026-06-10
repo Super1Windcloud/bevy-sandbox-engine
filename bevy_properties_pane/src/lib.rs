@@ -2,7 +2,7 @@
 
 use bevy::{feathers::theme::ThemedText, prelude::*, reflect::*};
 use bevy_editor_core::selection::{EditorSelection, common_conditions::primary_selection_changed};
-use bevy_editor_styles::Theme;
+use bevy_editor_styles::{EditorLocale, Theme};
 use bevy_i_cant_believe_its_not_bsn::{Template, TemplateEntityCommandsExt, template};
 use bevy_pane_layout::prelude::*;
 
@@ -25,8 +25,13 @@ impl Plugin for PropertiesPanePlugin {
 struct PropertiesPaneBody;
 
 fn setup_pane(pane: In<PaneStructure>, mut commands: Commands) {
+    let title = match EditorLocale::detect() {
+        EditorLocale::ZhCn => "检查器",
+        EditorLocale::EnUs => "Inspector",
+    };
+
     commands.entity(pane.header).with_children(|parent| {
-        parent.spawn((Text::new("检查器"), ThemedText));
+        parent.spawn((Text::new(title), ThemedText));
     });
 
     commands.entity(pane.content).insert((
@@ -55,6 +60,11 @@ fn update_properties_pane(
 }
 
 fn properties_pane(selection: &EditorSelection, theme: &Theme, world: &World) -> Template {
+    let empty_text = match EditorLocale::detect() {
+        EditorLocale::ZhCn => "选择一个对象以查看属性",
+        EditorLocale::EnUs => "Select an entity to inspect",
+    };
+
     match selection.primary() {
         Some(selection) => template! {
             (
@@ -80,7 +90,7 @@ fn properties_pane(selection: &EditorSelection, theme: &Theme, world: &World) ->
                 }
             ) => [
                 (
-                    Text::new("Select an entity to inspect"),
+                    Text::new(empty_text),
                     TextFont::from_font_size(14.0),
                     TextColor(Color::srgb(0.514, 0.514, 0.522)),
                 );
@@ -171,7 +181,10 @@ fn component_list(entity: Entity, theme: &Theme, world: &World) -> Template {
                                 }
                             ) => [
                                 (
-                                    Text::new("<reflection unavailable>"),
+                                    Text::new(match EditorLocale::detect() {
+                                        EditorLocale::ZhCn => "<无反射信息>",
+                                        EditorLocale::EnUs => "<reflection unavailable>",
+                                    }),
                                     TextFont::from_font_size(11.0),
                                     TextColor(Color::srgb(0.514, 0.514, 0.522)),
                                 );
@@ -252,12 +265,17 @@ fn reflected_struct(struct_info: &StructInfo, reflect: &dyn Reflect, _theme: &Th
 }
 
 fn reflected_tuple_struct(tuple_struct_info: &TupleStructInfo, _theme: &Theme) -> Template {
+    let todo_label = match EditorLocale::detect() {
+        EditorLocale::ZhCn => "待实现",
+        EditorLocale::EnUs => "TODO",
+    };
+
     tuple_struct_info
         .iter()
         .flat_map(|_field| {
             template! {
                 (
-                    Text::new("TODO"),
+                    Text::new(todo_label),
                     TextFont::from_font_size(10.0),
                 );
             }

@@ -21,9 +21,31 @@
 //! }
 //! ```
 use bevy::{asset::embedded_asset, prelude::*};
+use sys_locale::get_locale;
 
 pub mod colors;
 pub mod icons;
+
+/// Supported UI locales for the editor.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum EditorLocale {
+    /// Simplified Chinese.
+    ZhCn,
+    /// English (US fallback).
+    EnUs,
+}
+
+impl EditorLocale {
+    /// Detect the preferred editor locale from the current system locale.
+    pub fn detect() -> Self {
+        let locale = get_locale().unwrap_or_else(|| "en-US".to_string());
+        if locale.to_ascii_lowercase().starts_with("zh") {
+            Self::ZhCn
+        } else {
+            Self::EnUs
+        }
+    }
+}
 
 /// The Pallet Plugin.
 pub struct StylesPlugin;
@@ -168,8 +190,7 @@ impl FromWorld for Theme {
                 low_priority: EditorColors::TEXT_MUTED,
                 text_color: EditorColors::TEXT_PRIMARY,
                 high_priority: EditorColors::ACCENT_BLUE,
-                font: asset_server
-                    .load("embedded://bevy_editor_styles/assets/fonts/Inter-Regular.ttf"),
+                font: asset_server.load("fonts/NotoSansCJKsc-Regular.otf"),
             },
             icon: IconStyles {
                 font: asset_server.load("embedded://bevy_editor_styles/assets/icons/Lucide.ttf"),

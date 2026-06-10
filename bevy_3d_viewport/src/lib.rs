@@ -12,7 +12,7 @@ use bevy::{
     ui::ui_layout_system,
 };
 use bevy_editor_cam::prelude::{DefaultEditorCamPlugins, EditorCam};
-use bevy_editor_styles::Theme;
+use bevy_editor_styles::{EditorLocale, Theme};
 use bevy_infinite_grid::{InfiniteGrid, InfiniteGridPlugin, InfiniteGridSettings};
 use bevy_pane_layout::{components::fit_to_parent, prelude::*};
 use bevy_transform_gizmos::{TransformGizmo, prelude::*};
@@ -178,7 +178,10 @@ fn on_pane_creation(
     commands.spawn((pointer_id, ChildOf(structure.root)));
 
     commands.entity(structure.header).with_children(|parent| {
-        parent.spawn(Text::new("场景"));
+        parent.spawn(Text::new(match EditorLocale::detect() {
+            EditorLocale::ZhCn => "场景",
+            EditorLocale::EnUs => "Scene",
+        }));
     });
 
     let image_entity = commands

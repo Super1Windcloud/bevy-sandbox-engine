@@ -7,7 +7,7 @@ use bevy::{
     ui::ui_layout_system,
 };
 use bevy_editor_camera::{EditorCamera2d, EditorCamera2dPlugin};
-use bevy_editor_styles::Theme;
+use bevy_editor_styles::{EditorLocale, Theme};
 use bevy_infinite_grid::{InfiniteGrid, InfiniteGridPlugin, InfiniteGridSettings};
 use bevy_pane_layout::{components::fit_to_parent, prelude::*};
 
@@ -103,7 +103,13 @@ fn on_pane_creation(
         .id();
 
     commands.entity(structure.header).with_children(|parent| {
-        parent.spawn((Text::new("游戏"), ThemedText));
+        parent.spawn((
+            Text::new(match EditorLocale::detect() {
+                EditorLocale::ZhCn => "游戏",
+                EditorLocale::EnUs => "Game",
+            }),
+            ThemedText,
+        ));
     });
 
     commands.entity(structure.content).insert(Node {

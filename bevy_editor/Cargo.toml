@@ -32,6 +32,7 @@ rfd.workspace = true
 regex = "1.12.2"
 rquickjs = "0.9.0"
 walkdir = "2.5.0"
+sys-locale = "0.3"
 
 [lints]
 workspace = true

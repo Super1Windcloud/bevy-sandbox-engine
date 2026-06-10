@@ -1,5 +1,5 @@
 use bevy::{feathers::cursor::EntityCursor, prelude::*, window::SystemCursorIcon};
-use bevy_editor_styles::Theme;
+use bevy_editor_styles::{EditorLocale, Theme};
 
 use crate::{AssetBrowserLocation, io};
 
@@ -77,7 +77,10 @@ pub fn spawn_location_path_ui<'a>(
 
     spawn_path_segment_ui(
         commands,
-        "Sources".to_string(),
+        match EditorLocale::detect() {
+            EditorLocale::ZhCn => "资源源".to_string(),
+            EditorLocale::EnUs => "Sources".to_string(),
+        },
         theme.as_ref(),
         LocationSegmentType::Root,
     )

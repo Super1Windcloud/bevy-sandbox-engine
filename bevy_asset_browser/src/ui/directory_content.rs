@@ -1,6 +1,6 @@
 use bevy::{asset::io::AssetSourceId, prelude::*};
 use bevy_context_menu::{ContextMenu, ContextMenuOption};
-use bevy_editor_styles::Theme;
+use bevy_editor_styles::{EditorLocale, Theme};
 use bevy_scroll_box::{ScrollBox, ScrollBoxContent, spawn_scroll_box};
 
 use crate::{AssetBrowserLocation, DefaultSourceFilePath, DirectoryContent, Entry, io};
@@ -63,14 +63,28 @@ pub(crate) fn refresh_context_menu(
 }
 
 fn asset_browser_context_menu() -> ContextMenu {
+    let locale = EditorLocale::detect();
+    let create_folder = match locale {
+        EditorLocale::ZhCn => "创建文件夹",
+        EditorLocale::EnUs => "Create Folder",
+    };
+    let create_script = match locale {
+        EditorLocale::ZhCn => "创建脚本",
+        EditorLocale::EnUs => "Create New Script",
+    };
+    let open_manager = match locale {
+        EditorLocale::ZhCn => "在文件管理器中打开",
+        EditorLocale::EnUs => "Open in File Manager",
+    };
+
     ContextMenu::new([
-        ContextMenuOption::new("Create Folder", |mut commands, _entity| {
+        ContextMenuOption::new(create_folder, |mut commands, _entity| {
             commands.run_system_cached(create_new_folder);
         }),
-        ContextMenuOption::new("Create New Script", |mut commands, _entity| {
+        ContextMenuOption::new(create_script, |mut commands, _entity| {
             commands.run_system_cached(create_new_script);
         }),
-        ContextMenuOption::new("Open in File Manager", |mut commands, _entity| {
+        ContextMenuOption::new(open_manager, |mut commands, _entity| {
             commands.run_system_cached(open_in_file_manager);
         }),
     ])

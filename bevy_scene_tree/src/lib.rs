@@ -2,6 +2,7 @@
 
 use bevy::{app::Plugin, color::palettes::tailwind, prelude::*};
 use bevy_editor_core::selection::EditorSelection;
+use bevy_editor_styles::EditorLocale;
 use bevy_i_cant_believe_its_not_bsn::{Template, TemplateEntityCommandsExt, on, template};
 use bevy_pane_layout::prelude::{PaneAppExt, PaneStructure};
 
@@ -20,9 +21,14 @@ impl Plugin for SceneTreePlugin {
 struct SceneTreeRoot;
 
 fn setup_pane(pane: In<PaneStructure>, mut commands: Commands) {
+    let title = match EditorLocale::detect() {
+        EditorLocale::ZhCn => "层级",
+        EditorLocale::EnUs => "Hierarchy",
+    };
+
     commands.entity(pane.header).with_children(|parent| {
         parent.spawn((
-            Text::new("层级"),
+            Text::new(title),
             TextFont::from_font_size(12.0),
             TextColor(Color::srgb(0.86, 0.86, 0.88)),
         ));
