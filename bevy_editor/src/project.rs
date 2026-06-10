@@ -63,22 +63,34 @@ pub async fn create_new_project(
     template_id: String,
     path: PathBuf,
 ) -> std::io::Result<ProjectInfo> {
-    let info = ProjectInfo {
-        path,
-        kind: ProjectKind::Rust,
-        display_name: None,
-        last_opened: SystemTime::now(),
-    };
+    let path = path;
 
-    if let Err(error) = copy_template(&template_id, info.path.as_path()).await {
+    if let Err(error) = copy_template(&template_id, path.as_path()).await {
         error!("Failed to create new project");
         return Err(error);
     }
 
-    if let Err(error) = rewrite_template_dependency_paths(info.path.as_path()) {
+    if let Err(error) = rewrite_template_dependency_paths(path.as_path()) {
         error!("Failed to rewrite template dependency paths");
         return Err(error);
     }
+
+    let kind = detect_project_kind(path.as_path()).ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!(
+                "Template `{template_id}` did not produce a supported project layout at {}",
+                path.display()
+            ),
+        )
+    })?;
+
+    let info = ProjectInfo {
+        path,
+        kind,
+        display_name: None,
+        last_opened: SystemTime::now(),
+    };
 
     let mut projects = get_local_projects();
     projects.push(info.clone());

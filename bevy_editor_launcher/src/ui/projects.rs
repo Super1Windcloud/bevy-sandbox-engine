@@ -14,7 +14,6 @@ fn project_thumbnail(ui: &mut egui::Ui, texture: Option<&TextureHandle>, offset:
     let (rect, _) = ui.allocate_exact_size(size, egui::Sense::hover());
     let draw_rect = rect.translate(offset);
     let painter = ui.painter();
-    painter.rect_filled(draw_rect, 2.0, egui::Color32::from_rgb(64, 64, 64));
 
     if let Some(texture) = texture {
         painter.image(
