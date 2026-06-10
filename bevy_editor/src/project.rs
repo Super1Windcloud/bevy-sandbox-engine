@@ -245,7 +245,7 @@ fn run_compat_project(project: &ProjectInfo) -> std::io::Result<()> {
         .current_dir(workspace_root)
         .arg("run")
         .arg("-p")
-        .arg("bevy_editor_launcher")
+        .arg("bevy-sandbox-engine-launcher")
         .arg("--example")
         .arg("simple_editor")
         .env(COMPAT_PROJECT_ROOT_ENV, &project.path);

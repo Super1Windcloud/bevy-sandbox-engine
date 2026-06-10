@@ -24,6 +24,7 @@ use bevy::render::{
     RenderPlugin,
     settings::{RenderCreation, WgpuSettings},
 };
+use bevy::window::{WindowCloseRequested, WindowClosed};
 use bevy::window::{MonitorSelection, PrimaryWindow, WindowMode, WindowPlugin, WindowPosition};
 use bevy::{
     feathers::{FeathersPlugin, dark_theme::create_dark_theme, theme::UiTheme},
@@ -63,7 +64,23 @@ fn show_primary_window_when_ready(
     frame_count: Res<FrameCount>,
 ) {
     if !primary_window.visible && frame_count.0 >= SHOW_WINDOW_AFTER_FRAMES {
+        info!(
+            "Showing primary editor window at frame {}",
+            frame_count.0
+        );
         primary_window.visible = true;
+    }
+}
+
+fn log_window_close_requested(mut events: MessageReader<WindowCloseRequested>) {
+    for event in events.read() {
+        warn!("Editor window close requested for entity {:?}", event.window);
+    }
+}
+
+fn log_window_closed(mut events: MessageReader<WindowClosed>) {
+    for event in events.read() {
+        warn!("Editor window closed for entity {:?}", event.window);
     }
 }
 
@@ -109,7 +126,14 @@ impl Plugin for RuntimePlugin {
                     .set(render_plugin),
             )
             .insert_resource(ClearColor(APP_WINDOW_BG))
-            .add_systems(Update, show_primary_window_when_ready);
+            .add_systems(
+                Update,
+                (
+                    show_primary_window_when_ready,
+                    log_window_close_requested,
+                    log_window_closed,
+                ),
+            );
     }
 }
 

@@ -401,7 +401,7 @@ pub(super) fn render_projects_page(
             let over_menu = pointer_pos
                 .zip(menu_rect)
                 .is_some_and(|(pointer_pos, menu_rect)| menu_rect.contains(pointer_pos));
-            if card_response.double_clicked() && !over_menu {
+            if card_response.clicked() && !over_menu {
                 if !Path::new(&project.path).exists() {
                     let project_name = project.name().unwrap_or_else(|| "Unknown".to_string());
                     push_notification(
