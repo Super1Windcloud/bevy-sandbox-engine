@@ -1480,9 +1480,24 @@ fn render_projects_page(
                         });
                     });
                 });
-            let card_response = frame_response
-                .response
-                .interact(egui::Sense::click())
+            let card_rect = frame_response.response.rect;
+            let clickable_rect = if let Some(menu_rect) = menu_rect {
+                egui::Rect::from_min_max(
+                    card_rect.min,
+                    egui::pos2(
+                        (menu_rect.min.x - 8.0).max(card_rect.min.x),
+                        card_rect.max.y,
+                    ),
+                )
+            } else {
+                card_rect
+            };
+            let card_response = ui
+                .interact(
+                    clickable_rect,
+                    ui.make_persistent_id(("project_card", &project.path)),
+                    egui::Sense::click(),
+                )
                 .on_hover_cursor(egui::CursorIcon::PointingHand);
             let pointer_pos = card_response.interact_pointer_pos();
             let over_menu = pointer_pos

@@ -1,17 +1,19 @@
 //! Compatibility layer for importing external non-Rust projects.
 
 use std::{
-    collections::BTreeSet,
+    collections::{BTreeMap, BTreeSet},
     fs,
     path::{Path, PathBuf},
 };
 
 use bevy::{
+    color::palettes::tailwind,
     log::{error, info, warn},
     prelude::*,
 };
 use regex::Regex;
 use rquickjs::{Context, Runtime, function::Func};
+use serde_json::json;
 use walkdir::WalkDir;
 
 pub const COMPAT_PROJECT_ROOT_ENV: &str = "BEVY_COMPAT_PROJECT_ROOT";
@@ -48,8 +50,36 @@ class Vector3 {
         return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
     }
 
+    get normalized() {
+        const length = this.magnitude;
+        if (length === 0) {
+            return new Vector3();
+        }
+
+        return new Vector3(this.x / length, this.y / length, this.z / length);
+    }
+
     Mul(scale) {
         return new Vector3(this.x * scale, this.y * scale, this.z * scale);
+    }
+
+    Add(other) {
+        return new Vector3(this.x + other.x, this.y + other.y, this.z + other.z);
+    }
+
+    EqualsTo(other) {
+        return this.x === other.x && this.y === other.y && this.z === other.z;
+    }
+
+    static Distance(a, b) {
+        return new Vector3(a.x - b.x, a.y - b.y, a.z - b.z).magnitude;
+    }
+}
+
+class Vector2 {
+    constructor(x = 0, y = 0) {
+        this.x = x;
+        this.y = y;
     }
 }
 
@@ -62,6 +92,14 @@ class Quaternion {
     }
 
     static LookRotation(_direction) {
+        return new Quaternion();
+    }
+
+    static get identity() {
+        return new Quaternion();
+    }
+
+    static FromEuler(_euler) {
         return new Quaternion();
     }
 
@@ -87,10 +125,39 @@ class Transform extends EngineObject {
         this.rotation = new Quaternion();
         this.localRotation = new Quaternion();
         this.forward = new Vector3(0, 0, 1);
+        this.parent = null;
+        this.children = [];
+        this.gameObject = null;
     }
 
-    FindChild(_name) {
-        return new Transform();
+    get childCount() {
+        return this.children.length;
+    }
+
+    FindChild(name) {
+        return this.children.find((child) => child.name === name) ?? new Transform();
+    }
+
+    GetChild(index) {
+        return this.children[index] ?? new Transform();
+    }
+
+    addChild(transform) {
+        transform.parent = this;
+        this.children.push(transform);
+    }
+
+    SetParent(parent, _keepWorldPosition = false) {
+        if (parent) {
+            parent.addChild(this);
+        }
+    }
+
+    LookAt(_pos, _up = new Vector3(0, 1, 0)) {}
+
+    SetPositionAndRotation(pos, rot) {
+        this.position = pos;
+        this.rotation = rot;
     }
 }
 
@@ -99,14 +166,40 @@ class GameObject extends EngineObject {
         super(name);
         this.transform = new Transform();
         this.transform.gameObject = this;
+        this.transform.name = name;
+        this.enable = true;
+        this._components = new Map();
     }
 
-    GetComponent(_type) {
+    GetComponent(type) {
+        const typeName = typeof type === "string" ? type : type?.name;
+        if (!typeName) {
+            return null;
+        }
+
+        if (this._components.has(typeName)) {
+            return this._components.get(typeName);
+        }
+
+        const fallback = __compat.createNativeComponent(typeName, this);
+        if (fallback) {
+            this._components.set(typeName, fallback);
+            return fallback;
+        }
+
         return null;
     }
 
-    AddComponent(_type) {
-        return null;
+    AddComponent(type) {
+        const typeName = typeof type === "string" ? type : type?.name;
+        const ctor = globalThis[typeName];
+        if (typeof ctor !== "function") {
+            return null;
+        }
+
+        const instance = new ctor();
+        __compat.attachComponent(this, instance, typeName);
+        return instance;
     }
 
     static Instantiate(_origin, _position, _rotation, _parent) {
@@ -114,6 +207,12 @@ class GameObject extends EngineObject {
     }
 
     static DestroyGameObject(_go) {}
+
+    static DestroyComponent(component) {
+        if (component) {
+            component.enable = false;
+        }
+    }
 }
 
 class Component extends EngineObject {
@@ -121,6 +220,7 @@ class Component extends EngineObject {
         super("Component");
         this._gameObject = new GameObject("ScriptHost");
         this._transform = this._gameObject.transform;
+        this.enable = true;
     }
 
     get transform() {
@@ -137,6 +237,146 @@ class CharacterController extends Component {
         __rust_log("info", "CharacterController.SimpleMove " + JSON.stringify(direction));
     }
 }
+
+class CharacterHealth extends Component {
+    constructor() {
+        super();
+        this.IsDead = false;
+    }
+
+    RefresHealth() {
+        this.IsDead = false;
+    }
+}
+
+class Ray {
+    constructor() {
+        this.direction = new Vector3(0, 0, 1);
+    }
+}
+
+class Camera extends Component {
+    ScreenPointToRay(_point) {
+        return new Ray();
+    }
+
+    WorldPointToScreen(point) {
+        return new Vector3(point.x, point.y, point.z);
+    }
+
+    static get mainCamera() {
+        if (!Camera.__mainCamera) {
+            Camera.__mainCamera = new Camera();
+        }
+        return Camera.__mainCamera;
+    }
+}
+
+class RectTransform extends Transform {}
+
+class Image extends Component {
+    constructor() {
+        super();
+        this.rectTransform = new RectTransform();
+    }
+}
+
+class UIComponent extends Component {
+    constructor() {
+        super();
+        this.canvas = {
+            FindChild: (_type, name) => {
+                const image = new Image();
+                image.name = name;
+                return image;
+            }
+        };
+    }
+}
+
+class ParticleSystem extends Component {
+    Play() {}
+}
+
+class AudioSource extends Component {
+    Play() {}
+}
+
+class FABRIK extends Component {
+    constructor() {
+        super();
+        this.target = null;
+    }
+}
+
+class Prefab extends EngineObject {
+    constructor(name = "Prefab") {
+        super(name);
+    }
+
+    Instance() {
+        return new GameObject(`${this.name}_Instance`);
+    }
+}
+
+class List {
+    constructor(_type) {
+        this._items = [];
+    }
+
+    get count() {
+        return this._items.length;
+    }
+
+    Add(value) {
+        this._items.push(value);
+    }
+
+    get(index) {
+        return this._items[index];
+    }
+}
+
+class Input {
+    static get mousePosition() {
+        return new Vector2(0, 0);
+    }
+
+    static GetKey(_key) {
+        return false;
+    }
+
+    static GetKeyDown(_key) {
+        return false;
+    }
+
+    static GetKeyUp(_key) {
+        return false;
+    }
+
+    static GetMouseButton(_button) {
+        return false;
+    }
+
+    static GetMouseButtonDown(_button) {
+        return false;
+    }
+
+    static GetMouseButtonUp(_button) {
+        return false;
+    }
+}
+
+globalThis.KeyCode = {
+    W: "W",
+    A: "A",
+    S: "S",
+    D: "D"
+};
+
+globalThis.MouseButton = {
+    LeftButton: "LeftButton"
+};
 
 globalThis.Debug = {
     Log: (...args) => __rust_log("info", args.join(" ")),
@@ -160,12 +400,70 @@ globalThis.Time = {
     deltaTime: 1 / 60,
     fixedDeltaTime: 1 / 60
 };
+
+globalThis.__compat = {
+    attachComponent(gameObject, component, typeName) {
+        component._gameObject = gameObject;
+        component._transform = gameObject.transform;
+        component.name = typeName;
+        gameObject._components.set(typeName, component);
+    },
+
+    createNativeComponent(typeName, gameObject) {
+        const ctor = globalThis[typeName];
+        if (typeof ctor !== "function") {
+            return null;
+        }
+
+        if (!(ctor.prototype instanceof Component)) {
+            return null;
+        }
+
+        const instance = new ctor();
+        this.attachComponent(gameObject, instance, typeName);
+        return instance;
+    },
+
+    createNodeHost(nodeName, componentNames) {
+        const gameObject = new GameObject(nodeName);
+        const created = [];
+        for (const componentName of componentNames) {
+            const ctor = globalThis[componentName];
+            if (typeof ctor !== "function") {
+                throw new Error(`Missing script class: ${componentName}`);
+            }
+
+            const instance = new ctor();
+            this.attachComponent(gameObject, instance, componentName);
+            created.push(instance);
+        }
+
+        return { gameObject, created };
+    },
+
+    initializeNodeHost(host) {
+        for (const instance of host.created) {
+            if (typeof instance.OnEnable === "function") {
+                instance.OnEnable();
+            }
+        }
+
+        for (const instance of host.created) {
+            if (typeof instance.OnStart === "function") {
+                instance.OnStart();
+            }
+        }
+
+        return host;
+    }
+};
 "#;
 
 #[derive(Debug, Clone, Resource)]
 pub struct CompatProjectResource {
     pub manifest: CompatProjectManifest,
     pub script_registry: ScriptRegistry,
+    pub scenes: Vec<SceneSummary>,
 }
 
 #[derive(Debug, Clone)]
@@ -188,6 +486,8 @@ pub struct CompatProjectManifest {
 #[derive(Debug, Clone)]
 pub struct PrefabSummary {
     pub path: PathBuf,
+    pub name: String,
+    pub uuid: Option<String>,
     pub ts_components: Vec<String>,
 }
 
@@ -197,13 +497,59 @@ pub struct ScriptRegistry {
     pub component_classes: Vec<String>,
     pub transpile_failures: Vec<String>,
     pub eval_failures: Vec<String>,
+    pub script_host_summaries: Vec<ScriptHostSummary>,
+}
+
+#[derive(Debug, Clone)]
+pub struct SceneSummary {
+    pub path: PathBuf,
+    pub name: String,
+    pub nodes: Vec<CompatNode>,
+}
+
+#[derive(Debug, Clone)]
+pub struct CompatNode {
+    pub name: String,
+    pub source: CompatNodeSource,
+    pub script_components: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+pub enum CompatNodeSource {
+    NativeSceneObject,
+    PrefabInstance {
+        prefab_path: Option<PathBuf>,
+        prefab_name: Option<String>,
+        prefab_uuid: Option<String>,
+    },
+}
+
+#[derive(Component, Debug, Clone)]
+pub struct CompatSceneRoot {
+    pub path: PathBuf,
+}
+
+#[derive(Component, Debug, Clone)]
+pub struct CompatNodeMarker {
+    pub source_label: String,
+}
+
+#[derive(Component, Debug, Clone)]
+pub struct CompatScriptList(pub Vec<String>);
+
+#[derive(Debug, Clone)]
+pub struct ScriptHostSummary {
+    pub scene_name: String,
+    pub node_name: String,
+    pub components: Vec<String>,
 }
 
 pub struct CompatProjectPlugin;
 
 impl Plugin for CompatProjectPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, initialize_compat_project);
+        app.add_systems(Startup, initialize_compat_project)
+            .add_systems(PostStartup, migrate_default_scene);
     }
 }
 
@@ -237,6 +583,15 @@ fn initialize_compat_project(mut commands: Commands) {
                 warn!("{failure}");
             }
 
+            for host in &resource.script_registry.script_host_summaries {
+                info!(
+                    "Initialized script host [{}] {} => {}",
+                    host.scene_name,
+                    host.node_name,
+                    host.components.join(", ")
+                );
+            }
+
             commands.insert_resource(resource);
         }
         Err(error) => {
@@ -257,10 +612,12 @@ pub fn is_compat_project_root(path: &Path) -> bool {
 
 fn load_compat_project(root: &Path) -> std::io::Result<CompatProjectResource> {
     let manifest = scan_project(root)?;
-    let script_registry = build_script_registry(&manifest);
+    let scenes = build_scene_summaries(&manifest);
+    let script_registry = build_script_registry(&manifest, &scenes);
     Ok(CompatProjectResource {
         manifest,
         script_registry,
+        scenes,
     })
 }
 
@@ -309,7 +666,14 @@ fn scan_project(root: &Path) -> std::io::Result<CompatProjectManifest> {
             "prefab" => {
                 let bytes = fs::read(path)?;
                 prefabs.push(PrefabSummary {
+                    name: prefab_name_from_bytes(&bytes).unwrap_or_else(|| {
+                        path.file_stem()
+                            .unwrap_or_default()
+                            .to_string_lossy()
+                            .to_string()
+                    }),
                     path: relative_path,
+                    uuid: load_uuid_from_meta(path),
                     ts_components: extract_ts_component_names(&bytes),
                 });
             }
@@ -356,7 +720,46 @@ fn scan_project(root: &Path) -> std::io::Result<CompatProjectManifest> {
     })
 }
 
-fn build_script_registry(manifest: &CompatProjectManifest) -> ScriptRegistry {
+fn build_scene_summaries(manifest: &CompatProjectManifest) -> Vec<SceneSummary> {
+    let prefab_by_name = manifest
+        .prefabs
+        .iter()
+        .map(|prefab| (normalize_lookup_key(&prefab.name), prefab))
+        .collect::<BTreeMap<_, _>>();
+    let prefab_by_uuid = manifest
+        .prefabs
+        .iter()
+        .filter_map(|prefab| prefab.uuid.as_ref().map(|uuid| (uuid.clone(), prefab)))
+        .collect::<BTreeMap<_, _>>();
+
+    let mut scenes = Vec::new();
+    for scene_path in &manifest.scenes {
+        let absolute_path = manifest.root.join(scene_path);
+        let Ok(bytes) = fs::read(&absolute_path) else {
+            continue;
+        };
+        let raw_strings = extract_readable_strings(&bytes);
+        let scene_name = scene_path
+            .file_stem()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string();
+        let nodes = extract_scene_nodes(&raw_strings, &prefab_by_name, &prefab_by_uuid);
+
+        scenes.push(SceneSummary {
+            path: scene_path.clone(),
+            name: scene_name,
+            nodes,
+        });
+    }
+
+    scenes
+}
+
+fn build_script_registry(
+    manifest: &CompatProjectManifest,
+    scenes: &[SceneSummary],
+) -> ScriptRegistry {
     let mut registry = ScriptRegistry {
         script_files: manifest.scripts.clone(),
         ..Default::default()
@@ -440,7 +843,55 @@ fn build_script_registry(manifest: &CompatProjectManifest) -> ScriptRegistry {
     }
 
     registry.component_classes = discovered_classes.into_iter().collect();
+    registry.script_host_summaries = initialize_script_hosts(&context, scenes, &mut registry);
     registry
+}
+
+fn initialize_script_hosts(
+    context: &Context,
+    scenes: &[SceneSummary],
+    registry: &mut ScriptRegistry,
+) -> Vec<ScriptHostSummary> {
+    let mut summaries = Vec::new();
+
+    for scene in scenes {
+        for node in &scene.nodes {
+            if node.script_components.is_empty() {
+                continue;
+            }
+
+            let expression = json!({
+                "node": node.name,
+                "components": node.script_components,
+            })
+            .to_string();
+
+            let eval_result = context.with(|ctx| {
+                let script = format!(
+                    "(function(payload) {{
+                        const host = __compat.createNodeHost(payload.node, payload.components);
+                        __compat.initializeNodeHost(host);
+                    }})({expression});"
+                );
+                ctx.eval::<(), _>(script.as_str())?;
+                Ok::<(), rquickjs::Error>(())
+            });
+
+            match eval_result {
+                Ok(()) => summaries.push(ScriptHostSummary {
+                    scene_name: scene.name.clone(),
+                    node_name: node.name.clone(),
+                    components: node.script_components.clone(),
+                }),
+                Err(error) => registry.eval_failures.push(format!(
+                    "QuickJS failed to initialize node host '{}:{}': {error}",
+                    scene.name, node.name
+                )),
+            }
+        }
+    }
+
+    summaries
 }
 
 fn extract_ts_component_names(bytes: &[u8]) -> Vec<String> {
@@ -458,6 +909,17 @@ fn extract_ts_component_names(bytes: &[u8]) -> Vec<String> {
     }
 
     components.into_iter().collect()
+}
+
+fn prefab_name_from_bytes(bytes: &[u8]) -> Option<String> {
+    let strings = extract_readable_strings(bytes);
+    strings.windows(2).find_map(|pair| {
+        if pair[0] == "name" && !pair[1].starts_with("BLOCKMAN3.") {
+            Some(pair[1].clone())
+        } else {
+            None
+        }
+    })
 }
 
 fn extract_readable_strings(bytes: &[u8]) -> Vec<String> {
@@ -480,6 +942,20 @@ fn extract_readable_strings(bytes: &[u8]) -> Vec<String> {
     }
 
     strings
+}
+
+fn load_uuid_from_meta(path: &Path) -> Option<String> {
+    let meta_path = path.with_extension(format!(
+        "{}.meta",
+        path.extension()
+            .and_then(|ext| ext.to_str())
+            .unwrap_or_default()
+    ));
+    let text = fs::read_to_string(meta_path).ok()?;
+    let uuid_pattern = Regex::new(r#""uuid"\s*:\s*"([A-Fa-f0-9]{32})""#).expect("uuid regex");
+    uuid_pattern
+        .captures(&text)
+        .map(|capture| capture[1].to_ascii_uppercase())
 }
 
 fn is_component_name(value: &str) -> bool {
@@ -731,4 +1207,223 @@ fn find_component_classes(code: &str) -> Vec<String> {
         .captures_iter(code)
         .map(|capture| capture[1].to_string())
         .collect()
+}
+
+fn extract_scene_nodes(
+    strings: &[String],
+    prefab_by_name: &BTreeMap<String, &PrefabSummary>,
+    prefab_by_uuid: &BTreeMap<String, &PrefabSummary>,
+) -> Vec<CompatNode> {
+    let mut nodes = Vec::new();
+    let mut index = 0;
+
+    while index < strings.len() {
+        if strings[index] != "name" {
+            index += 1;
+            continue;
+        }
+
+        let Some(name) = strings.get(index + 1).cloned() else {
+            break;
+        };
+
+        if !should_capture_scene_name(&name) {
+            index += 1;
+            continue;
+        }
+
+        let end = (index + 32).min(strings.len());
+        let window = &strings[index..end];
+        let prefab_uuid = find_prefab_uuid_in_window(window);
+        let prefab = prefab_uuid
+            .as_ref()
+            .and_then(|uuid| prefab_by_uuid.get(uuid).copied())
+            .or_else(|| resolve_prefab_by_name(&name, prefab_by_name));
+
+        let source = if let Some(prefab) = prefab {
+            CompatNodeSource::PrefabInstance {
+                prefab_path: Some(prefab.path.clone()),
+                prefab_name: Some(prefab.name.clone()),
+                prefab_uuid: prefab.uuid.clone().or(prefab_uuid.clone()),
+            }
+        } else {
+            CompatNodeSource::NativeSceneObject
+        };
+
+        let script_components = prefab
+            .map(|prefab| prefab.ts_components.clone())
+            .unwrap_or_default();
+
+        nodes.push(CompatNode {
+            name,
+            source,
+            script_components,
+        });
+
+        index += 2;
+    }
+
+    dedupe_nodes(nodes)
+}
+
+fn find_prefab_uuid_in_window(window: &[String]) -> Option<String> {
+    for pair in window.windows(2) {
+        if pair[0] == "id" && is_uuid_string(&pair[1]) {
+            return Some(pair[1].to_ascii_uppercase());
+        }
+    }
+    None
+}
+
+fn is_uuid_string(value: &str) -> bool {
+    value.len() == 32 && value.chars().all(|ch| ch.is_ascii_hexdigit())
+}
+
+fn resolve_prefab_by_name<'a>(
+    scene_object_name: &str,
+    prefab_by_name: &'a BTreeMap<String, &'a PrefabSummary>,
+) -> Option<&'a PrefabSummary> {
+    let normalized = normalize_lookup_key(scene_object_name);
+    prefab_by_name.get(&normalized).copied().or_else(|| {
+        let simplified = strip_numeric_suffix(scene_object_name);
+        prefab_by_name
+            .get(&normalize_lookup_key(&simplified))
+            .copied()
+    })
+}
+
+fn normalize_lookup_key(value: &str) -> String {
+    value.to_ascii_lowercase().replace([' ', '-'], "")
+}
+
+fn strip_numeric_suffix(value: &str) -> String {
+    if let Some((prefix, suffix)) = value.rsplit_once('_')
+        && suffix.chars().all(|ch| ch.is_ascii_digit())
+    {
+        return prefix.to_string();
+    }
+    value.to_string()
+}
+
+fn should_capture_scene_name(value: &str) -> bool {
+    !matches!(
+        value,
+        "enable"
+            | "inst_id"
+            | "file_id"
+            | "layer"
+            | "flags"
+            | "component_count"
+            | "child_count"
+            | "data"
+            | "type"
+            | "sig"
+            | "ptype"
+            | "shared"
+            | "state"
+            | "exist"
+            | "container"
+            | "_name"
+            | "_type"
+            | "name"
+    ) && !value.starts_with("BLOCKMAN3.")
+        && value.chars().any(|ch| ch.is_ascii_alphabetic())
+}
+
+fn dedupe_nodes(nodes: Vec<CompatNode>) -> Vec<CompatNode> {
+    let mut counts = BTreeMap::<String, usize>::new();
+    let mut deduped = Vec::new();
+    for node in nodes {
+        let counter = counts.entry(node.name.clone()).or_default();
+        *counter += 1;
+        if *counter > 1 && !matches!(node.source, CompatNodeSource::PrefabInstance { .. }) {
+            continue;
+        }
+        deduped.push(node);
+    }
+    deduped
+}
+
+fn migrate_default_scene(
+    mut commands: Commands,
+    compat_project: Option<Res<CompatProjectResource>>,
+    existing_roots: Query<Entity, With<CompatSceneRoot>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let Some(compat_project) = compat_project else {
+        return;
+    };
+    if !existing_roots.is_empty() {
+        return;
+    }
+
+    let Some(scene) = compat_project
+        .scenes
+        .iter()
+        .find(|scene| scene.name.eq_ignore_ascii_case("DefaultScene"))
+        .or_else(|| compat_project.scenes.first())
+    else {
+        return;
+    };
+
+    let root = commands
+        .spawn((
+            Name::new(format!("CompatScene: {}", scene.name)),
+            CompatSceneRoot {
+                path: scene.path.clone(),
+            },
+            Transform::default(),
+            Visibility::default(),
+        ))
+        .id();
+
+    for (index, node) in scene.nodes.iter().enumerate() {
+        let source_label = match &node.source {
+            CompatNodeSource::NativeSceneObject => "scene-object".to_string(),
+            CompatNodeSource::PrefabInstance {
+                prefab_path,
+                prefab_name,
+                prefab_uuid,
+            } => format!(
+                "prefab:{}:{}:{}",
+                prefab_name.clone().unwrap_or_else(|| "unknown".to_string()),
+                prefab_path
+                    .as_ref()
+                    .map(|path| path.display().to_string())
+                    .unwrap_or_else(|| "unresolved".to_string()),
+                prefab_uuid.clone().unwrap_or_else(|| "no-uuid".to_string())
+            ),
+        };
+
+        let color = if node.script_components.is_empty() {
+            tailwind::SLATE_500
+        } else {
+            tailwind::EMERALD_500
+        };
+
+        let entity = commands
+            .spawn((
+                Name::new(node.name.clone()),
+                CompatNodeMarker { source_label },
+                CompatScriptList(node.script_components.clone()),
+                Mesh3d(meshes.add(Cuboid::from_size(Vec3::splat(0.35)))),
+                MeshMaterial3d(materials.add(Color::from(color))),
+                Transform::from_xyz(
+                    (index as f32 % 10.0) * 0.7,
+                    0.2,
+                    (index as f32 / 10.0) * 0.7,
+                ),
+                Visibility::default(),
+            ))
+            .id();
+
+        commands.entity(root).add_child(entity);
+    }
+
+    info!(
+        "Migrated compatibility scene '{}' into {} Bevy placeholder entities",
+        scene.path.display(),
+        scene.nodes.len()
+    );
 }
