@@ -16,7 +16,7 @@ use rquickjs::{Context, Runtime, function::Func};
 use serde_json::json;
 use walkdir::WalkDir;
 
-pub const COMPAT_PROJECT_ROOT_ENV: &str = "BEVY_COMPAT_PROJECT_ROOT";
+pub const COMPAT_PROJECT_ROOT_ARG: &str = "--project";
 
 const QUICKJS_BOOTSTRAP: &str = r#"
 globalThis.console = {
@@ -554,7 +554,7 @@ impl Plugin for CompatProjectPlugin {
 }
 
 fn initialize_compat_project(mut commands: Commands) {
-    let Some(root) = std::env::var_os(COMPAT_PROJECT_ROOT_ENV).map(PathBuf::from) else {
+    let Some(root) = compat_project_root_from_args() else {
         return;
     };
 
@@ -601,6 +601,17 @@ fn initialize_compat_project(mut commands: Commands) {
             );
         }
     }
+}
+
+fn compat_project_root_from_args() -> Option<PathBuf> {
+    let mut args = std::env::args_os();
+    while let Some(arg) = args.next() {
+        if arg == COMPAT_PROJECT_ROOT_ARG {
+            return args.next().map(PathBuf::from);
+        }
+    }
+
+    None
 }
 
 pub fn is_compat_project_root(path: &Path) -> bool {

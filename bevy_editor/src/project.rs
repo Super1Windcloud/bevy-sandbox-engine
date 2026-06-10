@@ -13,7 +13,7 @@ use toml::{Table, Value};
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 
-use crate::compat::{COMPAT_PROJECT_ROOT_ENV, is_compat_project_root};
+use crate::compat::{COMPAT_PROJECT_ROOT_ARG, is_compat_project_root};
 
 mod cache;
 pub mod templates;
@@ -128,9 +128,11 @@ pub fn get_local_projects() -> Vec<ProjectInfo> {
 }
 
 /// Update the current project info or create new ones if doesn't exist.
-pub fn update_project_info() {
+pub fn update_project_info(project_root: Option<&Path>) {
     let mut projects = get_local_projects();
-    let current_dir = std::env::current_dir().unwrap();
+    let current_dir = project_root
+        .map(Path::to_path_buf)
+        .unwrap_or_else(|| std::env::current_dir().unwrap());
 
     match projects.iter_mut().find(|p| p.path == current_dir) {
         Some(project) => {
@@ -202,13 +204,13 @@ fn run_rust_project(project: &ProjectInfo) -> std::io::Result<()> {
     }
 
     #[cfg(target_os = "windows")]
-    const CREATE_NEW_CONSOLE: u32 = 0x0000_0010;
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
     let mut command = Command::new("cargo");
     command.current_dir(&project.path).arg("run");
 
     #[cfg(target_os = "windows")]
-    command.creation_flags(CREATE_NEW_CONSOLE);
+    command.creation_flags(CREATE_NO_WINDOW);
 
     let child = command
         .spawn()
@@ -234,24 +236,31 @@ fn run_compat_project(project: &ProjectInfo) -> std::io::Result<()> {
     }
 
     #[cfg(target_os = "windows")]
-    const CREATE_NEW_CONSOLE: u32 = 0x0000_0010;
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
-    let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .ok_or_else(|| std::io::Error::other("Unable to locate workspace root"))?;
+    let mut command = if let Some(editor_binary) = find_editor_binary() {
+        let mut command = Command::new(editor_binary);
+        command.arg(COMPAT_PROJECT_ROOT_ARG).arg(&project.path);
+        command
+    } else {
+        let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .ok_or_else(|| std::io::Error::other("Unable to locate workspace root"))?;
 
-    let mut command = Command::new("cargo");
-    command
-        .current_dir(workspace_root)
-        .arg("run")
-        .arg("-p")
-        .arg("bevy-sandbox-engine-launcher")
-        .arg("--example")
-        .arg("simple_editor")
-        .env(COMPAT_PROJECT_ROOT_ENV, &project.path);
+        let mut command = Command::new("cargo");
+        command
+            .current_dir(workspace_root)
+            .arg("run")
+            .arg("-p")
+            .arg("bevy-sandbox-engine")
+            .arg("--")
+            .arg(COMPAT_PROJECT_ROOT_ARG)
+            .arg(&project.path);
+        command
+    };
 
     #[cfg(target_os = "windows")]
-    command.creation_flags(CREATE_NEW_CONSOLE);
+    command.creation_flags(CREATE_NO_WINDOW);
 
     let child = command.spawn().map_err(|error| {
         std::io::Error::other(format!("Failed to run compatibility project: {error}"))
@@ -262,6 +271,15 @@ fn run_compat_project(project: &ProjectInfo) -> std::io::Result<()> {
         child.id()
     );
     Ok(())
+}
+
+fn find_editor_binary() -> Option<PathBuf> {
+    let current_exe = std::env::current_exe().ok()?;
+    let candidate = current_exe
+        .parent()?
+        .join(format!("bevy-sandbox-engine{}", std::env::consts::EXE_SUFFIX));
+
+    candidate.is_file().then_some(candidate)
 }
 
 fn is_rust_project(path: &Path) -> bool {

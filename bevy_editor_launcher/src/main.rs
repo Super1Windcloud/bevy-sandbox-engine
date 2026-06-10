@@ -11,7 +11,7 @@ use bevy::{
     prelude::*,
     render::{
         RenderPlugin,
-        settings::{RenderCreation, WgpuSettings},
+        settings::{Backends, RenderCreation, WgpuSettings},
     },
     tasks::{IoTaskPool, Task, block_on, futures_lite::future},
     window::{MonitorSelection, PrimaryWindow, WindowCreated, WindowMode, WindowPosition},
@@ -171,20 +171,13 @@ fn ensure_primary_window_icon(primary_window_entity: Single<Entity, With<Primary
 }
 
 fn main() {
-    #[cfg(target_os = "windows")]
     let render_plugin = RenderPlugin {
         render_creation: RenderCreation::Automatic(WgpuSettings {
-            backends: Some(
-                bevy::render::settings::Backends::from_env()
-                    .unwrap_or(bevy::render::settings::Backends::VULKAN),
-            ),
+            backends: Some(default_render_backends()),
             ..default()
         }),
         ..default()
     };
-
-    #[cfg(not(target_os = "windows"))]
-    let render_plugin = RenderPlugin::default();
 
     App::new()
         .add_plugins((
@@ -225,4 +218,38 @@ fn main() {
         )
         .add_systems(EguiPrimaryContextPass, ui::render_launcher_ui)
         .run();
+}
+
+fn default_render_backends() -> Backends {
+    Backends::from_env().unwrap_or_else(|| {
+        #[cfg(target_os = "windows")]
+        {
+            Backends::VULKAN
+        }
+
+        #[cfg(target_os = "macos")]
+        {
+            Backends::METAL
+        }
+
+        #[cfg(all(
+            unix,
+            not(target_os = "macos"),
+            not(target_os = "android"),
+            not(target_family = "wasm")
+        ))]
+        {
+            Backends::VULKAN
+        }
+
+        #[cfg(target_os = "android")]
+        {
+            Backends::VULKAN
+        }
+
+        #[cfg(target_family = "wasm")]
+        {
+            Backends::BROWSER_WEBGPU
+        }
+    })
 }

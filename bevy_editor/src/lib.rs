@@ -22,7 +22,7 @@ use bevy::gilrs::GilrsPlugin;
 use bevy::prelude::*;
 use bevy::render::{
     RenderPlugin,
-    settings::{RenderCreation, WgpuSettings},
+    settings::{Backends, RenderCreation, WgpuSettings},
 };
 use bevy::window::{WindowCloseRequested, WindowClosed};
 use bevy::window::{MonitorSelection, PrimaryWindow, WindowMode, WindowPlugin, WindowPosition};
@@ -59,6 +59,11 @@ mod ui;
 const APP_WINDOW_BG: Color = Color::srgb(0.039, 0.047, 0.063);
 const SHOW_WINDOW_AFTER_FRAMES: u32 = 3;
 
+#[derive(Resource, Default, Clone)]
+struct LaunchOptions {
+    project_path: Option<std::path::PathBuf>,
+}
+
 fn show_primary_window_when_ready(
     mut primary_window: Single<&mut Window, With<PrimaryWindow>>,
     frame_count: Res<FrameCount>,
@@ -89,20 +94,13 @@ pub struct RuntimePlugin;
 
 impl Plugin for RuntimePlugin {
     fn build(&self, bevy_app: &mut BevyApp) {
-        #[cfg(target_os = "windows")]
         let render_plugin = RenderPlugin {
             render_creation: RenderCreation::Automatic(WgpuSettings {
-                backends: Some(
-                    bevy::render::settings::Backends::from_env()
-                        .unwrap_or(bevy::render::settings::Backends::DX12),
-                ),
+                backends: Some(default_render_backends()),
                 ..default()
             }),
             ..default()
         };
-
-        #[cfg(not(target_os = "windows"))]
-        let render_plugin = RenderPlugin::default();
 
         bevy_app
             .add_plugins(
@@ -142,8 +140,13 @@ pub struct EditorPlugin;
 
 impl Plugin for EditorPlugin {
     fn build(&self, bevy_app: &mut BevyApp) {
+        let launch_options = bevy_app
+            .world()
+            .get_resource::<LaunchOptions>()
+            .cloned()
+            .unwrap_or_default();
         // Update/register this project to the local project list
-        project::update_project_info();
+        project::update_project_info(launch_options.project_path.as_deref());
         info!("Loading Bevy Sandbox Engine");
         bevy_app
             .add_plugins((
@@ -189,8 +192,12 @@ impl App {
     pub fn run(&self) -> AppExit {
         let args = std::env::args().collect::<Vec<String>>();
         let editor_mode = !args.iter().any(|arg| arg == "-game");
+        let launch_options = LaunchOptions {
+            project_path: parse_project_path_argument(&args),
+        };
 
         let mut bevy_app = BevyApp::new();
+        bevy_app.insert_resource(launch_options);
         bevy_app.add_plugins(RuntimePlugin);
         if editor_mode {
             bevy_app.add_plugins(EditorPlugin);
@@ -233,4 +240,49 @@ fn dummy_setup(
         GizmoTransformable,
         Name::new("DirectionalLight"),
     ));
+}
+
+fn parse_project_path_argument(args: &[String]) -> Option<std::path::PathBuf> {
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        if arg == "--project" {
+            return iter.next().map(std::path::PathBuf::from);
+        }
+    }
+
+    None
+}
+
+fn default_render_backends() -> Backends {
+    Backends::from_env().unwrap_or_else(|| {
+        #[cfg(target_os = "windows")]
+        {
+            Backends::VULKAN
+        }
+
+        #[cfg(target_os = "macos")]
+        {
+            Backends::METAL
+        }
+
+        #[cfg(all(
+            unix,
+            not(target_os = "macos"),
+            not(target_os = "android"),
+            not(target_family = "wasm")
+        ))]
+        {
+            Backends::VULKAN
+        }
+
+        #[cfg(target_os = "android")]
+        {
+            Backends::VULKAN
+        }
+
+        #[cfg(target_family = "wasm")]
+        {
+            Backends::BROWSER_WEBGPU
+        }
+    })
 }
