@@ -38,6 +38,7 @@ pub struct LauncherUiState {
     templates_loaded: bool,
     create_dialog: Option<CreateProjectDialogState>,
     rename_dialog: Option<RenameProjectDialogState>,
+    project_card_menu: Option<ProjectCardMenuState>,
 }
 
 impl Default for LauncherUiState {
@@ -57,6 +58,7 @@ impl Default for LauncherUiState {
             templates_loaded: false,
             create_dialog: None,
             rename_dialog: None,
+            project_card_menu: None,
         }
     }
 }
@@ -114,8 +116,6 @@ const NAV_CREATE_TEXTURE_NAME: &str = "launcher-nav-create";
 const NAV_PROJECTS_TEXTURE_NAME: &str = "launcher-nav-projects";
 const NAV_HOVER_FILL: egui::Color32 = egui::Color32::from_rgb(58, 58, 58);
 const NAV_HOVER_STROKE: egui::Color32 = egui::Color32::from_rgb(96, 96, 96);
-const ICON_MORE_VERTICAL: &str = "\u{e0b7}";
-
 pub struct Strings {
     pub nav_create: &'static str,
     pub nav_projects: &'static str,
@@ -266,18 +266,17 @@ struct RenameProjectDialogState {
     project_name: String,
 }
 
+struct ProjectCardMenuState {
+    project_path: PathBuf,
+    anchor: egui::Pos2,
+    just_opened: bool,
+}
+
 impl TemplateCard {
     fn title(&self, locale: LauncherLocale) -> &str {
         match locale {
             LauncherLocale::ZhCn => &self.title_zh,
             LauncherLocale::EnUs => &self.title_en,
-        }
-    }
-
-    fn subtitle(&self, locale: LauncherLocale) -> &str {
-        match locale {
-            LauncherLocale::ZhCn => &self.subtitle_zh,
-            LauncherLocale::EnUs => &self.subtitle_en,
         }
     }
 }
@@ -751,6 +750,114 @@ fn project_thumbnail(ui: &mut egui::Ui, texture: Option<&TextureHandle>) {
     }
 }
 
+fn project_more_button(ui: &mut egui::Ui) -> egui::Response {
+    let response = ui.add(
+        egui::Button::new("")
+            .min_size(egui::vec2(24.0, 24.0))
+            .frame(false),
+    );
+    let painter = ui.painter_at(response.rect);
+    let color = if response.hovered() {
+        egui::Color32::from_rgb(220, 220, 220)
+    } else {
+        TEXT_MUTED
+    };
+    let center_x = response.rect.center().x;
+    for offset in [-5.0_f32, 0.0, 5.0] {
+        painter.circle_filled(
+            egui::pos2(center_x, response.rect.center().y + offset),
+            1.8,
+            color,
+        );
+    }
+    response
+}
+
+fn render_project_card_menu(
+    ctx: &egui::Context,
+    ui_state: &mut LauncherUiState,
+    project_list: &ProjectInfoList,
+    i18n: &Strings,
+) -> Option<PathBuf> {
+    let Some((project_path, anchor, just_opened)) =
+        ui_state.project_card_menu.as_ref().map(|menu_state| {
+            (
+                menu_state.project_path.clone(),
+                menu_state.anchor,
+                menu_state.just_opened,
+            )
+        })
+    else {
+        return None;
+    };
+
+    let mut close_menu = false;
+    let mut remove_path = None;
+    let project_name = project_list
+        .0
+        .iter()
+        .find(|project| project.path == project_path)
+        .and_then(|project| project.name())
+        .unwrap_or_else(|| "Unknown".to_string());
+
+    let area_response = egui::Area::new(egui::Id::new(("project-card-menu", &project_path)))
+        .order(egui::Order::Foreground)
+        .fixed_pos(anchor)
+        .show(ctx, |ui| {
+            egui::Frame::popup(&ctx.style())
+                .fill(SURFACE_BG)
+                .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(78, 78, 78)))
+                .corner_radius(6)
+                .show(ui, |ui| {
+                    ui.set_min_width(168.0);
+
+                    if ui.button(i18n.rename_project).clicked() {
+                        ui_state.rename_dialog = Some(RenameProjectDialogState {
+                            project_path: project_path.clone(),
+                            project_name: project_name.clone(),
+                        });
+                        close_menu = true;
+                    }
+
+                    if ui.button(i18n.open_project_folder).clicked() {
+                        if let Err(error) = open_project_folder(&project_path) {
+                            push_notification(
+                                ui_state,
+                                format!("{}: {error}", i18n.open_folder_failed),
+                            );
+                        }
+                        close_menu = true;
+                    }
+
+                    if ui.button(i18n.remove_project).clicked() {
+                        remove_path = Some(project_path.clone());
+                        close_menu = true;
+                    }
+                });
+        });
+
+    let menu_rect = area_response.response.rect;
+    let clicked_outside = if just_opened {
+        false
+    } else {
+        ctx.input(|input| {
+            input.pointer.any_click()
+                && input
+                    .pointer
+                    .interact_pos()
+                    .is_some_and(|pointer_pos| !menu_rect.contains(pointer_pos))
+        })
+    };
+
+    if close_menu || clicked_outside {
+        ui_state.project_card_menu = None;
+    } else if let Some(menu_state) = ui_state.project_card_menu.as_mut() {
+        menu_state.just_opened = false;
+    }
+
+    remove_path
+}
+
 fn ensure_template_preview_texture(
     ctx: &egui::Context,
     ui_state: &mut LauncherUiState,
@@ -769,11 +876,7 @@ fn ensure_template_preview_texture(
     Some(texture)
 }
 
-fn paint_template_preview(
-    ui: &mut egui::Ui,
-    card: &TemplateCard,
-    texture: Option<&TextureHandle>,
-) {
+fn paint_template_preview(ui: &mut egui::Ui, card: &TemplateCard, texture: Option<&TextureHandle>) {
     let width = 182.0;
     let height = 182.0;
     let (rect, _) = ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::hover());
@@ -976,11 +1079,6 @@ fn template_card(ui: &mut egui::Ui, card: &TemplateCard, ui_state: &mut Launcher
 
         ui.add_space(6.0);
         ui.label(egui::RichText::new(card.title(locale)).size(18.0));
-        ui.label(
-            egui::RichText::new(card.subtitle(locale))
-                .size(14.0)
-                .color(TEXT_MUTED),
-        );
     });
 }
 
@@ -1097,12 +1195,6 @@ fn render_create_project_dialog(
             paint_template_preview(ui, &template, preview_texture.as_ref());
             ui.add_space(12.0);
             ui.label(egui::RichText::new(template.title(locale)).size(22.0));
-            ui.add_space(10.0);
-            ui.label(
-                egui::RichText::new(template.subtitle(locale))
-                    .size(16.0)
-                    .color(egui::Color32::WHITE),
-            );
 
             ui.add_space(18.0);
             ui.separator();
@@ -1308,9 +1400,11 @@ fn render_projects_page(
     }
 
     let mut remove_path = None;
+    let ctx = ui.ctx().clone();
 
     egui::ScrollArea::vertical().show(ui, |ui| {
         for project in &project_list.0 {
+            let mut menu_rect = None;
             let frame_response = egui::Frame::new()
                 .fill(SURFACE_CARD)
                 .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(70, 70, 70)))
@@ -1324,24 +1418,24 @@ fn render_projects_page(
 
                         let info_width = (ui.available_width() - 34.0).max(160.0);
                         ui.vertical(|ui| {
-                            ui.set_min_width(info_width);
+                            ui.set_width(info_width);
                             ui.set_max_width(info_width);
                             ui.spacing_mut().item_spacing.y = 4.0;
 
                             let project_name =
                                 project.name().unwrap_or_else(|| "Unknown".to_string());
                             let project_id = project_stable_id(project);
-                            ui.add_sized(
-                                [info_width, 22.0],
+                            ui.add(
                                 egui::Label::new(
-                                    egui::RichText::new(format!("{project_name} (ID: {project_id})"))
-                                        .size(18.0)
-                                        .strong(),
+                                    egui::RichText::new(format!(
+                                        "{project_name} (ID: {project_id})"
+                                    ))
+                                    .size(18.0)
+                                    .strong(),
                                 )
                                 .truncate(),
                             );
-                            ui.add_sized(
-                                [info_width, 18.0],
+                            ui.add(
                                 egui::Label::new(
                                     egui::RichText::new(format!(
                                         "{}: {}",
@@ -1353,8 +1447,7 @@ fn render_projects_page(
                                 )
                                 .truncate(),
                             );
-                            ui.add_sized(
-                                [info_width, 18.0],
+                            ui.add(
                                 egui::Label::new(
                                     egui::RichText::new(format!(
                                         "{}: {}",
@@ -1371,49 +1464,31 @@ fn render_projects_page(
                         ui.scope(|ui| {
                             ui.style_mut().spacing.button_padding = egui::vec2(6.0, 2.0);
                             ui.with_layout(egui::Layout::top_down(egui::Align::Max), |ui| {
-                                ui.menu_button(
-                                    egui::RichText::new(ICON_MORE_VERTICAL)
-                                        .family(FontFamily::Name(ICON_FONT_NAME.into()))
-                                        .size(18.0)
-                                        .color(TEXT_MUTED),
-                                    |ui| {
-                                        if ui.button(i18n.rename_project).clicked() {
-                                            ui_state.rename_dialog =
-                                                Some(RenameProjectDialogState {
-                                                    project_path: project.path.clone(),
-                                                    project_name: project
-                                                        .name()
-                                                        .unwrap_or_else(|| "Unknown".to_string()),
-                                                });
-                                            ui.close();
-                                        }
-
-                                        if ui.button(i18n.open_project_folder).clicked() {
-                                            if let Err(error) = open_project_folder(&project.path) {
-                                                push_notification(
-                                                    ui_state,
-                                                    format!("{}: {error}", i18n.open_folder_failed),
-                                                );
-                                            }
-                                            ui.close();
-                                        }
-
-                                        if ui.button(i18n.remove_project).clicked() {
-                                            remove_path = Some(project.path.clone());
-                                            ui.close();
-                                        }
-                                    },
-                                );
+                                let menu_response = project_more_button(ui);
+                                menu_rect = Some(menu_response.rect);
+                                if menu_response.clicked() {
+                                    ui_state.project_card_menu = Some(ProjectCardMenuState {
+                                        project_path: project.path.clone(),
+                                        anchor: egui::pos2(
+                                            menu_response.rect.right() - 168.0,
+                                            menu_response.rect.bottom() + 4.0,
+                                        ),
+                                        just_opened: true,
+                                    });
+                                }
                             });
                         });
                     });
-
                 });
             let card_response = frame_response
                 .response
                 .interact(egui::Sense::click())
                 .on_hover_cursor(egui::CursorIcon::PointingHand);
-            if card_response.double_clicked() {
+            let pointer_pos = card_response.interact_pointer_pos();
+            let over_menu = pointer_pos
+                .zip(menu_rect)
+                .is_some_and(|(pointer_pos, menu_rect)| menu_rect.contains(pointer_pos));
+            if card_response.double_clicked() && !over_menu {
                 if !Path::new(&project.path).exists() {
                     let project_name = project.name().unwrap_or_else(|| "Unknown".to_string());
                     push_notification(
@@ -1450,6 +1525,10 @@ fn render_projects_page(
             ui.add_space(8.0);
         }
     });
+
+    if remove_path.is_none() {
+        remove_path = render_project_card_menu(&ctx, ui_state, project_list, i18n);
+    }
 
     if let Some(path) = remove_path {
         project_list.0.retain(|project| project.path != path);
