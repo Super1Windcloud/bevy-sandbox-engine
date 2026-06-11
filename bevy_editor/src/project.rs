@@ -4,7 +4,7 @@ use bevy::log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use std::{
     path::{Path, PathBuf},
-    process::Command,
+    process::{Child, Command},
     time::SystemTime,
 };
 use templates::copy_template;
@@ -176,14 +176,14 @@ pub fn detect_project_kind(path: &Path) -> Option<ProjectKind> {
 }
 
 /// Run a project in editor mode.
-pub fn run_project(project: &ProjectInfo) -> std::io::Result<()> {
+pub fn run_project(project: &ProjectInfo) -> std::io::Result<Child> {
     match project.kind {
         ProjectKind::Rust => run_rust_project(project),
         ProjectKind::BlockmanCompat => run_compat_project(project),
     }
 }
 
-fn run_rust_project(project: &ProjectInfo) -> std::io::Result<()> {
+fn run_rust_project(project: &ProjectInfo) -> std::io::Result<Child> {
     // Make sure the project folder exist
     if !project.path.exists() {
         return Err(std::io::Error::new(
@@ -217,10 +217,10 @@ fn run_rust_project(project: &ProjectInfo) -> std::io::Result<()> {
         .map_err(|error| std::io::Error::other(format!("Failed to run project: {error}")))?;
 
     info!("Project process started successfully (pid: {})", child.id());
-    Ok(())
+    Ok(child)
 }
 
-fn run_compat_project(project: &ProjectInfo) -> std::io::Result<()> {
+fn run_compat_project(project: &ProjectInfo) -> std::io::Result<Child> {
     if !project.path.exists() {
         return Err(std::io::Error::new(
             std::io::ErrorKind::NotFound,
@@ -270,7 +270,7 @@ fn run_compat_project(project: &ProjectInfo) -> std::io::Result<()> {
         "Compatibility project process started successfully (pid: {})",
         child.id()
     );
-    Ok(())
+    Ok(child)
 }
 
 fn find_editor_binary() -> Option<PathBuf> {

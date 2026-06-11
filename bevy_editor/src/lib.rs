@@ -118,6 +118,7 @@ impl Plugin for RuntimePlugin {
                     })
                     .disable::<GilrsPlugin>()
                     .set(AssetPlugin {
+                        file_path: "../assets".to_string(),
                         unapproved_path_mode: UnapprovedPathMode::Deny,
                         ..default()
                     })

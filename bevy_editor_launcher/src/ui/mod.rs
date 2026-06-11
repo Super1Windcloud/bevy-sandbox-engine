@@ -16,7 +16,7 @@ use bevy_sandbox_engine::project::{
 };
 use sys_locale::get_locale;
 
-use crate::{ProjectInfoList, spawn_create_new_project_task};
+use crate::{ProjectInfoList, RunningProjects, spawn_create_new_project_task};
 
 mod projects;
 mod templates;
@@ -114,7 +114,6 @@ pub(super) const BRAND_ICON_SIZE: f32 = 112.0;
 const NAV_CREATE_TEXTURE_NAME: &str = "launcher-nav-create";
 const NAV_PROJECTS_TEXTURE_NAME: &str = "launcher-nav-projects";
 pub(super) const NAV_HOVER_FILL: egui::Color32 = egui::Color32::from_rgb(58, 58, 58);
-pub(super) const NAV_HOVER_STROKE: egui::Color32 = egui::Color32::from_rgb(96, 96, 96);
 
 pub struct Strings {
     pub nav_create: &'static str,
@@ -155,6 +154,11 @@ pub struct Strings {
     pub invalid_project_name: &'static str,
     pub invalid_storage_location: &'static str,
     pub project_already_exists: &'static str,
+    pub launch_project: &'static str,
+    pub launching_project: &'static str,
+    pub terminate_project: &'static str,
+    pub project_already_running: &'static str,
+    pub failed_to_terminate_project: &'static str,
 }
 
 pub fn strings(locale: LauncherLocale) -> Strings {
@@ -198,6 +202,11 @@ pub fn strings(locale: LauncherLocale) -> Strings {
             invalid_project_name: "项目名称不能为空",
             invalid_storage_location: "存储位置无效",
             project_already_exists: "目标项目目录已存在",
+            launch_project: "启动",
+            launching_project: "正在启动",
+            terminate_project: "终止",
+            project_already_running: "项目已在运行",
+            failed_to_terminate_project: "终止项目失败",
         },
         LauncherLocale::EnUs => Strings {
             nav_create: "Create",
@@ -238,6 +247,11 @@ pub fn strings(locale: LauncherLocale) -> Strings {
             invalid_project_name: "Project name is required",
             invalid_storage_location: "Storage location is invalid",
             project_already_exists: "Target project directory already exists",
+            launch_project: "Launch",
+            launching_project: "Launching",
+            terminate_project: "Terminate",
+            project_already_running: "Project is already running",
+            failed_to_terminate_project: "Failed to terminate project",
         },
     }
 }
@@ -413,6 +427,10 @@ fn configure_visuals(ctx: &egui::Context) {
     visuals.widgets.inactive.bg_fill = SURFACE_BG;
     visuals.widgets.hovered.bg_fill = SURFACE_SOFT;
     visuals.widgets.active.bg_fill = SURFACE_SOFT;
+    visuals.widgets.inactive.bg_stroke = egui::Stroke::NONE;
+    visuals.widgets.hovered.bg_stroke = egui::Stroke::NONE;
+    visuals.widgets.active.bg_stroke = egui::Stroke::NONE;
+    visuals.widgets.open.bg_stroke = egui::Stroke::NONE;
     visuals.panel_fill = SURFACE_BG;
     visuals.window_fill = SURFACE_BG;
     ctx.set_visuals(visuals);
@@ -571,13 +589,8 @@ fn nav_button(
     } else {
         egui::Color32::TRANSPARENT
     };
-    let stroke = if selected || hovered {
-        egui::Stroke::new(1.0, NAV_HOVER_STROKE)
-    } else {
-        egui::Stroke::NONE
-    };
     ui.painter()
-        .rect(rect, 8.0, fill, stroke, egui::StrokeKind::Inside);
+        .rect(rect, 8.0, fill, egui::Stroke::NONE, egui::StrokeKind::Inside);
 
     let icon_rect = egui::Rect::from_center_size(
         egui::pos2(rect.left() + 24.0, rect.center().y),
@@ -716,8 +729,8 @@ pub fn render_launcher_ui(
     mut contexts: EguiContexts,
     mut commands: Commands,
     mut project_list: ResMut<ProjectInfoList>,
+    mut running_projects: ResMut<RunningProjects>,
     mut ui_state: ResMut<LauncherUiState>,
-    mut exit: MessageWriter<AppExit>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?;
     ensure_fonts(ctx, &mut ui_state);
@@ -804,8 +817,8 @@ pub fn render_launcher_ui(
                 projects::render_projects_page(
                     ui,
                     &mut project_list,
+                    &mut running_projects,
                     &mut ui_state,
-                    &mut exit,
                     &i18n,
                 );
             }

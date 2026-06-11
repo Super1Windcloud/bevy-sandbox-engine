@@ -66,11 +66,9 @@ fn template_preview(ui: &mut egui::Ui, card: &TemplateCard, ui_state: &mut Launc
 fn template_card(ui: &mut egui::Ui, card: &TemplateCard, ui_state: &mut LauncherUiState) {
     let locale = ui_state.locale;
     ui.vertical(|ui| {
-        let frame_stroke = egui::Stroke::new(1.0, egui::Color32::from_rgb(72, 72, 72));
-        let hovered_stroke = egui::Stroke::new(1.0, egui::Color32::from_rgb(244, 178, 47));
         let card_frame = egui::Frame::new()
             .fill(SURFACE_CARD)
-            .stroke(frame_stroke)
+            .stroke(egui::Stroke::NONE)
             .corner_radius(6)
             .inner_margin(0);
 
@@ -86,15 +84,6 @@ fn template_card(ui: &mut egui::Ui, card: &TemplateCard, ui_state: &mut Launcher
                 egui::Sense::click(),
             )
             .on_hover_cursor(egui::CursorIcon::PointingHand);
-
-        if response.hovered() {
-            ui.painter().rect_stroke(
-                card_response.rect,
-                6.0,
-                hovered_stroke,
-                egui::StrokeKind::Inside,
-            );
-        }
 
         if response.clicked() {
             ui_state.create_dialog = Some(CreateProjectDialogState {
@@ -152,7 +141,7 @@ pub(super) fn render_create_page(
     if cards.is_empty() {
         egui::Frame::new()
             .fill(SURFACE_BG)
-            .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(76, 76, 76)))
+            .stroke(egui::Stroke::NONE)
             .corner_radius(6)
             .inner_margin(egui::Margin::symmetric(18, 18))
             .show(ui, |ui| {
@@ -219,7 +208,7 @@ pub(super) fn render_create_project_dialog(
         .frame(
             egui::Frame::window(&ctx.style())
                 .fill(SURFACE_BG)
-                .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(78, 78, 78)))
+                .stroke(egui::Stroke::NONE)
                 .corner_radius(6),
         )
         .show(ctx, |ui| {

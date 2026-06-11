@@ -18,5 +18,9 @@ winit = "0.30.13"
 
 rfd.workspace = true
 
+[target.'cfg(target_os = "windows")'.dependencies]
+tray-item = "0.10.0"
+windows-sys = { version = "0.60.2", features = ["Win32_UI_WindowsAndMessaging"] }
+
 [build-dependencies]
 winres = "0.1"

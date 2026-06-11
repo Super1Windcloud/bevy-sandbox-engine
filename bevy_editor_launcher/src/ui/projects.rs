@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use bevy_egui::egui::{self, TextureHandle};
 use bevy_sandbox_engine::project::{ProjectInfo, run_project};
 
-use crate::ProjectInfoList;
+use crate::{ProjectInfoList, ProjectLaunchPhase, RunningProject, RunningProjects};
 
 use super::*;
 
@@ -86,7 +86,7 @@ fn render_project_card_menu(
         .show(ctx, |ui| {
             egui::Frame::popup(&ctx.style())
                 .fill(SURFACE_BG)
-                .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(78, 78, 78)))
+                .stroke(egui::Stroke::NONE)
                 .corner_radius(6)
                 .show(ui, |ui| {
                     ui.set_min_width(168.0);
@@ -141,6 +141,7 @@ fn render_project_card_menu(
 fn render_project_card(
     ui: &mut egui::Ui,
     project: &ProjectInfo,
+    running_projects: &RunningProjects,
     ui_state: &mut LauncherUiState,
     i18n: &Strings,
 ) -> (egui::Response, Option<egui::Rect>) {
@@ -167,22 +168,19 @@ fn render_project_card(
     let thumb_offset = content_offset * 0.9;
     let text_offset = content_offset * 0.35;
     let glow_center = pointer_pos.unwrap_or(card_rect.center());
+    let scaled_card_rect = if pointer_pos.is_some() {
+        egui::Rect::from_center_size(card_rect.center(), card_rect.size() * 1.05)
+    } else {
+        card_rect
+    };
 
-    let painter = ui.painter_at(card_rect);
-    painter.rect_filled(card_rect, 6.0, SURFACE_CARD);
-    painter.rect_stroke(
-        card_rect,
-        6.0,
-        egui::Stroke::new(
-            1.0,
-            if pointer_pos.is_some() {
-                egui::Color32::from_rgb(118, 118, 118)
-            } else {
-                egui::Color32::from_rgb(70, 70, 70)
-            },
-        ),
-        egui::StrokeKind::Inside,
-    );
+    let painter = ui.painter_at(scaled_card_rect);
+    let card_fill = if pointer_pos.is_some() {
+        egui::Color32::from_rgb(62, 62, 62)
+    } else {
+        SURFACE_CARD
+    };
+    painter.rect_filled(scaled_card_rect, 6.0, card_fill);
     if pointer_pos.is_some() {
         painter.circle_filled(
             glow_center,
@@ -191,10 +189,10 @@ fn render_project_card(
         );
     }
 
-    let inner_rect = card_rect.shrink2(egui::vec2(14.0, 14.0));
+    let inner_rect = scaled_card_rect.shrink2(egui::vec2(14.0, 14.0));
     let mut menu_rect = None;
     ui.allocate_ui_at_rect(inner_rect.translate(text_offset), |ui| {
-        ui.set_clip_rect(card_rect.shrink(2.0));
+        ui.set_clip_rect(scaled_card_rect.shrink(2.0));
         ui.horizontal_top(|ui| {
             project_thumbnail(
                 ui,
@@ -203,7 +201,7 @@ fn render_project_card(
             );
             ui.add_space(14.0);
 
-            let info_width = (ui.available_width() - 34.0).max(160.0);
+            let info_width = (ui.available_width() - 132.0).max(120.0);
             ui.vertical(|ui| {
                 ui.set_width(info_width);
                 ui.set_max_width(info_width);
@@ -245,6 +243,42 @@ fn render_project_card(
                 );
             });
 
+            let project_phase = running_projects
+                .0
+                .get(&project.path)
+                .map(|entry| entry.phase)
+                .unwrap_or(ProjectLaunchPhase::Ready);
+            let (action_label, action_fill) = match project_phase {
+                ProjectLaunchPhase::Ready => (
+                    i18n.launch_project,
+                    egui::Color32::from_rgb(72, 112, 168),
+                ),
+                ProjectLaunchPhase::Launching => (
+                    i18n.launching_project,
+                    egui::Color32::from_rgb(162, 128, 56),
+                ),
+                ProjectLaunchPhase::Running => (
+                    i18n.terminate_project,
+                    egui::Color32::from_rgb(152, 74, 74),
+                ),
+            };
+            let action_size = egui::vec2(84.0, 32.0);
+            let (action_rect, _) = ui.allocate_exact_size(action_size, egui::Sense::hover());
+            ui.painter().rect(
+                action_rect.translate(content_offset * 0.2),
+                6.0,
+                action_fill,
+                egui::Stroke::NONE,
+                egui::StrokeKind::Inside,
+            );
+            ui.painter().text(
+                action_rect.translate(content_offset * 0.2).center(),
+                egui::Align2::CENTER_CENTER,
+                action_label,
+                egui::FontId::proportional(14.0),
+                egui::Color32::from_rgb(244, 244, 244),
+            );
+
             ui.scope(|ui| {
                 ui.style_mut().spacing.button_padding = egui::vec2(6.0, 2.0);
                 ui.with_layout(egui::Layout::top_down(egui::Align::Max), |ui| {
@@ -267,14 +301,14 @@ fn render_project_card(
 
     let clickable_rect = if let Some(menu_rect) = menu_rect {
         egui::Rect::from_min_max(
-            card_rect.min,
+            scaled_card_rect.min,
             egui::pos2(
-                (menu_rect.min.x - 8.0).max(card_rect.min.x),
-                card_rect.max.y,
+                (menu_rect.min.x - 8.0).max(scaled_card_rect.min.x),
+                scaled_card_rect.max.y,
             ),
         )
     } else {
-        card_rect
+        scaled_card_rect
     };
 
     let response = ui
@@ -310,7 +344,7 @@ pub(super) fn render_rename_project_dialog(
         .frame(
             egui::Frame::window(&ctx.style())
                 .fill(SURFACE_BG)
-                .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(78, 78, 78)))
+                .stroke(egui::Stroke::NONE)
                 .corner_radius(6),
         )
         .show(ctx, |ui| {
@@ -371,8 +405,8 @@ pub(super) fn render_rename_project_dialog(
 pub(super) fn render_projects_page(
     ui: &mut egui::Ui,
     project_list: &mut ProjectInfoList,
+    running_projects: &mut RunningProjects,
     ui_state: &mut LauncherUiState,
-    exit: &mut MessageWriter<AppExit>,
     i18n: &Strings,
 ) {
     ui.horizontal(|ui| {
@@ -409,7 +443,8 @@ pub(super) fn render_projects_page(
 
     egui::ScrollArea::vertical().show(ui, |ui| {
         for project in &project_list.0 {
-            let (card_response, menu_rect) = render_project_card(ui, project, ui_state, i18n);
+            let (card_response, menu_rect) =
+                render_project_card(ui, project, running_projects, ui_state, i18n);
             let pointer_pos = card_response.interact_pointer_pos();
             let over_menu = pointer_pos
                 .zip(menu_rect)
@@ -425,27 +460,48 @@ pub(super) fn render_projects_page(
                     return;
                 }
 
-                match run_project(project) {
-                    Ok(_) => {
-                        exit.write(AppExit::Success);
+                if let Some(running_project) = running_projects.0.get_mut(&project.path) {
+                    if running_project.phase == ProjectLaunchPhase::Running {
+                        if let Err(error) = running_project.child.kill() {
+                            push_notification(
+                                ui_state,
+                                format!("{}: {error}", i18n.failed_to_terminate_project),
+                            );
+                        }
+                        running_projects.0.remove(&project.path);
+                    } else {
+                        push_notification(ui_state, i18n.project_already_running);
                     }
-                    Err(error) => match error.kind() {
-                        ErrorKind::NotFound | ErrorKind::InvalidData => {
-                            let project_name =
-                                project.name().unwrap_or_else(|| "Unknown".to_string());
-                            push_notification(
-                                ui_state,
-                                format!("{}: '{project_name}'", i18n.failed_to_run_project),
-                            );
-                            remove_path = Some(project.path.clone());
-                        }
-                        _ => {
-                            push_notification(
-                                ui_state,
-                                format!("{}: {error}", i18n.error_running_project),
+                } else {
+                    match run_project(project) {
+                        Ok(child) => {
+                            running_projects.0.insert(
+                                project.path.clone(),
+                                RunningProject {
+                                    child,
+                                    phase: ProjectLaunchPhase::Launching,
+                                    launch_timer: Timer::from_seconds(2.0, TimerMode::Once),
+                                },
                             );
                         }
-                    },
+                        Err(error) => match error.kind() {
+                            ErrorKind::NotFound | ErrorKind::InvalidData => {
+                                let project_name =
+                                    project.name().unwrap_or_else(|| "Unknown".to_string());
+                                push_notification(
+                                    ui_state,
+                                    format!("{}: '{project_name}'", i18n.failed_to_run_project),
+                                );
+                                remove_path = Some(project.path.clone());
+                            }
+                            _ => {
+                                push_notification(
+                                    ui_state,
+                                    format!("{}: {error}", i18n.error_running_project),
+                                );
+                            }
+                        },
+                    }
                 }
             }
             ui.add_space(8.0);

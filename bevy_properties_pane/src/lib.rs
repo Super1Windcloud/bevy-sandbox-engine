@@ -75,6 +75,7 @@ fn properties_pane(selection: &EditorSelection, theme: &Theme, world: &World) ->
                     ..default()
                 }
             ) => [
+                @{ summary_panel(selection, world) };
                 @{ component_list(selection, theme, world) };
             ];
         },
@@ -96,6 +97,69 @@ fn properties_pane(selection: &EditorSelection, theme: &Theme, world: &World) ->
                 );
             ];
         },
+    }
+}
+
+fn summary_panel(entity: Entity, world: &World) -> Template {
+    let locale = EditorLocale::detect();
+    let title = world
+        .get::<Name>(entity)
+        .map(|name| name.as_str().to_string())
+        .unwrap_or_else(|| match locale {
+            EditorLocale::ZhCn => "未命名对象".to_string(),
+            EditorLocale::EnUs => "Unnamed Entity".to_string(),
+        });
+    let entity_label = match locale {
+        EditorLocale::ZhCn => "对象",
+        EditorLocale::EnUs => "Entity",
+    };
+    let component_label = match locale {
+        EditorLocale::ZhCn => "组件数",
+        EditorLocale::EnUs => "Components",
+    };
+    let component_count = world
+        .inspect_entity(entity)
+        .map(|iter| iter.count())
+        .unwrap_or(0);
+
+    template! {
+        (
+            Node {
+                flex_direction: FlexDirection::Column,
+                padding: UiRect::all(Val::Px(10.0)),
+                margin: UiRect::bottom(Val::Px(8.0)),
+                row_gap: Val::Px(6.0),
+                border: UiRect::all(Val::Px(1.0)),
+                border_radius: BorderRadius::all(Val::Px(4.0)),
+                ..default()
+            },
+            BackgroundColor(Color::srgb(0.18, 0.18, 0.19)),
+            BorderColor::all(Color::srgb(0.25, 0.25, 0.26)),
+        ) => [
+            (
+                Text::new(title),
+                TextFont::from_font_size(13.0),
+                TextColor(Color::srgb(0.90, 0.90, 0.92)),
+            );
+            (
+                Node {
+                    flex_direction: FlexDirection::Row,
+                    justify_content: JustifyContent::SpaceBetween,
+                    ..default()
+                }
+            ) => [
+                (
+                    Text::new(format!("{entity_label} {}", entity.index())),
+                    TextFont::from_font_size(11.0),
+                    TextColor(Color::srgb(0.70, 0.71, 0.73)),
+                );
+                (
+                    Text::new(format!("{component_label}: {component_count}")),
+                    TextFont::from_font_size(11.0),
+                    TextColor(Color::srgb(0.70, 0.71, 0.73)),
+                );
+            ];
+        ];
     }
 }
 
