@@ -194,7 +194,7 @@ impl App {
         let args = std::env::args().collect::<Vec<String>>();
         let editor_mode = !args.iter().any(|arg| arg == "-game");
         let launch_options = LaunchOptions {
-            project_path: parse_project_path_argument(&args),
+            project_path: resolve_project_path(&args, editor_mode),
         };
 
         let mut bevy_app = BevyApp::new();
@@ -252,6 +252,16 @@ fn parse_project_path_argument(args: &[String]) -> Option<std::path::PathBuf> {
     }
 
     None
+}
+
+fn resolve_project_path(args: &[String], editor_mode: bool) -> Option<std::path::PathBuf> {
+    parse_project_path_argument(args).or_else(|| {
+        if editor_mode {
+            project::get_most_recent_project().map(|project| project.path)
+        } else {
+            None
+        }
+    })
 }
 
 fn default_render_backends() -> Backends {

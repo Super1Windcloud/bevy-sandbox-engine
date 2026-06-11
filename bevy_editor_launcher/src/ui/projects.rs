@@ -144,7 +144,7 @@ fn render_project_card(
     running_projects: &RunningProjects,
     ui_state: &mut LauncherUiState,
     i18n: &Strings,
-) -> (egui::Response, Option<egui::Rect>) {
+) -> (Option<egui::Response>, Option<egui::Rect>) {
     let card_rect = ui
         .allocate_exact_size(
             egui::vec2(ui.available_width(), 100.0),
@@ -191,6 +191,7 @@ fn render_project_card(
 
     let inner_rect = scaled_card_rect.shrink2(egui::vec2(14.0, 14.0));
     let mut menu_rect = None;
+    let mut action_rect = None;
     ui.allocate_ui_at_rect(inner_rect.translate(text_offset), |ui| {
         ui.set_clip_rect(scaled_card_rect.shrink(2.0));
         ui.horizontal_top(|ui| {
@@ -263,16 +264,17 @@ fn render_project_card(
                 ),
             };
             let action_size = egui::vec2(84.0, 32.0);
-            let (action_rect, _) = ui.allocate_exact_size(action_size, egui::Sense::hover());
+            let (button_rect, _) = ui.allocate_exact_size(action_size, egui::Sense::hover());
+            action_rect = Some(button_rect.translate(content_offset * 0.2));
             ui.painter().rect(
-                action_rect.translate(content_offset * 0.2),
+                button_rect.translate(content_offset * 0.2),
                 6.0,
                 action_fill,
                 egui::Stroke::NONE,
                 egui::StrokeKind::Inside,
             );
             ui.painter().text(
-                action_rect.translate(content_offset * 0.2).center(),
+                button_rect.translate(content_offset * 0.2).center(),
                 egui::Align2::CENTER_CENTER,
                 action_label,
                 egui::FontId::proportional(14.0),
@@ -299,27 +301,16 @@ fn render_project_card(
         });
     });
 
-    let clickable_rect = if let Some(menu_rect) = menu_rect {
-        egui::Rect::from_min_max(
-            scaled_card_rect.min,
-            egui::pos2(
-                (menu_rect.min.x - 8.0).max(scaled_card_rect.min.x),
-                scaled_card_rect.max.y,
-            ),
-        )
-    } else {
-        scaled_card_rect
-    };
-
-    let response = ui
-        .interact(
-            clickable_rect,
-            ui.make_persistent_id(("project_card", &project.path)),
+    let action_response = action_rect.map(|action_rect| {
+        ui.interact(
+            action_rect,
+            ui.make_persistent_id(("project_action_button", &project.path)),
             egui::Sense::click(),
         )
-        .on_hover_cursor(egui::CursorIcon::PointingHand);
+        .on_hover_cursor(egui::CursorIcon::PointingHand)
+    });
 
-    (response, menu_rect)
+    (action_response, menu_rect)
 }
 
 pub(super) fn render_rename_project_dialog(
@@ -443,13 +434,9 @@ pub(super) fn render_projects_page(
 
     egui::ScrollArea::vertical().show(ui, |ui| {
         for project in &project_list.0 {
-            let (card_response, menu_rect) =
+            let (action_response, menu_rect) =
                 render_project_card(ui, project, running_projects, ui_state, i18n);
-            let pointer_pos = card_response.interact_pointer_pos();
-            let over_menu = pointer_pos
-                .zip(menu_rect)
-                .is_some_and(|(pointer_pos, menu_rect)| menu_rect.contains(pointer_pos));
-            if card_response.clicked() && !over_menu {
+            if action_response.as_ref().is_some_and(egui::Response::clicked) {
                 if !Path::new(&project.path).exists() {
                     let project_name = project.name().unwrap_or_else(|| "Unknown".to_string());
                     push_notification(

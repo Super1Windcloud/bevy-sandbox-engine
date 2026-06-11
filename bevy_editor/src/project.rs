@@ -127,6 +127,13 @@ pub fn get_local_projects() -> Vec<ProjectInfo> {
     projects
 }
 
+/// Get the most recently opened valid local project.
+pub fn get_most_recent_project() -> Option<ProjectInfo> {
+    get_local_projects()
+        .into_iter()
+        .max_by_key(|project| project.last_opened)
+}
+
 /// Update the current project info or create new ones if doesn't exist.
 pub fn update_project_info(project_root: Option<&Path>) {
     let mut projects = get_local_projects();
