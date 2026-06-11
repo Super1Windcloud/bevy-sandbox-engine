@@ -751,6 +751,7 @@ fn spawn_new_entity(commands: &mut Commands) {
 fn setup_console_pane(
     pane: In<PaneStructure>,
     mut commands: Commands,
+    theme: Res<Theme>,
     ui_state: Res<EditorUiState>,
 ) {
     let i18n = strings(ui_state.locale);
@@ -768,7 +769,11 @@ fn setup_console_pane(
         for line in i18n.console_lines {
             parent.spawn((
                 Text::new(line),
-                TextFont::from_font_size(11.0),
+                TextFont {
+                    font: theme.text.font.clone(),
+                    font_size: 11.0,
+                    ..default()
+                },
                 TextColor(Color::srgb(0.76, 0.77, 0.79)),
             ));
         }
@@ -778,6 +783,7 @@ fn setup_console_pane(
 fn setup_asset_store_pane(
     pane: In<PaneStructure>,
     mut commands: Commands,
+    theme: Res<Theme>,
     ui_state: Res<EditorUiState>,
 ) {
     let i18n = strings(ui_state.locale);
@@ -794,7 +800,11 @@ fn setup_asset_store_pane(
     commands.entity(pane.content).with_children(|parent| {
         parent.spawn((
             Text::new(i18n.category_title),
-            TextFont::from_font_size(12.0),
+            TextFont {
+                font: theme.text.font.clone(),
+                font_size: 12.0,
+                ..default()
+            },
             TextColor(Color::srgb(0.86, 0.86, 0.88)),
         ));
 
@@ -811,7 +821,11 @@ fn setup_asset_store_pane(
                 .with_children(|row| {
                     row.spawn((
                         Text::new(category),
-                        TextFont::from_font_size(11.0),
+                        TextFont {
+                            font: theme.text.font.clone(),
+                            font_size: 11.0,
+                            ..default()
+                        },
                         TextColor(Color::srgb(0.74, 0.75, 0.77)),
                     ));
                 });

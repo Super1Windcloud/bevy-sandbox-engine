@@ -1,286 +1,90 @@
-//! 3D Viewport for Bevy
-use bevy::{
-    asset::uuid::Uuid,
-    camera::{NormalizedRenderTarget, RenderTarget, visibility::RenderLayers},
-    image::Image,
-    picking::{
-        PickingSystems,
-        input::{mouse_pick_events, touch_pick_events},
-        pointer::{Location, PointerId, PointerInput},
-    },
-    prelude::*,
-    render::render_resource::{Extent3d, TextureFormat, TextureUsages},
-    ui::ui_layout_system,
-    window::PrimaryWindow,
-};
-use bevy_editor_cam::prelude::{DefaultEditorCamPlugins, EditorCam};
+//! 3D viewport pane skeleton.
+use bevy::prelude::*;
 use bevy_editor_styles::Theme;
-use bevy_infinite_grid::{InfiniteGrid, InfiniteGridPlugin, InfiniteGridSettings};
-use bevy_pane_layout::{components::fit_to_parent, prelude::*};
-use bevy_transform_gizmos::{TransformGizmo, prelude::*};
-use view_gizmo::ViewGizmoPlugin;
-
-use crate::{selection_box::SelectionBoxPlugin, view_gizmo::spawn_view_gizmo_node};
-
-mod selection_box;
-mod view_gizmo;
+use bevy_pane_layout::prelude::*;
 
 /// The identifier for the 3D Viewport.
 /// This is present on any pane that is a 3D Viewport.
-#[derive(Component)]
-pub struct Bevy3dViewport {
-    camera_id: Entity,
-}
-
 #[derive(Component, Default)]
-struct RenderTargetResizeState {
-    last_size: UVec2,
-    stable_frames: u8,
-}
-
-impl Default for Bevy3dViewport {
-    fn default() -> Self {
-        Bevy3dViewport {
-            camera_id: Entity::PLACEHOLDER,
-        }
-    }
-}
+pub struct Bevy3dViewport;
 
 /// Plugin for the 3D Viewport pane.
 pub struct Viewport3dPanePlugin;
 
 impl Plugin for Viewport3dPanePlugin {
     fn build(&self, app: &mut App) {
-        if !app.is_plugin_added::<InfiniteGridPlugin>() {
-            app.add_plugins(InfiniteGridPlugin);
-        }
-
-        app.add_plugins((DefaultEditorCamPlugins, ViewGizmoPlugin, SelectionBoxPlugin))
-            .add_systems(Startup, setup)
-            .add_systems(
-                First,
-                render_target_picking_passthrough
-                    .in_set(PickingSystems::Input)
-                    .after(touch_pick_events)
-                    .after(mouse_pick_events),
-            )
-            .add_systems(
-                PostUpdate,
-                (
-                    update_render_target_size.after(ui_layout_system),
-                    disable_editor_cam_during_gizmo_interaction,
-                ),
-            )
-            .add_observer(
-                |trigger: On<Remove, Bevy3dViewport>,
-                 mut commands: Commands,
-                 query: Query<&Bevy3dViewport>| {
-                    // Despawn the viewport camera
-                    commands
-                        .entity(query.get(trigger.event().event_target()).unwrap().camera_id)
-                        .despawn();
-                },
-            );
-
         app.register_pane("Scene", on_pane_creation);
     }
-}
-
-/// Temporary. We will need a proper design for mutually exclusive controls.
-fn disable_editor_cam_during_gizmo_interaction(
-    transform_gizmo: Single<Ref<TransformGizmo>>,
-    mut query: Query<&mut EditorCam>,
-) {
-    if !transform_gizmo.is_changed() {
-        return;
-    }
-    let enable = transform_gizmo.interaction().is_none();
-    for mut editor_cam in &mut query {
-        editor_cam.enabled = enable;
-    }
-}
-
-/// A viewport is considered active while the mouse is hovering over it.
-#[derive(Component)]
-struct Active;
-
-// FIXME: This system makes a lot of assumptions and is therefore rather fragile. Does not handle multiple windows.
-/// Sends copies of [`PointerInput`] event actions from the mouse pointer to pointers belonging to the viewport panes.
-fn render_target_picking_passthrough(
-    viewports: Query<(Entity, &Bevy3dViewport)>,
-    content: Query<&PaneContentNode>,
-    children_query: Query<&Children>,
-    node_query: Query<(&ComputedNode, &UiGlobalTransform, &ImageNode), With<Active>>,
-    mut pointer_input_reader: MessageReader<PointerInput>,
-    // Using commands to output PointerInput events to avoid clashing with the MessageReader
-    mut commands: Commands,
-) {
-    for event in pointer_input_reader.read() {
-        // Ignore the events sent from this system by only copying events that come directly from the mouse.
-        if event.pointer_id != PointerId::Mouse {
-            continue;
-        }
-        for (pane_root, _viewport) in &viewports {
-            let Some(content_node_id) = children_query
-                .iter_descendants(pane_root)
-                .find(|e| content.contains(*e))
-            else {
-                continue;
-            };
-
-            let image_id = children_query.get(content_node_id).unwrap()[0];
-            let Ok((computed_node, global_transform, ui_image)) = node_query.get(image_id) else {
-                // Inactive viewport
-                continue;
-            };
-            let node_top_left = global_transform.translation - computed_node.size() / 2.;
-            let position = event.location.position - node_top_left;
-            let target = NormalizedRenderTarget::Image(ui_image.image.clone().into());
-
-            let event_copy = PointerInput {
-                action: event.action,
-                location: Location { position, target },
-                pointer_id: pointer_id_from_entity(pane_root),
-            };
-
-            commands.write_message(event_copy);
-        }
-    }
-}
-
-fn setup(mut commands: Commands, theme: Res<Theme>) {
-    commands.spawn((
-        InfiniteGrid,
-        InfiniteGridSettings {
-            x_axis_color: theme.viewport.x_axis_color,
-            z_axis_color: theme.viewport.z_axis_color,
-            major_line_color: theme.viewport.grid_major_line_color,
-            minor_line_color: theme.viewport.grid_minor_line_color,
-            ..default()
-        },
-        RenderLayers::layer(1),
-    ));
-}
-
-/// Construct a pointer id from an entity. Used to tie the viewport panel root entity to a pointer id.
-fn pointer_id_from_entity(entity: Entity) -> PointerId {
-    let bits = entity.to_bits();
-    PointerId::Custom(Uuid::from_u64_pair(bits, bits))
 }
 
 fn on_pane_creation(
     structure: In<PaneStructure>,
     mut commands: Commands,
-    mut images: ResMut<Assets<Image>>,
     theme: Res<Theme>,
-    primary_window: Single<&Window, With<PrimaryWindow>>,
 ) {
-    let window_size = primary_window.resolution.physical_size();
-    let width = window_size.x.max(1);
-    let height = window_size.y.max(1);
-    let mut image =
-        Image::new_target_texture(width, height, TextureFormat::Bgra8UnormSrgb, None);
-    image.texture_descriptor.usage |= TextureUsages::RENDER_ATTACHMENT;
+    commands.entity(structure.root).insert(Bevy3dViewport);
+    commands.entity(structure.content).insert((
+        Node {
+            width: Val::Percent(100.0),
+            height: Val::Percent(100.0),
+            flex_direction: FlexDirection::Column,
+            ..default()
+        },
+        BackgroundColor(theme.viewport.background_color),
+    ));
 
-    let image_handle = images.add(image);
-
-    // Spawn the cursor associated with this viewport pane.
-    let pointer_id = pointer_id_from_entity(structure.root);
-    commands.spawn((pointer_id, ChildOf(structure.root)));
-
-    let image_entity = commands
-        .spawn((
-            ImageNode::new(image_handle.clone()),
-            fit_to_parent(),
-            ChildOf(structure.content),
-        ))
-        .observe(|trigger: On<Pointer<Over>>, mut commands: Commands| {
-            commands
-                .entity(trigger.event().event_target())
-                .insert(Active);
-        })
-        .observe(|trigger: On<Pointer<Out>>, mut commands: Commands| {
-            commands
-                .entity(trigger.event().event_target())
-                .remove::<Active>();
-        })
-        .id();
-    let _ = image_entity;
-    spawn_view_gizmo_node(&mut commands, &mut images, structure.content);
-
-    let camera_id = commands
-        .spawn((
-            Camera3d::default(),
-            Camera {
-                clear_color: ClearColorConfig::Custom(theme.viewport.background_color),
-                is_active: false,
+    commands.entity(structure.content).with_children(|parent| {
+        parent.spawn((
+            Node {
+                height: Val::Px(30.0),
+                width: Val::Percent(100.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::SpaceBetween,
+                padding: UiRect::horizontal(Val::Px(10.0)),
                 ..default()
             },
-            RenderTarget::Image(image_handle.into()),
-            EditorCam::default(),
-            GizmoCamera,
-            RenderTargetResizeState::default(),
-            Transform::from_translation(Vec3::ONE * 5.).looking_at(Vec3::ZERO, Vec3::Y),
-            RenderLayers::from_layers(&[0, 1]),
-            MeshPickingCamera,
+            BackgroundColor(Color::srgba(0.08, 0.09, 0.11, 0.95)),
         ))
-        .id();
+        .with_children(|bar| {
+            bar.spawn((
+                Text::new("Scene"),
+                TextFont {
+                    font: theme.text.font.clone(),
+                    font_size: 12.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.88, 0.89, 0.91)),
+            ));
+            bar.spawn((
+                Text::new("Viewport skeleton"),
+                TextFont {
+                    font: theme.text.font.clone(),
+                    font_size: 11.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.58, 0.61, 0.66)),
+            ));
+        });
 
-    commands
-        .entity(structure.root)
-        .insert(Bevy3dViewport { camera_id });
-}
-
-fn update_render_target_size(
-    query: Query<(Entity, &Bevy3dViewport)>,
-    mut camera_query: Query<(&RenderTarget, &mut Camera, &mut RenderTargetResizeState)>,
-    bodies: Query<&PaneContentNode>,
-    children_query: Query<&Children>,
-    computed_node_query: Query<&ComputedNode>,
-    mut images: ResMut<Assets<Image>>,
-) {
-    for (pane_root, viewport) in &query {
-        let Some(pane_body) = children_query
-            .iter_descendants(pane_root)
-            .find(|e| bodies.contains(*e))
-        else {
-            continue;
-        };
-
-        let Ok(computed_node) = computed_node_query.get(pane_body) else {
-            continue;
-        };
-        let content_node_size = computed_node.size();
-
-        let (target, mut camera, mut resize_state) = camera_query.get_mut(viewport.camera_id).unwrap();
-        let RenderTarget::Image(image_handle) = target else {
-            continue;
-        };
-        let size = Extent3d {
-            width: u32::max(1, content_node_size.x as u32),
-            height: u32::max(1, content_node_size.y as u32),
-            depth_or_array_layers: 1,
-        };
-        let image = images.get_mut(&image_handle.handle).unwrap();
-        let current = image.texture_descriptor.size;
-        let requested = UVec2::new(size.width, size.height);
-        if resize_state.last_size != requested {
-            resize_state.last_size = requested;
-            resize_state.stable_frames = 0;
-        }
-
-        if current.width != size.width || current.height != size.height {
-            image.resize(size);
-            camera.is_active = false;
-            continue;
-        }
-
-        if resize_state.stable_frames < 1 {
-            resize_state.stable_frames += 1;
-            camera.is_active = false;
-            continue;
-        }
-
-        camera.is_active = size.width > 1 && size.height > 1;
-    }
+        parent.spawn((
+            Node {
+                flex_grow: 1.0,
+                width: Val::Percent(100.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+        ))
+        .with_children(|content| {
+            content.spawn((
+                Text::new("3D viewport temporarily reduced to a stable placeholder"),
+                TextFont {
+                    font: theme.text.font.clone(),
+                    font_size: 13.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.72, 0.74, 0.77)),
+            ));
+        });
+    });
 }

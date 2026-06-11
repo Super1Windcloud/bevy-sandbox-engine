@@ -2,6 +2,7 @@
 
 use bevy::{app::Plugin, color::palettes::tailwind, prelude::*};
 use bevy_editor_core::selection::EditorSelection;
+use bevy_editor_styles::Theme;
 use bevy_i_cant_believe_its_not_bsn::{Template, TemplateEntityCommandsExt, on, template};
 use bevy_pane_layout::prelude::{PaneAppExt, PaneStructure};
 
@@ -45,12 +46,13 @@ fn update_scene_tree(
     scene_trees: Query<Entity, With<SceneTreeRoot>>,
     scene_entities: Query<(Entity, &Name)>,
     selection: Res<EditorSelection>,
+    theme: Res<Theme>,
     mut commands: Commands,
 ) {
     for scene_tree in &scene_trees {
         let tree_rows: Template = scene_entities
             .iter()
-            .flat_map(|(entity, name)| scene_tree_row_for_entity(entity, name, &selection, 0))
+            .flat_map(|(entity, name)| scene_tree_row_for_entity(entity, name, &selection, &theme, 0))
             .collect();
 
         commands.entity(scene_tree).build_children(tree_rows);
@@ -61,6 +63,7 @@ fn scene_tree_row_for_entity(
     entity: Entity,
     name: &Name,
     selection: &EditorSelection,
+    theme: &Theme,
     level: usize,
 ) -> Template {
     let selection_handler =
@@ -106,7 +109,11 @@ fn scene_tree_row_for_entity(
             // Entity name
             (
                 Text(name.into()),
-                TextFont::from_font_size(12.0),
+                TextFont {
+                    font: theme.text.font.clone(),
+                    font_size: 12.0,
+                    ..default()
+                },
                 TextColor(if selection.contains(entity) { Color::WHITE } else { tailwind::NEUTRAL_200.into() }),
                 Pickable::IGNORE,
             );

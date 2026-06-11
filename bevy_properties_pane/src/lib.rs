@@ -66,7 +66,7 @@ fn properties_pane(selection: &EditorSelection, theme: &Theme, world: &World) ->
                     ..default()
                 }
             ) => [
-                @{ summary_panel(selection, world) };
+                @{ summary_panel(selection, theme, world) };
                 @{ component_list(selection, theme, world) };
             ];
         },
@@ -83,7 +83,11 @@ fn properties_pane(selection: &EditorSelection, theme: &Theme, world: &World) ->
             ) => [
                 (
                     Text::new(empty_text),
-                    TextFont::from_font_size(14.0),
+                    TextFont {
+                        font: theme.text.font.clone(),
+                        font_size: 14.0,
+                        ..default()
+                    },
                     TextColor(Color::srgb(0.514, 0.514, 0.522)),
                 );
             ];
@@ -91,7 +95,7 @@ fn properties_pane(selection: &EditorSelection, theme: &Theme, world: &World) ->
     }
 }
 
-fn summary_panel(entity: Entity, world: &World) -> Template {
+fn summary_panel(entity: Entity, theme: &Theme, world: &World) -> Template {
     let locale = EditorLocale::detect();
     let title = world
         .get::<Name>(entity)
@@ -129,7 +133,11 @@ fn summary_panel(entity: Entity, world: &World) -> Template {
         ) => [
             (
                 Text::new(title),
-                TextFont::from_font_size(13.0),
+                TextFont {
+                    font: theme.text.font.clone(),
+                    font_size: 13.0,
+                    ..default()
+                },
                 TextColor(Color::srgb(0.90, 0.90, 0.92)),
             );
             (
@@ -141,12 +149,20 @@ fn summary_panel(entity: Entity, world: &World) -> Template {
             ) => [
                 (
                     Text::new(format!("{entity_label} {}", entity.index())),
-                    TextFont::from_font_size(11.0),
+                    TextFont {
+                        font: theme.text.font.clone(),
+                        font_size: 11.0,
+                        ..default()
+                    },
                     TextColor(Color::srgb(0.70, 0.71, 0.73)),
                 );
                 (
                     Text::new(format!("{component_label}: {component_count}")),
-                    TextFont::from_font_size(11.0),
+                    TextFont {
+                        font: theme.text.font.clone(),
+                        font_size: 11.0,
+                        ..default()
+                    },
                     TextColor(Color::srgb(0.70, 0.71, 0.73)),
                 );
             ];
@@ -210,18 +226,30 @@ fn component_list(entity: Entity, theme: &Theme, world: &World) -> Template {
                         ) => [
                             (
                                 Text::new("▼"),
-                                TextFont::from_font_size(12.0),
+                                TextFont {
+                                    font: theme.text.font.clone(),
+                                    font_size: 12.0,
+                                    ..default()
+                                },
                                 TextColor(Color::srgb(0.769, 0.769, 0.769)),
                             );
                             (
                                 Text::new(name.clone()),
-                                TextFont::from_font_size(12.0),
+                                TextFont {
+                                    font: theme.text.font.clone(),
+                                    font_size: 12.0,
+                                    ..default()
+                                },
                                 TextColor(Color::srgb(0.863, 0.863, 0.863)),
                             );
                         ];
                         (
                             Text::new("⋯"),
-                            TextFont::from_font_size(12.0),
+                            TextFont {
+                                font: theme.text.font.clone(),
+                                font_size: 12.0,
+                                ..default()
+                            },
                             TextColor(Color::srgb(0.769, 0.769, 0.769)),
                         );
                     ];
@@ -240,7 +268,11 @@ fn component_list(entity: Entity, theme: &Theme, world: &World) -> Template {
                                         EditorLocale::ZhCn => "<无反射信息>",
                                         EditorLocale::EnUs => "<reflection unavailable>",
                                     }),
-                                    TextFont::from_font_size(11.0),
+                                    TextFont {
+                                        font: theme.text.font.clone(),
+                                        font_size: 11.0,
+                                        ..default()
+                                    },
                                     TextColor(Color::srgb(0.514, 0.514, 0.522)),
                                 );
                             ];
@@ -261,7 +293,7 @@ fn component(type_info: Option<&TypeInfo>, reflect: &dyn Reflect, theme: &Theme)
     }
 }
 
-fn reflected_struct(struct_info: &StructInfo, reflect: &dyn Reflect, _theme: &Theme) -> Template {
+fn reflected_struct(struct_info: &StructInfo, reflect: &dyn Reflect, theme: &Theme) -> Template {
     let fields: Template = struct_info
         .iter()
         .enumerate()
@@ -292,12 +324,20 @@ fn reflected_struct(struct_info: &StructInfo, reflect: &dyn Reflect, _theme: &Th
                 ) => [
                     (
                         Text::new(field.name()),
-                        TextFont::from_font_size(12.0),
+                        TextFont {
+                            font: theme.text.font.clone(),
+                            font_size: 12.0,
+                            ..default()
+                        },
                         TextColor(Color::srgb(0.855, 0.855, 0.855)),
                     );
                     (
                         Text::new(value_string.clone()),
-                        TextFont::from_font_size(12.0),
+                        TextFont {
+                            font: theme.text.font.clone(),
+                            font_size: 12.0,
+                            ..default()
+                        },
                         TextColor(Color::srgb(0.761, 0.761, 0.761)),
                     );
                 ];
@@ -319,7 +359,7 @@ fn reflected_struct(struct_info: &StructInfo, reflect: &dyn Reflect, _theme: &Th
     }
 }
 
-fn reflected_tuple_struct(tuple_struct_info: &TupleStructInfo, _theme: &Theme) -> Template {
+fn reflected_tuple_struct(tuple_struct_info: &TupleStructInfo, theme: &Theme) -> Template {
     let todo_label = match EditorLocale::detect() {
         EditorLocale::ZhCn => "待实现",
         EditorLocale::EnUs => "TODO",
@@ -331,21 +371,29 @@ fn reflected_tuple_struct(tuple_struct_info: &TupleStructInfo, _theme: &Theme) -
             template! {
                 (
                     Text::new(todo_label),
-                    TextFont::from_font_size(10.0),
+                    TextFont {
+                        font: theme.text.font.clone(),
+                        font_size: 10.0,
+                        ..default()
+                    },
                 );
             }
         })
         .collect()
 }
 
-fn reflected_enum(enum_info: &EnumInfo, _theme: &Theme) -> Template {
+fn reflected_enum(enum_info: &EnumInfo, theme: &Theme) -> Template {
     let variants: Template = enum_info
         .iter()
         .flat_map(|variant| {
             template! {
                 (
                     Text::new(variant.name()),
-                    TextFont::from_font_size(10.0),
+                    TextFont {
+                        font: theme.text.font.clone(),
+                        font_size: 10.0,
+                        ..default()
+                    },
                 );
             }
         })
