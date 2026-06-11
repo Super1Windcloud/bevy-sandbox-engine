@@ -6,6 +6,8 @@ default:
     just --list
 
 launcher:
+    cargo build -p bevy-sandbox-engine
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     cargo run -p bevy-sandbox-engine-launcher
 
 watch:
@@ -13,12 +15,12 @@ watch:
     cargo watch -x "run -p bevy-sandbox-engine-launcher"
 
 launcher-backend backend="vulkan":
-    $env:WGPU_BACKEND = "{{backend}}"
+    $env:WGPU_BACKEND = "{{ backend }}"
     cargo run -p bevy-sandbox-engine-launcher
 
 launcher-watch-backend backend="vulkan":
     if (-not (Get-Command cargo-watch -ErrorAction SilentlyContinue)) { Write-Error "cargo-watch is required. Install it with: cargo install cargo-watch"; exit 1 }
-    $env:WGPU_BACKEND = "{{backend}}"
+    $env:WGPU_BACKEND = "{{ backend }}"
     cargo watch -x "run -p bevy-sandbox-engine-launcher"
 
 editor:

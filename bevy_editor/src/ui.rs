@@ -225,8 +225,8 @@ fn ui_setup(mut commands: Commands) {
         .spawn((
             Node {
                 position_type: PositionType::Absolute,
-                top: Val::Px(56.0),
-                bottom: Val::Px(26.0),
+                top: Val::Px(88.0),
+                bottom: Val::Px(24.0),
                 left: Val::Px(0.0),
                 right: Val::Px(0.0),
                 display: Display::Flex,
@@ -257,17 +257,18 @@ fn render_editor_shell(
     let i18n = strings(ui_state.locale);
 
     egui::TopBottomPanel::top("editor_top_bar")
-        .exact_height(74.0)
+        .exact_height(84.0)
         .frame(
             egui::Frame::new()
-                .fill(egui::Color32::from_rgb(43, 43, 43))
-                .inner_margin(egui::Margin::symmetric(10, 6)),
+                .fill(egui::Color32::from_rgb(38, 38, 38))
+                .inner_margin(egui::Margin::ZERO),
         )
         .show(ctx, |ui| {
             ui.vertical(|ui| {
-                ui.spacing_mut().item_spacing = egui::vec2(8.0, 6.0);
+                ui.spacing_mut().item_spacing = egui::vec2(0.0, 0.0);
 
                 ui.horizontal(|ui| {
+                    ui.set_height(28.0);
                     ui.spacing_mut().item_spacing.x = 14.0;
                     ui.label(
                         egui::RichText::new(i18n.engine_name)
@@ -312,92 +313,99 @@ fn render_editor_shell(
                     );
                 });
 
-                ui.horizontal(|ui| {
-                    ui.spacing_mut().item_spacing.x = 6.0;
+                ui.separator();
 
-                    tool_button(
-                        ui,
-                        &mut active_tool,
-                        &mut gizmo_settings,
-                        EditorTool::Select,
-                        i18n.tool_select,
+                ui.columns(3, |columns| {
+                    columns[0].with_layout(egui::Layout::left_to_right(egui::Align::Center), |_| {});
+
+                    columns[1].with_layout(
+                        egui::Layout::centered_and_justified(egui::Direction::LeftToRight),
+                        |ui| {
+                            ui.spacing_mut().item_spacing.x = 6.0;
+
+                            play_button(
+                                ui,
+                                &mut shell_state,
+                                PlayState::Playing,
+                                "▶",
+                                i18n.status_playing,
+                            );
+                            play_button(
+                                ui,
+                                &mut shell_state,
+                                PlayState::Paused,
+                                "⏸",
+                                i18n.status_paused,
+                            );
+                            if ui.button("⏹").clicked() {
+                                shell_state.play_state = PlayState::Editing;
+                                shell_state.status = i18n.status_stopped.to_string();
+                            }
+
+                            ui.separator();
+
+                            tool_button(
+                                ui,
+                                &mut active_tool,
+                                &mut gizmo_settings,
+                                EditorTool::Select,
+                                i18n.tool_select,
+                            );
+                            tool_button(
+                                ui,
+                                &mut active_tool,
+                                &mut gizmo_settings,
+                                EditorTool::Move,
+                                i18n.tool_move,
+                            );
+                            tool_button(
+                                ui,
+                                &mut active_tool,
+                                &mut gizmo_settings,
+                                EditorTool::Rotate,
+                                i18n.tool_rotate,
+                            );
+                            tool_button(
+                                ui,
+                                &mut active_tool,
+                                &mut gizmo_settings,
+                                EditorTool::Scale,
+                                i18n.tool_scale,
+                            );
+                        },
                     );
-                    tool_button(
-                        ui,
-                        &mut active_tool,
-                        &mut gizmo_settings,
-                        EditorTool::Move,
-                        i18n.tool_move,
-                    );
-                    tool_button(
-                        ui,
-                        &mut active_tool,
-                        &mut gizmo_settings,
-                        EditorTool::Rotate,
-                        i18n.tool_rotate,
-                    );
-                    tool_button(
-                        ui,
-                        &mut active_tool,
-                        &mut gizmo_settings,
-                        EditorTool::Scale,
-                        i18n.tool_scale,
-                    );
 
-                    ui.separator();
-
-                    play_button(
-                        ui,
-                        &mut shell_state,
-                        PlayState::Playing,
-                        "▶",
-                        i18n.status_playing,
-                    );
-                    play_button(
-                        ui,
-                        &mut shell_state,
-                        PlayState::Paused,
-                        "⏸",
-                        i18n.status_paused,
-                    );
-                    if ui.button("⏹").clicked() {
-                        shell_state.play_state = PlayState::Editing;
-                        shell_state.status = i18n.status_stopped.to_string();
-                    }
-
-                    ui.separator();
-
-                    if ui.button(i18n.action_new_entity).clicked() {
-                        spawn_new_entity(&mut commands);
-                        shell_state.status = i18n.status_new_entity.to_string();
-                    }
-
-                    let snap_label = if gizmo_settings.snap_enabled {
-                        i18n.action_snap_on
-                    } else {
-                        i18n.action_snap_off
-                    };
-                    if ui.button(snap_label).clicked() {
-                        gizmo_settings.snap_enabled = !gizmo_settings.snap_enabled;
-                        shell_state.status = if gizmo_settings.snap_enabled {
-                            i18n.status_snap_on.to_string()
-                        } else {
-                            i18n.status_snap_off.to_string()
-                        };
-                    }
-
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    columns[2].with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         ui.label(
                             egui::RichText::new(i18n.coordinate_text)
                                 .color(egui::Color32::from_rgb(170, 170, 173)),
                         );
+
+                        let snap_label = if gizmo_settings.snap_enabled {
+                            i18n.action_snap_on
+                        } else {
+                            i18n.action_snap_off
+                        };
+                        if ui.button(snap_label).clicked() {
+                            gizmo_settings.snap_enabled = !gizmo_settings.snap_enabled;
+                            shell_state.status = if gizmo_settings.snap_enabled {
+                                i18n.status_snap_on.to_string()
+                            } else {
+                                i18n.status_snap_off.to_string()
+                            };
+                        }
+
+                        if ui.button(i18n.action_new_entity).clicked() {
+                            spawn_new_entity(&mut commands);
+                            shell_state.status = i18n.status_new_entity.to_string();
+                        }
                     });
                 });
             });
         });
 
     egui::TopBottomPanel::bottom("editor_status_bar")
-        .exact_height(26.0)
+        .exact_height(24.0)
         .frame(
             egui::Frame::new()
                 .fill(egui::Color32::from_rgb(16, 18, 20))

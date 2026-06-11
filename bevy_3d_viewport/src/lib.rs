@@ -178,10 +178,41 @@ fn on_pane_creation(
     commands.spawn((pointer_id, ChildOf(structure.root)));
 
     commands.entity(structure.header).with_children(|parent| {
-        parent.spawn(Text::new(match EditorLocale::detect() {
-            EditorLocale::ZhCn => "场景",
-            EditorLocale::EnUs => "Scene",
-        }));
+        let (scene_label, game_label) = match EditorLocale::detect() {
+            EditorLocale::ZhCn => ("场景", "游戏"),
+            EditorLocale::EnUs => ("Scene", "Game"),
+        };
+
+        parent
+            .spawn(Node {
+                height: Val::Percent(100.0),
+                align_items: AlignItems::Center,
+                column_gap: Val::Px(12.0),
+                ..default()
+            })
+            .with_children(|row| {
+                row.spawn((
+                    Node {
+                        padding: UiRect::axes(Val::Px(8.0), Val::Px(4.0)),
+                        border_radius: BorderRadius::all(Val::Px(3.0)),
+                        ..default()
+                    },
+                    BackgroundColor(Color::srgb(0.18, 0.18, 0.19)),
+                ))
+                .with_children(|tab| {
+                    tab.spawn((
+                        Text::new(scene_label),
+                        TextFont::from_font_size(12.0),
+                        TextColor(Color::srgb(0.90, 0.90, 0.92)),
+                    ));
+                });
+
+                row.spawn((
+                    Text::new(game_label),
+                    TextFont::from_font_size(12.0),
+                    TextColor(Color::srgb(0.58, 0.59, 0.61)),
+                ));
+            });
     });
 
     let image_entity = commands

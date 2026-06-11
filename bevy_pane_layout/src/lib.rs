@@ -120,37 +120,17 @@ fn setup(
         .insert(ChildOf(*panes_root))
         .id();
 
-    let left_sidebar = spawn_divider(&mut commands, Divider::Vertical, 0.18)
-        .insert(ChildOf(divider))
-        .id();
-
-    spawn_pane(&mut commands, &theme, 0.50, "Hierarchy").insert(ChildOf(left_sidebar));
-    spawn_resize_handle(&mut commands, Divider::Vertical).insert(ChildOf(left_sidebar));
-    spawn_pane(&mut commands, &theme, 0.50, "Asset Store").insert(ChildOf(left_sidebar));
+    spawn_pane(&mut commands, &theme, 0.19, "Hierarchy").insert(ChildOf(divider));
 
     spawn_resize_handle(&mut commands, Divider::Horizontal).insert(ChildOf(divider));
 
-    let center_workspace = spawn_divider(&mut commands, Divider::Vertical, 0.62)
+    let center_workspace = spawn_divider(&mut commands, Divider::Vertical, 0.61)
         .insert(ChildOf(divider))
         .id();
 
-    let viewport_stack = spawn_divider(&mut commands, Divider::Horizontal, 0.70)
-        .insert(ChildOf(center_workspace))
-        .id();
-
-    spawn_pane(&mut commands, &theme, 0.67, "Scene").insert(ChildOf(viewport_stack));
-    spawn_resize_handle(&mut commands, Divider::Horizontal).insert(ChildOf(viewport_stack));
-    spawn_pane(&mut commands, &theme, 0.33, "Game").insert(ChildOf(viewport_stack));
-
+    spawn_pane(&mut commands, &theme, 0.64, "Scene").insert(ChildOf(center_workspace));
     spawn_resize_handle(&mut commands, Divider::Vertical).insert(ChildOf(center_workspace));
-
-    let bottom_stack = spawn_divider(&mut commands, Divider::Horizontal, 0.30)
-        .insert(ChildOf(center_workspace))
-        .id();
-
-    spawn_pane(&mut commands, &theme, 0.72, "Project").insert(ChildOf(bottom_stack));
-    spawn_resize_handle(&mut commands, Divider::Horizontal).insert(ChildOf(bottom_stack));
-    spawn_pane(&mut commands, &theme, 0.28, "Console").insert(ChildOf(bottom_stack));
+    spawn_pane(&mut commands, &theme, 0.36, "Project").insert(ChildOf(center_workspace));
 
     spawn_resize_handle(&mut commands, Divider::Horizontal).insert(ChildOf(divider));
 
