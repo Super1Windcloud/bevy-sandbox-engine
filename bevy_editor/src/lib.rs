@@ -17,14 +17,13 @@ use std::time::Duration;
 use bevy::app::App as BevyApp;
 use bevy::asset::UnapprovedPathMode;
 use bevy::color::palettes::tailwind;
-use bevy::diagnostic::FrameCount;
 use bevy::gilrs::GilrsPlugin;
 use bevy::prelude::*;
 use bevy::render::{
     RenderPlugin,
     settings::{Backends, RenderCreation, WgpuSettings},
 };
-use bevy::window::{MonitorSelection, PrimaryWindow, WindowMode, WindowPlugin, WindowPosition};
+use bevy::window::{MonitorSelection, WindowMode, WindowPlugin, WindowPosition};
 use bevy::window::{WindowCloseRequested, WindowClosed};
 use bevy::{
     feathers::{FeathersPlugin, dark_theme::create_dark_theme, theme::UiTheme},
@@ -57,21 +56,9 @@ pub mod project;
 mod ui;
 
 const APP_WINDOW_BG: Color = Color::srgb(0.039, 0.047, 0.063);
-const SHOW_WINDOW_AFTER_FRAMES: u32 = 3;
-
 #[derive(Resource, Default, Clone)]
 struct LaunchOptions {
     project_path: Option<std::path::PathBuf>,
-}
-
-fn show_primary_window_when_ready(
-    mut primary_window: Single<&mut Window, With<PrimaryWindow>>,
-    frame_count: Res<FrameCount>,
-) {
-    if !primary_window.visible && frame_count.0 >= SHOW_WINDOW_AFTER_FRAMES {
-        info!("Showing primary editor window at frame {}", frame_count.0);
-        primary_window.visible = true;
-    }
 }
 
 fn log_window_close_requested(mut events: MessageReader<WindowCloseRequested>) {
@@ -111,7 +98,7 @@ impl Plugin for RuntimePlugin {
                             resolution: bevy::window::WindowResolution::new(1440, 900),
                             position: WindowPosition::Centered(MonitorSelection::Primary),
                             mode: WindowMode::Windowed,
-                            visible: false,
+                            visible: true,
                             ..default()
                         }),
                         ..default()
@@ -128,7 +115,6 @@ impl Plugin for RuntimePlugin {
             .add_systems(
                 Update,
                 (
-                    show_primary_window_when_ready,
                     log_window_close_requested,
                     log_window_closed,
                 ),

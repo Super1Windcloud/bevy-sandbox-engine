@@ -8,7 +8,6 @@ use bevy::{
 };
 use bevy_editor_styles::Theme;
 
-use super::PANE_HEADER_DIVIDER;
 use super::{HEADER_HEIGHT, PANE_HEADER_BG, PANE_HEADER_BORDER, PANE_HEADER_TEXT};
 
 pub fn root_node() -> Node {
@@ -65,23 +64,18 @@ pub fn header_cursor() -> EntityCursor {
     EntityCursor::System(SystemCursorIcon::Pointer)
 }
 
-pub fn header_divider_node() -> Node {
-    Node {
-        width: Val::Px(1.0),
-        height: Val::Px(14.0),
-        margin: UiRect::horizontal(Val::Px(4.0)),
+pub fn title_font(theme: &Theme) -> TextFont {
+    TextFont {
+        font: theme.text.font.clone(),
+        font_size: 12.0,
         ..default()
     }
 }
 
-pub fn header_divider_theme() -> ThemeBackgroundColor {
-    ThemeBackgroundColor(PANE_HEADER_DIVIDER)
-}
-
-pub fn title_font(theme: &Theme) -> TextFont {
+pub fn close_button_font(theme: &Theme) -> TextFont {
     TextFont {
         font: theme.text.font.clone(),
-        font_size: 14.0,
+        font_size: 12.0,
         ..default()
     }
 }

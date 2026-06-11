@@ -1,6 +1,6 @@
 //! An interactive, reflection-based inspector for Bevy ECS data in running applications.
 
-use bevy::{feathers::theme::ThemedText, prelude::*, reflect::*};
+use bevy::{prelude::*, reflect::*};
 use bevy_editor_core::selection::{EditorSelection, common_conditions::primary_selection_changed};
 use bevy_editor_styles::{EditorLocale, Theme};
 use bevy_i_cant_believe_its_not_bsn::{Template, TemplateEntityCommandsExt, template};
@@ -25,15 +25,6 @@ impl Plugin for PropertiesPanePlugin {
 struct PropertiesPaneBody;
 
 fn setup_pane(pane: In<PaneStructure>, mut commands: Commands) {
-    let title = match EditorLocale::detect() {
-        EditorLocale::ZhCn => "检查器",
-        EditorLocale::EnUs => "Inspector",
-    };
-
-    commands.entity(pane.header).with_children(|parent| {
-        parent.spawn((Text::new(title), ThemedText));
-    });
-
     commands.entity(pane.content).insert((
         PropertiesPaneBody,
         Node {

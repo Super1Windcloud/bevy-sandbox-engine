@@ -2,6 +2,7 @@
 use bevy::{
     asset::uuid::Uuid,
     camera::{NormalizedRenderTarget, RenderTarget, visibility::RenderLayers},
+    image::Image,
     picking::{
         PickingSystems,
         input::{mouse_pick_events, touch_pick_events},
@@ -10,9 +11,10 @@ use bevy::{
     prelude::*,
     render::render_resource::{Extent3d, TextureFormat, TextureUsages},
     ui::ui_layout_system,
+    window::PrimaryWindow,
 };
 use bevy_editor_cam::prelude::{DefaultEditorCamPlugins, EditorCam};
-use bevy_editor_styles::{EditorLocale, Theme};
+use bevy_editor_styles::Theme;
 use bevy_infinite_grid::{InfiniteGrid, InfiniteGridPlugin, InfiniteGridSettings};
 use bevy_pane_layout::{components::fit_to_parent, prelude::*};
 use bevy_transform_gizmos::{TransformGizmo, prelude::*};
@@ -28,6 +30,12 @@ mod view_gizmo;
 #[derive(Component)]
 pub struct Bevy3dViewport {
     camera_id: Entity,
+}
+
+#[derive(Component, Default)]
+struct RenderTargetResizeState {
+    last_size: UVec2,
+    stable_frames: u8,
 }
 
 impl Default for Bevy3dViewport {
@@ -165,55 +173,20 @@ fn on_pane_creation(
     mut commands: Commands,
     mut images: ResMut<Assets<Image>>,
     theme: Res<Theme>,
+    primary_window: Single<&Window, With<PrimaryWindow>>,
 ) {
-    let mut image = Image::default();
-
+    let window_size = primary_window.resolution.physical_size();
+    let width = window_size.x.max(1);
+    let height = window_size.y.max(1);
+    let mut image =
+        Image::new_target_texture(width, height, TextureFormat::Bgra8UnormSrgb, None);
     image.texture_descriptor.usage |= TextureUsages::RENDER_ATTACHMENT;
-    image.texture_descriptor.format = TextureFormat::Bgra8UnormSrgb;
 
     let image_handle = images.add(image);
 
     // Spawn the cursor associated with this viewport pane.
     let pointer_id = pointer_id_from_entity(structure.root);
     commands.spawn((pointer_id, ChildOf(structure.root)));
-
-    commands.entity(structure.header).with_children(|parent| {
-        let (scene_label, game_label) = match EditorLocale::detect() {
-            EditorLocale::ZhCn => ("场景", "游戏"),
-            EditorLocale::EnUs => ("Scene", "Game"),
-        };
-
-        parent
-            .spawn(Node {
-                height: Val::Percent(100.0),
-                align_items: AlignItems::Center,
-                column_gap: Val::Px(12.0),
-                ..default()
-            })
-            .with_children(|row| {
-                row.spawn((
-                    Node {
-                        padding: UiRect::axes(Val::Px(8.0), Val::Px(4.0)),
-                        border_radius: BorderRadius::all(Val::Px(3.0)),
-                        ..default()
-                    },
-                    BackgroundColor(Color::srgb(0.18, 0.18, 0.19)),
-                ))
-                .with_children(|tab| {
-                    tab.spawn((
-                        Text::new(scene_label),
-                        TextFont::from_font_size(12.0),
-                        TextColor(Color::srgb(0.90, 0.90, 0.92)),
-                    ));
-                });
-
-                row.spawn((
-                    Text::new(game_label),
-                    TextFont::from_font_size(12.0),
-                    TextColor(Color::srgb(0.58, 0.59, 0.61)),
-                ));
-            });
-    });
 
     let image_entity = commands
         .spawn((
@@ -240,11 +213,13 @@ fn on_pane_creation(
             Camera3d::default(),
             Camera {
                 clear_color: ClearColorConfig::Custom(theme.viewport.background_color),
+                is_active: false,
                 ..default()
             },
             RenderTarget::Image(image_handle.into()),
             EditorCam::default(),
             GizmoCamera,
+            RenderTargetResizeState::default(),
             Transform::from_translation(Vec3::ONE * 5.).looking_at(Vec3::ZERO, Vec3::Y),
             RenderLayers::from_layers(&[0, 1]),
             MeshPickingCamera,
@@ -258,10 +233,10 @@ fn on_pane_creation(
 
 fn update_render_target_size(
     query: Query<(Entity, &Bevy3dViewport)>,
-    mut camera_query: Query<&RenderTarget>,
+    mut camera_query: Query<(&RenderTarget, &mut Camera, &mut RenderTargetResizeState)>,
     bodies: Query<&PaneContentNode>,
     children_query: Query<&Children>,
-    computed_node_query: Query<&ComputedNode, Changed<ComputedNode>>,
+    computed_node_query: Query<&ComputedNode>,
     mut images: ResMut<Assets<Image>>,
 ) {
     for (pane_root, viewport) in &query {
@@ -275,10 +250,9 @@ fn update_render_target_size(
         let Ok(computed_node) = computed_node_query.get(pane_body) else {
             continue;
         };
-        // TODO Convert to physical pixels
         let content_node_size = computed_node.size();
 
-        let target = camera_query.get_mut(viewport.camera_id).unwrap();
+        let (target, mut camera, mut resize_state) = camera_query.get_mut(viewport.camera_id).unwrap();
         let RenderTarget::Image(image_handle) = target else {
             continue;
         };
@@ -287,6 +261,26 @@ fn update_render_target_size(
             height: u32::max(1, content_node_size.y as u32),
             depth_or_array_layers: 1,
         };
-        images.get_mut(&image_handle.handle).unwrap().resize(size);
+        let image = images.get_mut(&image_handle.handle).unwrap();
+        let current = image.texture_descriptor.size;
+        let requested = UVec2::new(size.width, size.height);
+        if resize_state.last_size != requested {
+            resize_state.last_size = requested;
+            resize_state.stable_frames = 0;
+        }
+
+        if current.width != size.width || current.height != size.height {
+            image.resize(size);
+            camera.is_active = false;
+            continue;
+        }
+
+        if resize_state.stable_frames < 1 {
+            resize_state.stable_frames += 1;
+            camera.is_active = false;
+            continue;
+        }
+
+        camera.is_active = size.width > 1 && size.height > 1;
     }
 }

@@ -1,11 +1,54 @@
 use bevy::{feathers::cursor::EntityCursor, prelude::*, window::SystemCursorIcon};
 use bevy_context_menu::{ContextMenu, ContextMenuOption};
 use bevy_editor_styles::{Theme, icons};
+use icondata::Icon;
 
 use crate::{
     Divider, DragState, PaneAreaNode, PaneContentNode, PaneHeaderNode, PaneRootNode, ResizeHandle,
     Size, containers, handlers::*, registry::PaneStructure,
 };
+
+struct PaneHeaderSpec {
+    title: &'static str,
+    icon: Icon,
+}
+
+fn pane_header_spec(name: &str) -> PaneHeaderSpec {
+    match name {
+        "Hierarchy" => PaneHeaderSpec {
+            title: "层级",
+            icon: icondata::LuPanelLeft,
+        },
+        "Scene" => PaneHeaderSpec {
+            title: "场景",
+            icon: icondata::LuScanEye,
+        },
+        "Game" => PaneHeaderSpec {
+            title: "游戏",
+            icon: icondata::LuGamepad2,
+        },
+        "Project" => PaneHeaderSpec {
+            title: "项目",
+            icon: icondata::LuFolderOpen,
+        },
+        "Console" => PaneHeaderSpec {
+            title: "控制台",
+            icon: icondata::LuTerminal,
+        },
+        "Inspector" => PaneHeaderSpec {
+            title: "检查器",
+            icon: icondata::LuSquareMousePointer,
+        },
+        "Asset Store" => PaneHeaderSpec {
+            title: "资源商店",
+            icon: icondata::LuStore,
+        },
+        _ => PaneHeaderSpec {
+            title: "窗口",
+            icon: icondata::LuLayoutPanelTop,
+        },
+    }
+}
 
 pub fn header_context_menu() -> ContextMenu {
     ContextMenu::new([
@@ -28,6 +71,7 @@ pub(crate) fn spawn_pane<'a>(
     name: impl Into<String>,
 ) -> EntityCommands<'a> {
     let name: String = name.into();
+    let header_spec = pane_header_spec(&name);
     // Unstyled root node
     let root = commands
         .spawn((
@@ -60,26 +104,42 @@ pub(crate) fn spawn_pane<'a>(
             parent
                 .spawn(containers::pane::header_title_row_node())
                 .with_children(|parent| {
-                    // Drop down button for selecting the pane type.
-                    // Once a drop down menu is implemented, this will have that added.
                     parent.spawn((
-                        Text::new(icons::CHEVRON_DOWN),
+                        Text::new(pane_icon_glyph(&header_spec.icon)),
                         containers::pane::title_font(theme),
                     ));
                     parent.spawn((
-                        Text::new(format!(" {name}")),
+                        Text::new(format!(" {}", header_spec.title)),
                         containers::pane::title_font(theme),
-                    ));
-                    parent.spawn((
-                        containers::pane::header_divider_node(),
-                        containers::pane::header_divider_theme(),
                     ));
                 });
 
-            parent.spawn((
-                Text::new(icons::GRIP_VERTICAL),
-                containers::pane::title_font(theme),
-            ));
+            parent
+                .spawn((
+                    Button,
+                    Node {
+                        width: Val::Px(18.0),
+                        height: Val::Px(18.0),
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
+                        border_radius: BorderRadius::all(Val::Px(3.0)),
+                        ..default()
+                    },
+                    BackgroundColor(Color::srgb(0.20, 0.20, 0.21)),
+                ))
+                .with_children(|button| {
+                    button.spawn((
+                        Text::new("×"),
+                        containers::pane::close_button_font(theme),
+                    ));
+                })
+                .observe(move |trigger: On<Pointer<Release>>, mut commands: Commands| {
+                    if trigger.event().button != PointerButton::Primary {
+                        return;
+                    }
+
+                    commands.run_system_cached_with(remove_pane, root);
+                });
         })
         .id();
 
@@ -101,6 +161,10 @@ pub(crate) fn spawn_pane<'a>(
     });
 
     commands.entity(root)
+}
+
+fn pane_icon_glyph(_icon: &Icon) -> &'static str {
+    icons::CHEVRON_DOWN
 }
 
 pub(crate) fn spawn_divider<'a>(

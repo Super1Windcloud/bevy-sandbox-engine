@@ -1,25 +1,24 @@
-use std::path::Path;
-
 use bevy::prelude::*;
-use bevy_egui::{
-    EguiContexts, EguiPrimaryContextPass,
-    egui::{self, FontData, FontDefinitions, FontFamily},
-};
-use bevy_pane_layout::{PaneLayoutPlugin, RootPaneLayoutNode, prelude::*};
+use bevy_egui::EguiGlobalSettings;
+use bevy_editor_styles::{Theme, colors::EditorColors};
+use bevy_pane_layout::{PaneLayoutPlugin, PaneLayoutSet, RootPaneLayoutNode, prelude::*};
 use bevy_properties_pane::PropertiesPanePlugin;
 use bevy_scene_tree::SceneTreePlugin;
 use bevy_toolbar::{ActiveTool, EditorTool};
 use bevy_transform_gizmos::{GizmoMode, TransformGizmoSettings};
 use sys_locale::get_locale;
 
-/// The Bevy Editor UI Plugin.
 pub struct EditorUIPlugin;
 
 impl Plugin for EditorUIPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, ui_setup.in_set(UISet))
-            .add_systems(Update, sync_system_locale)
-            .add_systems(EguiPrimaryContextPass, render_editor_shell)
+        app.configure_sets(Startup, UISet.before(PaneLayoutSet))
+            .insert_resource(EguiGlobalSettings {
+                auto_create_primary_context: false,
+                ..default()
+            })
+            .add_systems(Startup, ui_setup.in_set(UISet))
+            .add_systems(Update, (sync_system_locale, handle_shell_buttons, sync_shell_labels))
             .add_plugins((PaneLayoutPlugin, SceneTreePlugin, PropertiesPanePlugin))
             .register_pane("Console", setup_console_pane)
             .register_pane("Asset Store", setup_asset_store_pane)
@@ -31,7 +30,6 @@ impl Plugin for EditorUIPlugin {
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct UISet;
 
-/// The root node for the UI.
 #[derive(Component)]
 pub struct RootUINode;
 
@@ -44,14 +42,12 @@ struct EditorShellState {
 #[derive(Resource)]
 struct EditorUiState {
     locale: EditorLocale,
-    fonts_configured: bool,
 }
 
 impl Default for EditorUiState {
     fn default() -> Self {
         Self {
             locale: EditorLocale::detect(),
-            fonts_configured: false,
         }
     }
 }
@@ -73,8 +69,7 @@ enum EditorLocale {
 impl EditorLocale {
     fn detect() -> Self {
         let locale = get_locale().unwrap_or_else(|| "en-US".to_string());
-        let normalized = locale.to_ascii_lowercase();
-        if normalized.starts_with("zh") {
+        if locale.to_ascii_lowercase().starts_with("zh") {
             Self::ZhCn
         } else {
             Self::EnUs
@@ -109,12 +104,13 @@ struct EditorStrings {
     status_playing: &'static str,
     status_paused: &'static str,
     status_stopped: &'static str,
+    status_step: &'static str,
+    status_pivot_center: &'static str,
+    status_local_global: &'static str,
     tool_prefix: &'static str,
     state_editing: &'static str,
     state_playing: &'static str,
     state_paused: &'static str,
-    console_title: &'static str,
-    asset_store_title: &'static str,
     category_title: &'static str,
     categories: [&'static str; 5],
     console_lines: [&'static str; 4],
@@ -150,12 +146,13 @@ fn strings(locale: EditorLocale) -> EditorStrings {
             status_playing: "运行中",
             status_paused: "已暂停",
             status_stopped: "已停止运行",
+            status_step: "单步执行",
+            status_pivot_center: "切换枢轴模式",
+            status_local_global: "切换本地/世界坐标",
             tool_prefix: "工具",
             state_editing: "状态: 编辑",
             state_playing: "状态: 运行",
             state_paused: "状态: 暂停",
-            console_title: "控制台",
-            asset_store_title: "资源商店",
             category_title: "分类",
             categories: ["推荐", "几何体", "生物", "自然", "人造物"],
             console_lines: [
@@ -164,10 +161,10 @@ fn strings(locale: EditorLocale) -> EditorStrings {
                 "[警告] 脚本桥接当前仍使用替身引擎 API",
                 "[信息] 点击播放后继续逼近运行态一致性",
             ],
-            coordinate_text: "坐标 5.00    缩放 1.0    旋转 0.01",
+            coordinate_text: "坐标 5.00   缩放 1.0   旋转 0.01",
         },
         EditorLocale::EnUs => EditorStrings {
-            engine_name: "Sandmod Engine",
+            engine_name: "Bevy Sandbox Engine",
             menu_file: "File",
             menu_edit: "Edit",
             menu_window: "Window",
@@ -193,12 +190,13 @@ fn strings(locale: EditorLocale) -> EditorStrings {
             status_playing: "Playing",
             status_paused: "Paused",
             status_stopped: "Stopped",
+            status_step: "Step",
+            status_pivot_center: "Toggle pivot mode",
+            status_local_global: "Toggle local/world space",
             tool_prefix: "Tool",
             state_editing: "State: Editing",
             state_playing: "State: Playing",
             state_paused: "State: Paused",
-            console_title: "Console",
-            asset_store_title: "Asset Store",
             category_title: "Categories",
             categories: ["Recommended", "Geometry", "Creatures", "Nature", "Props"],
             console_lines: [
@@ -207,278 +205,498 @@ fn strings(locale: EditorLocale) -> EditorStrings {
                 "[Warn] Script bridge is still running with stub engine APIs",
                 "[Info] Press Play to keep closing the runtime parity gap",
             ],
-            coordinate_text: "Pivot 5.00    Scale 1.0    Rotate 0.01",
+            coordinate_text: "Pivot 5.00   Scale 1.0   Rotate 0.01",
         },
     }
 }
 
-fn ui_setup(mut commands: Commands) {
-    commands.spawn((
-        Camera2d,
-        Camera {
-            order: 10,
-            ..default()
-        },
-    ));
+#[derive(Component)]
+struct StatusText;
+
+#[derive(Component)]
+struct ToolText;
+
+#[derive(Component)]
+struct PlayText;
+
+#[derive(Component)]
+struct SnapButtonText;
+
+#[derive(Component)]
+struct ShellButton(ShellAction);
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ShellAction {
+    File,
+    Edit,
+    Window,
+    GameObject,
+    Component,
+    Help,
+    Play,
+    Pause,
+    Stop,
+    Step,
+    Select,
+    Move,
+    Rotate,
+    Scale,
+    Pivot,
+    LocalGlobal,
+    NewEntity,
+    ToggleSnap,
+}
+
+fn ui_setup(
+    mut commands: Commands,
+    theme: Res<Theme>,
+    active_tool: Res<ActiveTool>,
+    shell_state: Res<EditorShellState>,
+    ui_state: Res<EditorUiState>,
+) {
+    let i18n = strings(ui_state.locale);
+
+    let ui_camera = commands
+        .spawn((
+            Camera2d,
+            Camera {
+                order: 10,
+                ..default()
+            },
+            IsDefaultUiCamera,
+        ))
+        .id();
 
     commands
         .spawn((
             Node {
                 position_type: PositionType::Absolute,
-                top: Val::Px(88.0),
-                bottom: Val::Px(24.0),
+                top: Val::Px(0.0),
+                bottom: Val::Px(0.0),
                 left: Val::Px(0.0),
                 right: Val::Px(0.0),
                 display: Display::Flex,
                 flex_direction: FlexDirection::Column,
-                ..Default::default()
+                ..default()
             },
+            UiTargetCamera(ui_camera),
+            BackgroundColor(EditorColors::BACKGROUND),
             RootUINode,
         ))
-        .with_children(|parent| {
-            parent.spawn(RootPaneLayoutNode);
+        .with_children(|root| {
+            root.spawn((
+                Node {
+                    height: Val::Px(28.0),
+                    align_items: AlignItems::Center,
+                    padding: UiRect::horizontal(Val::Px(8.0)),
+                    column_gap: Val::Px(12.0),
+                    ..default()
+                },
+                BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
+            ))
+            .with_children(|menu| {
+                menu.spawn((
+                    Text::new(i18n.engine_name),
+                    TextFont {
+                        font: theme.text.font.clone(),
+                        font_size: 13.0,
+                        ..default()
+                    },
+                    TextColor(theme.text.text_color),
+                ));
+
+                for (label, action) in [
+                    (i18n.menu_file, ShellAction::File),
+                    (i18n.menu_edit, ShellAction::Edit),
+                    (i18n.menu_window, ShellAction::Window),
+                    (i18n.menu_game_object, ShellAction::GameObject),
+                    (i18n.menu_component, ShellAction::Component),
+                    (i18n.menu_help, ShellAction::Help),
+                ] {
+                    spawn_shell_button(menu, &theme, label, action, false, false, false, false);
+                }
+            });
+
+            root.spawn((
+                Node {
+                    height: Val::Px(56.0),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::SpaceBetween,
+                    padding: UiRect::horizontal(Val::Px(12.0)),
+                    ..default()
+                },
+                BackgroundColor(Color::srgb(0.18, 0.18, 0.18)),
+            ))
+            .with_children(|toolbar| {
+                toolbar.spawn(Node {
+                    width: Val::Px(180.0),
+                    ..default()
+                });
+
+                toolbar
+                    .spawn((
+                        Node {
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::Center,
+                            column_gap: Val::Px(6.0),
+                            padding: UiRect::all(Val::Px(8.0)),
+                            border_radius: BorderRadius::all(Val::Px(6.0)),
+                            ..default()
+                        },
+                        BackgroundColor(Color::srgb(0.24, 0.24, 0.24)),
+                    ))
+                    .with_children(|group| {
+                        spawn_shell_button(group, &theme, "▶", ShellAction::Play, true, false, shell_state.play_state == PlayState::Playing, false);
+                        spawn_shell_button(group, &theme, "⏸", ShellAction::Pause, true, false, shell_state.play_state == PlayState::Paused, false);
+                        spawn_shell_button(group, &theme, "⏹", ShellAction::Stop, true, false, shell_state.play_state == PlayState::Editing, false);
+                        spawn_separator(group);
+                        spawn_shell_button(group, &theme, i18n.tool_select, ShellAction::Select, false, true, active_tool.0 == EditorTool::Select, false);
+                        spawn_shell_button(group, &theme, i18n.tool_move, ShellAction::Move, false, true, active_tool.0 == EditorTool::Move, false);
+                        spawn_shell_button(group, &theme, i18n.tool_rotate, ShellAction::Rotate, false, true, active_tool.0 == EditorTool::Rotate, false);
+                        spawn_shell_button(group, &theme, i18n.tool_scale, ShellAction::Scale, false, true, active_tool.0 == EditorTool::Scale, false);
+                        spawn_separator(group);
+                        spawn_shell_button(group, &theme, "◎", ShellAction::Pivot, true, false, false, false);
+                        spawn_shell_button(group, &theme, "L", ShellAction::LocalGlobal, true, false, false, false);
+                        spawn_shell_button(group, &theme, ">", ShellAction::Step, true, false, false, false);
+                    });
+
+                toolbar
+                    .spawn((
+                        Node {
+                            width: Val::Px(360.0),
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::FlexEnd,
+                            column_gap: Val::Px(8.0),
+                            ..default()
+                        },
+                    ))
+                    .with_children(|right| {
+                        right.spawn((
+                            Text::new(i18n.coordinate_text),
+                            TextFont {
+                                font: theme.text.font.clone(),
+                                font_size: 12.0,
+                                ..default()
+                            },
+                            TextColor(theme.text.low_priority),
+                        ));
+                        spawn_shell_button(
+                            right,
+                            &theme,
+                            i18n.action_new_entity,
+                            ShellAction::NewEntity,
+                            false,
+                            false,
+                            false,
+                            false,
+                        );
+                        spawn_shell_button(
+                            right,
+                            &theme,
+                            i18n.action_snap_off,
+                            ShellAction::ToggleSnap,
+                            false,
+                            false,
+                            false,
+                            true,
+                        );
+                    });
+            });
+
+            root.spawn((
+                Node {
+                    flex_grow: 1.0,
+                    min_height: Val::Px(0.0),
+                    ..default()
+                },
+            ))
+            .with_children(|workspace| {
+                workspace.spawn(RootPaneLayoutNode);
+            });
+
+            root.spawn((
+                Node {
+                    height: Val::Px(24.0),
+                    align_items: AlignItems::Center,
+                    padding: UiRect::horizontal(Val::Px(10.0)),
+                    column_gap: Val::Px(12.0),
+                    ..default()
+                },
+                BackgroundColor(Color::srgb(0.06, 0.07, 0.08)),
+            ))
+            .with_children(|status_bar| {
+                status_bar.spawn((
+                    Text::new(shell_state.status.clone()),
+                    TextFont {
+                        font: theme.text.font.clone(),
+                        font_size: 11.0,
+                        ..default()
+                    },
+                    TextColor(theme.text.text_color),
+                    StatusText,
+                ));
+                status_bar.spawn((
+                    Text::new(format!(
+                        "{}: {}",
+                        i18n.tool_prefix,
+                        tool_name(active_tool.0, ui_state.locale)
+                    )),
+                    TextFont {
+                        font: theme.text.font.clone(),
+                        font_size: 11.0,
+                        ..default()
+                    },
+                    TextColor(theme.text.low_priority),
+                    ToolText,
+                ));
+                status_bar.spawn((
+                    Text::new(play_state_name(shell_state.play_state, &i18n)),
+                    TextFont {
+                        font: theme.text.font.clone(),
+                        font_size: 11.0,
+                        ..default()
+                    },
+                    TextColor(theme.text.low_priority),
+                    PlayText,
+                ));
+            });
         });
+}
+
+fn spawn_shell_button(
+    parent: &mut ChildSpawnerCommands,
+    theme: &Theme,
+    label: &str,
+    action: ShellAction,
+    compact: bool,
+    ghost: bool,
+    selected: bool,
+    mark_snap_text: bool,
+) {
+    let width = if compact { 26.0 } else { 66.0 };
+    let mut entity = parent.spawn((
+        Button,
+        ShellButton(action),
+        Node {
+            min_width: Val::Px(width),
+            height: Val::Px(24.0),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            padding: UiRect::horizontal(Val::Px(8.0)),
+            border_radius: BorderRadius::all(Val::Px(4.0)),
+            ..default()
+        },
+        BackgroundColor(button_color(selected, ghost)),
+    ));
+
+    if mark_snap_text {
+        entity.insert(SnapButtonText);
+    }
+
+    entity.with_children(|button| {
+        button.spawn((
+            Text::new(label),
+            TextFont {
+                font: theme.text.font.clone(),
+                font_size: if compact { 12.0 } else { 11.0 },
+                ..default()
+            },
+            TextColor(if selected {
+                Color::WHITE
+            } else {
+                theme.text.text_color
+            }),
+        ));
+    });
+}
+
+fn spawn_separator(parent: &mut ChildSpawnerCommands) {
+    parent.spawn((
+        Node {
+            width: Val::Px(1.0),
+            height: Val::Px(18.0),
+            margin: UiRect::horizontal(Val::Px(3.0)),
+            ..default()
+        },
+        BackgroundColor(EditorColors::BORDER),
+    ));
+}
+
+fn button_color(selected: bool, ghost: bool) -> Color {
+    if selected {
+        Color::srgb(0.36, 0.48, 0.23)
+    } else if ghost {
+        Color::srgb(0.21, 0.22, 0.23)
+    } else {
+        EditorColors::BUTTON_DEFAULT
+    }
 }
 
 fn sync_system_locale(mut ui_state: ResMut<EditorUiState>) {
     ui_state.locale = EditorLocale::detect();
 }
 
-fn render_editor_shell(
-    mut contexts: EguiContexts,
-    mut commands: Commands,
+fn handle_shell_buttons(
+    mut interaction_query: Query<
+        (&Interaction, &ShellButton, &mut BackgroundColor),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut shell_state: ResMut<EditorShellState>,
+    ui_state: Res<EditorUiState>,
     mut active_tool: ResMut<ActiveTool>,
     mut gizmo_settings: ResMut<TransformGizmoSettings>,
-    mut shell_state: ResMut<EditorShellState>,
-    mut ui_state: ResMut<EditorUiState>,
-) -> Result {
-    let ctx = contexts.ctx_mut()?;
-    ensure_fonts(ctx, &mut ui_state);
+    mut commands: Commands,
+) {
     let i18n = strings(ui_state.locale);
 
-    egui::TopBottomPanel::top("editor_top_bar")
-        .exact_height(84.0)
-        .frame(
-            egui::Frame::new()
-                .fill(egui::Color32::from_rgb(38, 38, 38))
-                .inner_margin(egui::Margin::ZERO),
-        )
-        .show(ctx, |ui| {
-            ui.vertical(|ui| {
-                ui.spacing_mut().item_spacing = egui::vec2(0.0, 0.0);
-
-                ui.horizontal(|ui| {
-                    ui.set_height(28.0);
-                    ui.spacing_mut().item_spacing.x = 14.0;
-                    ui.label(
-                        egui::RichText::new(i18n.engine_name)
-                            .strong()
-                            .color(egui::Color32::from_rgb(238, 238, 239)),
-                    );
-                    menu_button(
-                        ui,
-                        i18n.menu_file,
-                        &mut shell_state.status,
-                        i18n.menu_file_message,
-                    );
-                    menu_button(
-                        ui,
-                        i18n.menu_edit,
-                        &mut shell_state.status,
-                        i18n.menu_edit_message,
-                    );
-                    menu_button(
-                        ui,
-                        i18n.menu_window,
-                        &mut shell_state.status,
-                        i18n.menu_window_message,
-                    );
-                    menu_button(
-                        ui,
-                        i18n.menu_game_object,
-                        &mut shell_state.status,
-                        i18n.menu_game_object_message,
-                    );
-                    menu_button(
-                        ui,
-                        i18n.menu_component,
-                        &mut shell_state.status,
-                        i18n.menu_component_message,
-                    );
-                    menu_button(
-                        ui,
-                        i18n.menu_help,
-                        &mut shell_state.status,
-                        i18n.menu_help_message,
-                    );
-                });
-
-                ui.separator();
-
-                ui.columns(3, |columns| {
-                    columns[0].with_layout(egui::Layout::left_to_right(egui::Align::Center), |_| {});
-
-                    columns[1].with_layout(
-                        egui::Layout::centered_and_justified(egui::Direction::LeftToRight),
-                        |ui| {
-                            ui.spacing_mut().item_spacing.x = 6.0;
-
-                            play_button(
-                                ui,
-                                &mut shell_state,
-                                PlayState::Playing,
-                                "▶",
-                                i18n.status_playing,
-                            );
-                            play_button(
-                                ui,
-                                &mut shell_state,
-                                PlayState::Paused,
-                                "⏸",
-                                i18n.status_paused,
-                            );
-                            if ui.button("⏹").clicked() {
-                                shell_state.play_state = PlayState::Editing;
-                                shell_state.status = i18n.status_stopped.to_string();
-                            }
-
-                            ui.separator();
-
-                            tool_button(
-                                ui,
-                                &mut active_tool,
-                                &mut gizmo_settings,
-                                EditorTool::Select,
-                                i18n.tool_select,
-                            );
-                            tool_button(
-                                ui,
-                                &mut active_tool,
-                                &mut gizmo_settings,
-                                EditorTool::Move,
-                                i18n.tool_move,
-                            );
-                            tool_button(
-                                ui,
-                                &mut active_tool,
-                                &mut gizmo_settings,
-                                EditorTool::Rotate,
-                                i18n.tool_rotate,
-                            );
-                            tool_button(
-                                ui,
-                                &mut active_tool,
-                                &mut gizmo_settings,
-                                EditorTool::Scale,
-                                i18n.tool_scale,
-                            );
-                        },
-                    );
-
-                    columns[2].with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        ui.label(
-                            egui::RichText::new(i18n.coordinate_text)
-                                .color(egui::Color32::from_rgb(170, 170, 173)),
-                        );
-
-                        let snap_label = if gizmo_settings.snap_enabled {
-                            i18n.action_snap_on
+    for (interaction, button, mut background) in &mut interaction_query {
+        let selected = is_selected(button.0, active_tool.0, shell_state.play_state, gizmo_settings.snap_enabled);
+        match *interaction {
+            Interaction::Pressed => {
+                match button.0 {
+                    ShellAction::File => shell_state.status = i18n.menu_file_message.to_string(),
+                    ShellAction::Edit => shell_state.status = i18n.menu_edit_message.to_string(),
+                    ShellAction::Window => shell_state.status = i18n.menu_window_message.to_string(),
+                    ShellAction::GameObject => {
+                        shell_state.status = i18n.menu_game_object_message.to_string()
+                    }
+                    ShellAction::Component => {
+                        shell_state.status = i18n.menu_component_message.to_string()
+                    }
+                    ShellAction::Help => shell_state.status = i18n.menu_help_message.to_string(),
+                    ShellAction::Play => {
+                        shell_state.play_state = PlayState::Playing;
+                        shell_state.status = i18n.status_playing.to_string();
+                    }
+                    ShellAction::Pause => {
+                        shell_state.play_state = PlayState::Paused;
+                        shell_state.status = i18n.status_paused.to_string();
+                    }
+                    ShellAction::Stop => {
+                        shell_state.play_state = PlayState::Editing;
+                        shell_state.status = i18n.status_stopped.to_string();
+                    }
+                    ShellAction::Step => shell_state.status = i18n.status_step.to_string(),
+                    ShellAction::Select => active_tool.0 = EditorTool::Select,
+                    ShellAction::Move => {
+                        active_tool.0 = EditorTool::Move;
+                        gizmo_settings.mode = GizmoMode::Translate;
+                    }
+                    ShellAction::Rotate => {
+                        active_tool.0 = EditorTool::Rotate;
+                        gizmo_settings.mode = GizmoMode::Rotate;
+                    }
+                    ShellAction::Scale => {
+                        active_tool.0 = EditorTool::Scale;
+                        gizmo_settings.mode = GizmoMode::Scale;
+                    }
+                    ShellAction::Pivot => shell_state.status = i18n.status_pivot_center.to_string(),
+                    ShellAction::LocalGlobal => {
+                        shell_state.status = i18n.status_local_global.to_string()
+                    }
+                    ShellAction::NewEntity => {
+                        spawn_new_entity(&mut commands);
+                        shell_state.status = i18n.status_new_entity.to_string();
+                    }
+                    ShellAction::ToggleSnap => {
+                        gizmo_settings.snap_enabled = !gizmo_settings.snap_enabled;
+                        shell_state.status = if gizmo_settings.snap_enabled {
+                            i18n.status_snap_on.to_string()
                         } else {
-                            i18n.action_snap_off
+                            i18n.status_snap_off.to_string()
                         };
-                        if ui.button(snap_label).clicked() {
-                            gizmo_settings.snap_enabled = !gizmo_settings.snap_enabled;
-                            shell_state.status = if gizmo_settings.snap_enabled {
-                                i18n.status_snap_on.to_string()
-                            } else {
-                                i18n.status_snap_off.to_string()
-                            };
-                        }
+                    }
+                }
 
-                        if ui.button(i18n.action_new_entity).clicked() {
-                            spawn_new_entity(&mut commands);
-                            shell_state.status = i18n.status_new_entity.to_string();
-                        }
-                    });
-                });
-            });
-        });
-
-    egui::TopBottomPanel::bottom("editor_status_bar")
-        .exact_height(24.0)
-        .frame(
-            egui::Frame::new()
-                .fill(egui::Color32::from_rgb(16, 18, 20))
-                .inner_margin(egui::Margin::symmetric(12, 6)),
-        )
-        .show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                ui.label(
-                    egui::RichText::new(&shell_state.status)
-                        .color(egui::Color32::from_rgb(188, 192, 198)),
-                );
-                ui.separator();
-                ui.label(
-                    egui::RichText::new(format!(
-                        "{}: {}",
-                        i18n.tool_prefix,
-                        tool_name(active_tool.0, ui_state.locale)
-                    ))
-                    .color(egui::Color32::from_rgb(148, 152, 158)),
-                );
-                ui.separator();
-                ui.label(
-                    egui::RichText::new(play_state_name(shell_state.play_state, &i18n))
-                        .color(egui::Color32::from_rgb(148, 152, 158)),
-                );
-            });
-        });
-
-    Ok(())
-}
-
-fn menu_button(ui: &mut egui::Ui, label: &str, status: &mut String, message: &str) {
-    if ui.button(label).clicked() {
-        *status = message.to_string();
-    }
-}
-
-fn play_button(
-    ui: &mut egui::Ui,
-    shell_state: &mut EditorShellState,
-    target: PlayState,
-    label: &str,
-    message: &str,
-) {
-    let selected = shell_state.play_state == target;
-    let button = egui::Button::new(label).fill(if selected {
-        egui::Color32::from_rgb(88, 132, 55)
-    } else {
-        egui::Color32::from_rgb(62, 62, 64)
-    });
-
-    if ui.add(button).clicked() {
-        shell_state.play_state = target;
-        shell_state.status = message.to_string();
-    }
-}
-
-fn tool_button(
-    ui: &mut egui::Ui,
-    active_tool: &mut ActiveTool,
-    gizmo_settings: &mut TransformGizmoSettings,
-    tool: EditorTool,
-    label: &str,
-) {
-    let selected = active_tool.0 == tool;
-    if ui.selectable_label(selected, label).clicked() {
-        active_tool.0 = tool;
-        match tool {
-            EditorTool::Move => gizmo_settings.mode = GizmoMode::Translate,
-            EditorTool::Rotate => gizmo_settings.mode = GizmoMode::Rotate,
-            EditorTool::Scale => gizmo_settings.mode = GizmoMode::Scale,
-            _ => {}
+                *background = BackgroundColor(button_color(
+                    is_selected(button.0, active_tool.0, shell_state.play_state, gizmo_settings.snap_enabled),
+                    is_ghost(button.0),
+                ));
+            }
+            Interaction::Hovered => {
+                *background = BackgroundColor(EditorColors::BUTTON_HOVER);
+            }
+            Interaction::None => {
+                *background = BackgroundColor(button_color(selected, is_ghost(button.0)));
+            }
         }
+    }
+}
+
+fn sync_shell_labels(
+    shell_state: Res<EditorShellState>,
+    ui_state: Res<EditorUiState>,
+    active_tool: Res<ActiveTool>,
+    gizmo_settings: Res<TransformGizmoSettings>,
+    mut text_queries: ParamSet<(
+        Query<&mut Text, With<StatusText>>,
+        Query<&mut Text, With<ToolText>>,
+        Query<&mut Text, With<PlayText>>,
+        Query<&mut Text, With<SnapButtonText>>,
+    )>,
+    mut button_query: Query<(&ShellButton, &mut BackgroundColor), With<Button>>,
+) {
+    let i18n = strings(ui_state.locale);
+
+    for mut text in &mut text_queries.p0() {
+        text.0 = shell_state.status.clone();
+    }
+    for mut text in &mut text_queries.p1() {
+        text.0 = format!(
+            "{}: {}",
+            i18n.tool_prefix,
+            tool_name(active_tool.0, ui_state.locale)
+        );
+    }
+    for mut text in &mut text_queries.p2() {
+        text.0 = play_state_name(shell_state.play_state, &i18n).to_string();
+    }
+    for mut text in &mut text_queries.p3() {
+        text.0 = if gizmo_settings.snap_enabled {
+            i18n.action_snap_on.to_string()
+        } else {
+            i18n.action_snap_off.to_string()
+        };
+    }
+
+    if active_tool.is_changed() || shell_state.is_changed() || gizmo_settings.is_changed() {
+        for (button, mut background) in &mut button_query {
+            *background = BackgroundColor(button_color(
+                is_selected(button.0, active_tool.0, shell_state.play_state, gizmo_settings.snap_enabled),
+                is_ghost(button.0),
+            ));
+        }
+    }
+}
+
+fn is_ghost(action: ShellAction) -> bool {
+    matches!(
+        action,
+        ShellAction::Play
+            | ShellAction::Pause
+            | ShellAction::Stop
+            | ShellAction::Step
+            | ShellAction::Pivot
+            | ShellAction::LocalGlobal
+    )
+}
+
+fn is_selected(
+    action: ShellAction,
+    active_tool: EditorTool,
+    play_state: PlayState,
+    snap_enabled: bool,
+) -> bool {
+    match action {
+        ShellAction::Play => play_state == PlayState::Playing,
+        ShellAction::Pause => play_state == PlayState::Paused,
+        ShellAction::Stop => play_state == PlayState::Editing,
+        ShellAction::Select => active_tool == EditorTool::Select,
+        ShellAction::Move => active_tool == EditorTool::Move,
+        ShellAction::Rotate => active_tool == EditorTool::Rotate,
+        ShellAction::Scale => active_tool == EditorTool::Scale,
+        ShellAction::ToggleSnap => snap_enabled,
+        _ => false,
     }
 }
 
@@ -536,13 +754,6 @@ fn setup_console_pane(
     ui_state: Res<EditorUiState>,
 ) {
     let i18n = strings(ui_state.locale);
-    commands.entity(pane.header).with_children(|parent| {
-        parent.spawn((
-            Text::new(i18n.console_title),
-            TextFont::from_font_size(12.0),
-        ));
-    });
-
     commands.entity(pane.content).insert((
         Node {
             flex_direction: FlexDirection::Column,
@@ -570,13 +781,6 @@ fn setup_asset_store_pane(
     ui_state: Res<EditorUiState>,
 ) {
     let i18n = strings(ui_state.locale);
-    commands.entity(pane.header).with_children(|parent| {
-        parent.spawn((
-            Text::new(i18n.asset_store_title),
-            TextFont::from_font_size(12.0),
-        ));
-    });
-
     commands.entity(pane.content).insert((
         Node {
             flex_direction: FlexDirection::Column,
@@ -613,60 +817,4 @@ fn setup_asset_store_pane(
                 });
         }
     });
-}
-
-const CJK_FONT_NAME: &str = "editor-cjk-font";
-
-fn ensure_fonts(ctx: &egui::Context, ui_state: &mut EditorUiState) {
-    if ui_state.fonts_configured {
-        return;
-    }
-
-    let mut fonts = FontDefinitions::default();
-    if let Some(font_bytes) = load_cjk_font_bytes() {
-        fonts.font_data.insert(
-            CJK_FONT_NAME.to_string(),
-            FontData::from_owned(font_bytes).into(),
-        );
-        fonts
-            .families
-            .entry(FontFamily::Proportional)
-            .or_default()
-            .insert(0, CJK_FONT_NAME.to_string());
-        fonts
-            .families
-            .entry(FontFamily::Monospace)
-            .or_default()
-            .insert(0, CJK_FONT_NAME.to_string());
-    }
-
-    ctx.set_fonts(fonts);
-    ui_state.fonts_configured = true;
-}
-
-fn load_cjk_font_bytes() -> Option<Vec<u8>> {
-    let embedded_font = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("assets")
-        .join("fonts")
-        .join("NotoSansCJKsc-Regular.otf");
-
-    if let Ok(bytes) = std::fs::read(&embedded_font) {
-        return Some(bytes);
-    }
-
-    let font_candidates = [
-        r"C:\Windows\Fonts\msyh.ttc",
-        r"C:\Windows\Fonts\simhei.ttf",
-        r"C:\Windows\Fonts\Deng.ttf",
-        r"C:\Windows\Fonts\simsun.ttc",
-    ];
-
-    for path in font_candidates {
-        if let Ok(bytes) = std::fs::read(path) {
-            return Some(bytes);
-        }
-    }
-
-    None
 }

@@ -30,7 +30,6 @@ pub struct SelectionBoxPlugin;
 impl Plugin for SelectionBoxPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ShowSelectionBox>()
-            .add_systems(Startup, spawn_selection_box_toggle_ui)
             .add_systems(Update, selection_box_system)
             .add_systems(Update, update_selection_box_toggle_text);
     }
@@ -234,36 +233,6 @@ fn transform_aabb(local_aabb: &Aabb, global_transform: &GlobalTransform) -> Aabb
     }
 
     Aabb::from_min_max(world_min, world_max)
-}
-
-pub fn spawn_selection_box_toggle_ui(mut commands: Commands) {
-    info!("Spawning Selection Box Toggle UI");
-    commands
-        .spawn((
-            Node {
-                position_type: PositionType::Absolute,
-                top: Val::Px(20.0),
-                right: Val::Px(20.0),
-                width: Val::Px(100.0),
-                height: Val::Px(15.0),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                ..default()
-            },
-            BackgroundColor(Color::srgb(0.2, 0.2, 0.2)),
-        ))
-        .with_children(|parent| {
-            parent.spawn((
-                Text::new("Show Selection Box"),
-                TextFont::from_font_size(10.0),
-                SelectionBoxToggleText,
-            ));
-        })
-        .observe(
-            |_trigger: On<Pointer<Click>>, mut show_selection: ResMut<ShowSelectionBox>| {
-                show_selection.0 = !show_selection.0;
-            },
-        );
 }
 
 // System to update the button text when ShowSelectionBox changes

@@ -9,6 +9,7 @@ bevy.workspace = true
 bevy_editor_styles.workspace = true
 bevy_context_menu.workspace = true
 bevy_proto_bsn.workspace = true
+icondata = { version = "0.7.0", default-features = false, features = ["lucide"] }
 
 [lints]
 workspace = true
