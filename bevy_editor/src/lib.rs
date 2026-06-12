@@ -27,7 +27,7 @@ use bevy::render::{
 use bevy::window::{MonitorSelection, WindowMode, WindowPlugin, WindowPosition};
 use bevy::window::{WindowCloseRequested, WindowClosed};
 use bevy::{
-    feathers::{FeathersPlugin, dark_theme::create_dark_theme, theme::UiTheme},
+    feathers::{FeathersPlugins, dark_theme::create_dark_theme, theme::UiTheme},
     input_focus::{InputDispatchPlugin, tab_navigation::TabNavigationPlugin},
     ui_widgets::UiWidgetsPlugins,
 };
@@ -86,10 +86,10 @@ pub struct RuntimePlugin;
 impl Plugin for RuntimePlugin {
     fn build(&self, bevy_app: &mut BevyApp) {
         let render_plugin = RenderPlugin {
-            render_creation: RenderCreation::Automatic(WgpuSettings {
+            render_creation: RenderCreation::Automatic(Box::new(WgpuSettings {
                 backends: Some(default_render_backends()),
                 ..default()
-            }),
+            })),
             ..default()
         };
 
@@ -225,7 +225,7 @@ fn dummy_setup(
 
     commands.spawn((
         DirectionalLight {
-            shadows_enabled: true,
+            shadow_maps_enabled: true,
             ..default()
         },
         Transform::default().looking_to(vec3(-1., -1., 1.), Vec3::Y),

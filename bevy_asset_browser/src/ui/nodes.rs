@@ -70,8 +70,8 @@ pub(crate) fn spawn_source_node<'a>(
     commands.spawn((
         Text::new(source_id_to_string(source_id)),
         TextFont {
-            font: theme.text.font.clone(),
-            font_size: 10.0,
+            font: theme.text.font.clone().into(),
+            font_size: FontSize::Px(10.0),
             ..default()
         },
         TextColor(theme.text.text_color),
@@ -137,8 +137,8 @@ pub(crate) fn spawn_folder_node<'a>(
     commands.spawn((
         Text::new(folder_name),
         TextFont {
-            font: theme.text.font.clone(),
-            font_size: 10.0,
+            font: theme.text.font.clone().into(),
+            font_size: FontSize::Px(10.0),
             ..default()
         },
         TextColor(theme.text.text_color),
@@ -188,8 +188,8 @@ pub(crate) fn spawn_file_node<'a>(
     commands.spawn((
         Text::new(file_name),
         TextFont {
-            font: theme.text.font.clone(),
-            font_size: 10.0,
+            font: theme.text.font.clone().into(),
+            font_size: FontSize::Px(10.0),
             ..default()
         },
         TextColor(theme.text.text_color),

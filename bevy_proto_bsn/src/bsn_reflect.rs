@@ -9,9 +9,13 @@ use bevy::{
     },
     platform::hash::FixedState,
     reflect::{
-        DynamicEnum, DynamicList, DynamicStruct, DynamicTuple, DynamicTupleStruct, DynamicVariant,
-        FromType, NamedField, PartialReflect, Reflect, ReflectKind, StructInfo, StructVariantInfo,
-        TypeInfo, TypePath, TypeRegistration, TypeRegistry, TypeRegistryArc,
+        enums::{DynamicEnum, DynamicVariant, StructVariantInfo},
+        list::DynamicList,
+        structs::{DynamicStruct, StructInfo},
+        tuple::DynamicTuple,
+        tuple_struct::DynamicTupleStruct,
+        FromType, NamedField, PartialReflect, Reflect, ReflectKind, TypeInfo, TypePath,
+        TypeRegistration, TypeRegistry, TypeRegistryArc,
     },
 };
 use thiserror::Error;
@@ -27,7 +31,6 @@ pub(crate) fn bsn_reflect_plugin(app: &mut App) {
 
     /// Register `ReflectHandle`s for some upstream assets to ensure the hacky asset loading workaround works.
     use bevy::{asset::Handle, prelude::*, sprite_render::Wireframe2dMaterial};
-    app.register_type_data::<Handle<Scene>, ReflectHandleLoad>();
     app.register_type_data::<Handle<Bsn>, ReflectHandleLoad>();
     app.register_type_data::<Handle<Font>, ReflectHandleLoad>();
     app.register_type_data::<Handle<Mesh>, ReflectHandleLoad>();
@@ -36,7 +39,6 @@ pub(crate) fn bsn_reflect_plugin(app: &mut App) {
     app.register_type_data::<Handle<AnimationGraph>, ReflectHandleLoad>();
     app.register_type_data::<Handle<AudioSource>, ReflectHandleLoad>();
     app.register_type_data::<Handle<Shader>, ReflectHandleLoad>();
-    app.register_type_data::<Handle<DynamicScene>, ReflectHandleLoad>();
     app.register_type_data::<Handle<ColorMaterial>, ReflectHandleLoad>();
     app.register_type::<Handle<Wireframe2dMaterial>>();
     app.register_type_data::<Handle<Wireframe2dMaterial>, ReflectHandleLoad>();

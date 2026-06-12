@@ -66,6 +66,8 @@ struct WithChildCommand<B> {
 }
 
 impl<B: Bundle> Command for WithChildCommand<B> {
+    type Out = ();
+
     fn apply(self, world: &mut World) {
         let Ok(mut entity_mut) = world.get_entity_mut(self.parent_entity) else {
             #[cfg(debug_assertions)]
@@ -174,6 +176,8 @@ struct WithChildrenCommand<B, I> {
 impl<B: Bundle, I: IntoIterator<Item = B> + Send + Sync + 'static> Command
     for WithChildrenCommand<B, I>
 {
+    type Out = ();
+
     fn apply(self, world: &mut World) {
         let Ok(mut entity_mut) = world.get_entity_mut(self.parent_entity) else {
             #[cfg(debug_assertions)]

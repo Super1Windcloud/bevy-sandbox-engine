@@ -54,8 +54,8 @@ fn setup_gizmo_indicator(mut commands: Commands, theme: Res<Theme>) {
             parent.spawn((
                 Text("Transform Gizmo".to_string()),
                 TextFont {
-                    font: theme.text.font.clone(),
-                    font_size: 12.0,
+                    font: theme.text.font.clone().into(),
+                    font_size: FontSize::Px(12.0),
                     ..default()
                 },
                 TextColor(Color::srgb(0.9, 0.9, 0.9)),
@@ -65,8 +65,8 @@ fn setup_gizmo_indicator(mut commands: Commands, theme: Res<Theme>) {
             parent.spawn((
                 Text("Mode: Translate (W)".to_string()),
                 TextFont {
-                    font: theme.text.font.clone(),
-                    font_size: 11.0,
+                    font: theme.text.font.clone().into(),
+                    font_size: FontSize::Px(11.0),
                     ..default()
                 },
                 TextColor(Color::srgb(0.125, 0.431, 0.788)), // CSS: #206EC9 - Active blue
@@ -77,8 +77,8 @@ fn setup_gizmo_indicator(mut commands: Commands, theme: Res<Theme>) {
             parent.spawn((
                 Text("Snap: ON (Ctrl to toggle)".to_string()),
                 TextFont {
-                    font: theme.text.font.clone(),
-                    font_size: 11.0,
+                    font: theme.text.font.clone().into(),
+                    font_size: FontSize::Px(11.0),
                     ..default()
                 },
                 TextColor(Color::srgb(0.36, 0.7, 0.05)), // Green for enabled snap
@@ -97,8 +97,8 @@ fn setup_gizmo_indicator(mut commands: Commands, theme: Res<Theme>) {
                     help.spawn((
                         Text("Hotkeys:".to_string()),
                         TextFont {
-                            font: theme.text.font.clone(),
-                            font_size: 10.0,
+                            font: theme.text.font.clone().into(),
+                            font_size: FontSize::Px(10.0),
                             ..default()
                         },
                         TextColor(Color::srgb(0.7, 0.7, 0.7)),
@@ -106,8 +106,8 @@ fn setup_gizmo_indicator(mut commands: Commands, theme: Res<Theme>) {
                     help.spawn((
                         Text("W - Translate | E - Rotate | R - Scale".to_string()),
                         TextFont {
-                            font: theme.text.font.clone(),
-                            font_size: 9.0,
+                            font: theme.text.font.clone().into(),
+                            font_size: FontSize::Px(9.0),
                             ..default()
                         },
                         TextColor(Color::srgb(0.6, 0.6, 0.6)),
@@ -115,8 +115,8 @@ fn setup_gizmo_indicator(mut commands: Commands, theme: Res<Theme>) {
                     help.spawn((
                         Text("Ctrl - Toggle Snapping".to_string()),
                         TextFont {
-                            font: theme.text.font.clone(),
-                            font_size: 9.0,
+                            font: theme.text.font.clone().into(),
+                            font_size: FontSize::Px(9.0),
                             ..default()
                         },
                         TextColor(Color::srgb(0.6, 0.6, 0.6)),

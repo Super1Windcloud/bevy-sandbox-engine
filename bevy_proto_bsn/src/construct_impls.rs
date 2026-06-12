@@ -133,7 +133,7 @@ pub struct ConstructTextFont {
     /// Font
     pub font: ConstructHandle<Font>,
     /// Font size
-    pub font_size: f32,
+    pub font_size: FontSize,
     /// Font smoothing
     pub font_smoothing: FontSmoothing,
 }
@@ -142,7 +142,7 @@ pub struct ConstructTextFont {
 #[derive(Clone, Reflect)]
 pub struct ConstructTextFontProps {
     pub font: ConstructProp<ConstructHandle<Font>>,
-    pub font_size: f32,
+    pub font_size: FontSize,
     pub font_smoothing: FontSmoothing,
 }
 
@@ -150,7 +150,7 @@ impl Default for ConstructTextFontProps {
     fn default() -> Self {
         let default = TextFont::default();
         Self {
-            font: ConstructProp::Value(default.font.into()),
+            font: ConstructProp::Value(ConstructHandle(Handle::default())),
             font_size: default.font_size,
             font_smoothing: default.font_smoothing,
         }
@@ -183,7 +183,7 @@ impl Component for ConstructTextFont {
                 .unwrap()
                 .clone();
             world.commands().entity(context.entity).insert(TextFont {
-                font: constructable.font.into(),
+                font: Handle::<Font>::from(constructable.font).into(),
                 font_size: constructable.font_size,
                 font_smoothing: constructable.font_smoothing,
                 ..default()

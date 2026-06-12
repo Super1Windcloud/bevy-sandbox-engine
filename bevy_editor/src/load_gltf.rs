@@ -3,6 +3,7 @@
 use bevy::{
     prelude::*,
     tasks::{AsyncComputeTaskPool, Task, block_on, futures_lite::future},
+    world_serialization::WorldAssetRoot,
 };
 use bevy_editor_core::prelude::*;
 use rfd::{AsyncFileDialog, FileHandle};
@@ -29,7 +30,7 @@ fn file_dropped(
             && (extension == "gtlf" || extension == "glb")
         {
             let asset_path = GltfAssetLabel::Scene(0).from_asset(path_buf.clone());
-            commands.spawn(SceneRoot(asset_server.load_override(asset_path)));
+            commands.spawn(WorldAssetRoot(asset_server.load_override(asset_path)));
         }
     }
 }
@@ -63,7 +64,7 @@ fn poll_pick_gltf(
         if let Some(file) = result {
             let path = file.path().to_owned();
             let asset_path = GltfAssetLabel::Scene(0).from_asset(path);
-            commands.spawn(SceneRoot(asset_server.load_override(asset_path)));
+            commands.spawn(WorldAssetRoot(asset_server.load_override(asset_path)));
         }
     }
 }

@@ -139,8 +139,8 @@ fn spawn_path_segment_ui<'a>(
             parent.spawn((
                 Text(directory_name),
                 TextFont {
-                    font: theme.text.font.clone(),
-                    font_size: 10.0,
+                    font: theme.text.font.clone().into(),
+                    font_size: FontSize::Px(10.0),
                     ..default()
                 },
                 TextColor(theme.text.text_color),
@@ -191,8 +191,8 @@ fn path_separator_ui(theme: &Theme) -> impl Bundle {
     (
         Text(">".to_string()),
         TextFont {
-            font: theme.text.font.clone(),
-            font_size: 10.0,
+            font: theme.text.font.clone().into(),
+            font_size: FontSize::Px(10.0),
             ..default()
         },
         TextColor(theme.text.text_color),

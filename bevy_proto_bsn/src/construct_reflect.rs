@@ -148,9 +148,6 @@ pub(crate) fn register_reflect_construct(app: &mut App) {
     app.register_type_data::<bevy::light::VolumetricLight, ReflectConstruct>();
 
     app.register_type_data::<bevy::pbr::AtmosphereSettings, ReflectConstruct>();
-    app.register_type_data::<bevy::pbr::RenderCascadesVisibleEntities, ReflectConstruct>();
-    app.register_type_data::<bevy::pbr::RenderCubemapVisibleEntities, ReflectConstruct>();
-    app.register_type_data::<bevy::pbr::RenderVisibleMeshEntities, ReflectConstruct>();
     app.register_type_data::<bevy::pbr::DistanceFog, ReflectConstruct>();
     app.register_type_data::<bevy::prelude::EnvironmentMapLight, ReflectConstruct>();
     app.register_type_data::<bevy::pbr::Lightmap, ReflectConstruct>();
@@ -175,14 +172,10 @@ pub(crate) fn register_reflect_construct(app: &mut App) {
     app.register_type_data::<bevy::picking::pointer::PointerPress, ReflectConstruct>();
 
     app.register_type_data::<bevy::render::camera::TemporalJitter, ReflectConstruct>();
-    app.register_type_data::<bevy::render::experimental::occlusion_culling::OcclusionCulling, ReflectConstruct>();
+    app.register_type_data::<bevy::render::occlusion_culling::OcclusionCulling, ReflectConstruct>();
     app.register_type_data::<bevy::render::sync_world::SyncToRenderWorld, ReflectConstruct>();
     app.register_type_data::<bevy::render::sync_world::TemporaryRenderEntity, ReflectConstruct>();
     app.register_type_data::<bevy::render::view::ColorGrading, ReflectConstruct>();
-    app.register_type_data::<bevy::render::view::visibility::RenderVisibleEntities, ReflectConstruct>();
-
-    app.register_type_data::<bevy::scene::DynamicSceneRoot, ReflectConstruct>();
-    app.register_type_data::<bevy::scene::SceneRoot, ReflectConstruct>();
 
     //app.register_type_data::<bevy::sprite::MeshMaterial2d, ReflectConstruct>();
     app.register_type_data::<bevy::sprite::SpritePickingCamera, ReflectConstruct>();
@@ -196,7 +189,6 @@ pub(crate) fn register_reflect_construct(app: &mut App) {
     app.register_type_data::<bevy::mesh::Mesh2d, ReflectConstruct>();
     app.register_type_data::<bevy::mesh::Mesh3d, ReflectConstruct>();
     app.register_type_data::<bevy::mesh::MeshTag, ReflectConstruct>();
-    app.register_type_data::<bevy::mesh::morph::MeshMorphWeights, ReflectConstruct>();
     app.register_type_data::<bevy::mesh::morph::MorphWeights, ReflectConstruct>();
     app.register_type_data::<bevy::mesh::skinning::SkinnedMesh, ReflectConstruct>();
 

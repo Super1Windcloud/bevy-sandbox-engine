@@ -172,7 +172,7 @@ fn update_render_target_size(
             height: u32::max(1, computed_node.size().y as u32),
             depth_or_array_layers: 1,
         };
-        let image = images.get_mut(&image_handle.handle).unwrap();
+        let mut image = images.get_mut(&image_handle.handle).unwrap();
         let current = image.texture_descriptor.size;
         let requested = UVec2::new(size.width, size.height);
         if resize_state.last_size != requested {

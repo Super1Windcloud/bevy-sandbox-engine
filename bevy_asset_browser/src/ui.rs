@@ -138,8 +138,8 @@ fn spawn_project_toolbar<'a>(commands: &'a mut Commands, theme: &Res<Theme>) -> 
                 row.spawn((
                     Text::new(label),
                     TextFont {
-                        font: theme.text.font.clone(),
-                        font_size: 11.0,
+                        font: theme.text.font.clone().into(),
+                        font_size: FontSize::Px(11.0),
                         ..default()
                     },
                     TextColor(Color::srgb(0.74, 0.75, 0.77)),
@@ -186,8 +186,8 @@ fn spawn_project_sidebar<'a>(commands: &'a mut Commands, theme: &Res<Theme>) -> 
         parent.spawn((
             Text::new(assets_label),
             TextFont {
-                font: theme.text.font.clone(),
-                font_size: 12.0,
+                font: theme.text.font.clone().into(),
+                font_size: FontSize::Px(12.0),
                 ..default()
             },
             TextColor(Color::srgb(0.90, 0.90, 0.92)),
@@ -210,8 +210,8 @@ fn spawn_project_sidebar<'a>(commands: &'a mut Commands, theme: &Res<Theme>) -> 
                     row.spawn((
                         Text::new(folder),
                         TextFont {
-                            font: theme.text.font.clone(),
-                            font_size: 11.0,
+                            font: theme.text.font.clone().into(),
+                            font_size: FontSize::Px(11.0),
                             ..default()
                         },
                         TextColor(Color::srgb(0.74, 0.75, 0.77)),

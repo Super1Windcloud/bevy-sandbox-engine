@@ -1,5 +1,5 @@
 use bevy::{
-    feathers::theme::{ThemeBackgroundColor, ThemeBorderColor, ThemeFontColor},
+    feathers::theme::{ThemeBackgroundColor, ThemeBorderColor, ThemeTextColor},
     prelude::*,
 };
 use bevy_editor_styles::Theme;
@@ -30,11 +30,11 @@ pub fn header_node() -> Node {
 }
 
 #[allow(dead_code)]
-pub fn header_theme() -> (ThemeBackgroundColor, ThemeBorderColor, ThemeFontColor) {
+pub fn header_theme() -> (ThemeBackgroundColor, ThemeBorderColor, ThemeTextColor) {
     (
         ThemeBackgroundColor(SUBPANE_HEADER_BG),
         ThemeBorderColor(SUBPANE_HEADER_BORDER),
-        ThemeFontColor(SUBPANE_HEADER_TEXT),
+        ThemeTextColor(SUBPANE_HEADER_TEXT),
     )
 }
 
@@ -52,19 +52,19 @@ pub fn body_node() -> Node {
     }
 }
 
-pub fn body_theme() -> (ThemeBackgroundColor, ThemeBorderColor, ThemeFontColor) {
+pub fn body_theme() -> (ThemeBackgroundColor, ThemeBorderColor, ThemeTextColor) {
     (
         ThemeBackgroundColor(SUBPANE_BODY_BG),
         ThemeBorderColor(SUBPANE_BODY_BORDER),
-        ThemeFontColor(SUBPANE_HEADER_TEXT),
+        ThemeTextColor(SUBPANE_HEADER_TEXT),
     )
 }
 
 #[allow(dead_code)]
 pub fn body_font(theme: &Theme) -> TextFont {
     TextFont {
-        font: theme.text.font.clone(),
-        font_size: 14.0,
+        font: theme.text.font.clone().into(),
+        font_size: FontSize::Px(14.0),
         ..default()
     }
 }

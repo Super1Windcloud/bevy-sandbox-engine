@@ -117,7 +117,7 @@ fn menu_setup(
         .spawn((
             Text::new("File"),
             TextFont {
-                font: theme.text.font.clone(),
+                font: theme.text.font.clone().into(),
                 font_size: 12.,
                 ..default()
             },
@@ -145,7 +145,7 @@ fn menu_setup(
         .spawn((
             Text::new("Edit"),
             TextFont {
-                font: theme.text.font.clone(),
+                font: theme.text.font.clone().into(),
                 font_size: 12.,
                 ..default()
             },
@@ -173,7 +173,7 @@ fn menu_setup(
         .spawn((
             Text::new("Build"),
             TextFont {
-                font: theme.text.font.clone(),
+                font: theme.text.font.clone().into(),
                 font_size: 12.,
                 ..default()
             },
@@ -201,7 +201,7 @@ fn menu_setup(
         .spawn((
             Text::new("Window"),
             TextFont {
-                font: theme.text.font.clone(),
+                font: theme.text.font.clone().into(),
                 font_size: 12.,
                 ..default()
             },
@@ -229,7 +229,7 @@ fn menu_setup(
         .spawn((
             Text::new("Help"),
             TextFont {
-                font: theme.text.font.clone(),
+                font: theme.text.font.clone().into(),
                 font_size: 12.,
                 ..default()
             },

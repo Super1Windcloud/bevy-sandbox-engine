@@ -110,8 +110,8 @@ fn scene_tree_row_for_entity(
             (
                 Text(name.into()),
                 TextFont {
-                    font: theme.text.font.clone(),
-                    font_size: 12.0,
+                    font: theme.text.font.clone().into(),
+                    font_size: FontSize::Px(12.0),
                     ..default()
                 },
                 TextColor(if selection.contains(entity) { Color::WHITE } else { tailwind::NEUTRAL_200.into() }),

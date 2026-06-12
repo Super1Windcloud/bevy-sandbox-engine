@@ -3,7 +3,10 @@ use std::borrow::Cow;
 use bevy::{
     asset::{load_internal_asset, uuid_handle},
     camera::visibility::VisibleEntities,
-    core_pipeline::{core_2d::Transparent2d, core_3d::Transparent3d},
+    core_pipeline::{
+        core_2d::Transparent2d,
+        core_3d::{Transparent3d, TransparentSortingInfo3d},
+    },
     ecs::{
         query::ROQueryItem,
         system::{
@@ -11,10 +14,8 @@ use bevy::{
             lifetimeless::{Read, SRes},
         },
     },
-    image::BevyDefault,
     math::FloatOrd,
     mesh::PrimitiveTopology,
-    pbr::MeshPipelineKey,
     prelude::*,
     render::{
         Extract, ExtractSchedule, Render, RenderApp, RenderSystems,
@@ -33,7 +34,7 @@ use bevy::{
         },
         renderer::{RenderDevice, RenderQueue},
         sync_world::RenderEntity,
-        view::{ExtractedView, RenderVisibleEntities, ViewTarget},
+        view::{ExtractedView, RenderVisibleEntities},
     },
 };
 
@@ -425,21 +426,24 @@ fn queue_infinite_grids(
             continue;
         }
 
-        let mesh_key = MeshPipelineKey::from_hdr(view.hdr);
         let pipeline_id = pipelines.specialize(
             &pipeline_cache,
             &pipeline,
             GridPipelineKey {
-                mesh_key,
+                target_format: view.target_format,
                 sample_count: msaa.samples(),
             },
         );
 
-        for &(entity, main_entity) in visible_entities.iter::<InfiniteGridSettings>() {
+        let Some(visible_grids) = visible_entities.get::<InfiniteGridSettings>() else {
+            continue;
+        };
+
+        for (entity, main_entity) in visible_grids.iter_visible() {
             if let Some(phase2d) = &mut phase2d {
-                phase2d.items.push(Transparent2d {
+                phase2d.add_retained(Transparent2d {
                     pipeline: pipeline_id,
-                    entity: (entity, main_entity),
+                    entity: (*entity, *main_entity),
                     draw_function: draw_function_id_2d,
                     batch_range: 0..1,
                     extra_index: PhaseItemExtraIndex::None,
@@ -449,21 +453,25 @@ fn queue_infinite_grids(
                 });
             }
             if !infinite_grids
-                .get(entity)
+                .get(*entity)
                 .map(|grid| plane_check(&grid.transform, view.world_from_view.translation()))
                 .unwrap_or(false)
             {
                 continue;
             }
             if let Some(phase) = &mut phase3d {
-                phase.items.push(Transparent3d {
+                phase.add_retained(Transparent3d {
                     pipeline: pipeline_id,
-                    entity: (entity, main_entity),
+                    entity: (*entity, *main_entity),
                     draw_function: draw_function_id,
                     distance: f32::NEG_INFINITY,
                     batch_range: 0..1,
                     extra_index: PhaseItemExtraIndex::None,
                     indexed: true,
+                    sorting_info: TransparentSortingInfo3d::Sorted {
+                        mesh_center: Vec3::ZERO,
+                        depth_bias: 0.0,
+                    },
                 });
             }
         }
@@ -529,7 +537,7 @@ impl FromWorld for InfiniteGridPipeline {
 
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
 pub struct GridPipelineKey {
-    mesh_key: MeshPipelineKey,
+    target_format: TextureFormat,
     sample_count: u32,
 }
 
@@ -537,19 +545,13 @@ impl SpecializedRenderPipeline for InfiniteGridPipeline {
     type Key = GridPipelineKey;
 
     fn specialize(&self, key: Self::Key) -> RenderPipelineDescriptor {
-        let format = if key.mesh_key.contains(MeshPipelineKey::HDR) {
-            ViewTarget::TEXTURE_FORMAT_HDR
-        } else {
-            TextureFormat::bevy_default()
-        };
-
         RenderPipelineDescriptor {
             label: Some(Cow::Borrowed("grid-render-pipeline")),
             layout: vec![
                 self.view_layout_descriptor.clone(),
                 self.infinite_grid_layout_descriptor.clone(),
             ],
-            push_constant_ranges: Vec::new(),
+            immediate_size: 0,
             vertex: VertexState {
                 shader: GRID_SHADER_HANDLE,
                 shader_defs: vec![],
@@ -567,8 +569,8 @@ impl SpecializedRenderPipeline for InfiniteGridPipeline {
             },
             depth_stencil: Some(DepthStencilState {
                 format: TextureFormat::Depth32Float,
-                depth_write_enabled: false,
-                depth_compare: CompareFunction::Greater,
+                depth_write_enabled: Some(false),
+                depth_compare: Some(CompareFunction::Greater),
                 stencil: StencilState {
                     front: StencilFaceState::IGNORE,
                     back: StencilFaceState::IGNORE,
@@ -591,7 +593,7 @@ impl SpecializedRenderPipeline for InfiniteGridPipeline {
                 shader_defs: vec![],
                 entry_point: Some(Cow::Borrowed("fragment")),
                 targets: vec![Some(ColorTargetState {
-                    format,
+                    format: key.target_format,
                     blend: Some(BlendState::ALPHA_BLENDING),
                     write_mask: ColorWrites::ALL,
                 })],

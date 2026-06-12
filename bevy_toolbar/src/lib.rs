@@ -148,8 +148,8 @@ fn setup_toolbar(
                                     button.spawn((
                                         Text(icon.to_string()),
                                         TextFont {
-                                            font: theme.text.font.clone(),
-                                            font_size: 10.0, // Slightly smaller to fit shortcuts
+                                            font: theme.text.font.clone().into(),
+                                            font_size: FontSize::Px(10.0), // Slightly smaller to fit shortcuts
                                             ..default()
                                         },
                                         TextColor(theme.text.text_color),
@@ -179,8 +179,8 @@ fn setup_toolbar(
                         status.spawn((
                             Text("W=Move | E=Rotate | R=Scale | Ctrl=Snap".to_string()),
                             TextFont {
-                                font: theme.text.font.clone(),
-                                font_size: 10.0,
+                                font: theme.text.font.clone().into(),
+                                font_size: FontSize::Px(10.0),
                                 ..default()
                             },
                             TextColor(EditorColors::TEXT_MUTED),
@@ -190,8 +190,8 @@ fn setup_toolbar(
                         status.spawn((
                             Text("Snap: ON".to_string()),
                             TextFont {
-                                font: theme.text.font.clone(),
-                                font_size: 10.0,
+                                font: theme.text.font.clone().into(),
+                                font_size: FontSize::Px(10.0),
                                 ..default()
                             },
                             TextColor(EditorColors::SUCCESS),

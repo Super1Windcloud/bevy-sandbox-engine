@@ -210,6 +210,8 @@ impl<S> EntityCommand for ConstructSceneCommand<S>
 where
     S: Scene + Send + 'static,
 {
+    type Out = ();
+
     fn apply(self, entity: EntityWorldMut) {
         let mut context = ConstructContext::new(entity.id(), entity.into_world_mut());
         self.0

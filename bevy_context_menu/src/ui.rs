@@ -91,8 +91,8 @@ pub(crate) fn spawn_option<'a>(
     commands.spawn((
         Text::new(label),
         TextFont {
-            font: theme.text.font.clone(),
-            font_size: 12.,
+            font: theme.text.font.clone().into(),
+            font_size: FontSize::Px(12.),
             ..default()
         },
         Pickable::IGNORE,

@@ -2,10 +2,9 @@ use core::any::TypeId;
 use std::any::Any;
 
 use bevy::{
-    platform::collections::hash_map::Entry,
     prelude::{AppTypeRegistry, Component, Mut, ReflectComponent},
     reflect::{PartialReflect, TypeRegistry},
-    utils::TypeIdMap,
+    utils::{TypeIdMap, TypeIdMapEntry},
 };
 use variadics_please::all_tuples;
 
@@ -206,14 +205,14 @@ impl DynamicScene {
         });
 
         match self.component_props.entry(TypeId::of::<C>()) {
-            Entry::Vacant(entry) => {
+            TypeIdMapEntry::Vacant(entry) => {
                 entry.insert(ComponentProps {
                     type_id: TypeId::of::<C>(),
                     patches: vec![Box::new(C::patch(patch))],
                     construct,
                 });
             }
-            Entry::Occupied(mut entry) => {
+            TypeIdMapEntry::Occupied(mut entry) => {
                 let entry = entry.get_mut();
                 if matches!(entry.construct, DynamicConstructFn::Reflected) {
                     entry.construct = construct;
@@ -229,14 +228,14 @@ impl DynamicScene {
         F: Fn(&mut dyn PartialReflect) + Send + Sync + 'static,
     {
         match self.component_props.entry(type_id) {
-            Entry::Vacant(entry) => {
+            TypeIdMapEntry::Vacant(entry) => {
                 entry.insert(ComponentProps {
                     type_id,
                     patches: vec![Box::new(patch)],
                     construct: DynamicConstructFn::Reflected,
                 });
             }
-            Entry::Occupied(mut entry) => {
+            TypeIdMapEntry::Occupied(mut entry) => {
                 entry.get_mut().patches.push(Box::new(patch));
             }
         }
@@ -289,6 +288,7 @@ impl Scene for DynamicScene {
     }
 }
 
+#[derive(Clone, Copy)]
 enum DynamicConstructFn {
     Typed(
         fn(

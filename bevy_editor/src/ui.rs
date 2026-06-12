@@ -298,8 +298,8 @@ fn ui_setup(
                 menu.spawn((
                     Text::new(i18n.engine_name),
                     TextFont {
-                        font: theme.text.font.clone(),
-                        font_size: 13.0,
+                        font: theme.text.font.clone().into(),
+                        font_size: FontSize::Px(13.0),
                         ..default()
                     },
                     TextColor(theme.text.text_color),
@@ -374,8 +374,8 @@ fn ui_setup(
                         right.spawn((
                             Text::new(i18n.coordinate_text),
                             TextFont {
-                                font: theme.text.font.clone(),
-                                font_size: 12.0,
+                                font: theme.text.font.clone().into(),
+                                font_size: FontSize::Px(12.0),
                                 ..default()
                             },
                             TextColor(theme.text.low_priority),
@@ -428,8 +428,8 @@ fn ui_setup(
                 status_bar.spawn((
                     Text::new(shell_state.status.clone()),
                     TextFont {
-                        font: theme.text.font.clone(),
-                        font_size: 11.0,
+                        font: theme.text.font.clone().into(),
+                        font_size: FontSize::Px(11.0),
                         ..default()
                     },
                     TextColor(theme.text.text_color),
@@ -442,8 +442,8 @@ fn ui_setup(
                         tool_name(active_tool.0, ui_state.locale)
                     )),
                     TextFont {
-                        font: theme.text.font.clone(),
-                        font_size: 11.0,
+                        font: theme.text.font.clone().into(),
+                        font_size: FontSize::Px(11.0),
                         ..default()
                     },
                     TextColor(theme.text.low_priority),
@@ -452,8 +452,8 @@ fn ui_setup(
                 status_bar.spawn((
                     Text::new(play_state_name(shell_state.play_state, &i18n)),
                     TextFont {
-                        font: theme.text.font.clone(),
-                        font_size: 11.0,
+                        font: theme.text.font.clone().into(),
+                        font_size: FontSize::Px(11.0),
                         ..default()
                     },
                     TextColor(theme.text.low_priority),
@@ -497,8 +497,8 @@ fn spawn_shell_button(
         button.spawn((
             Text::new(label),
             TextFont {
-                font: theme.text.font.clone(),
-                font_size: if compact { 12.0 } else { 11.0 },
+                font: theme.text.font.clone().into(),
+                font_size: FontSize::Px(if compact { 12.0 } else { 11.0 }),
                 ..default()
             },
             TextColor(if selected {
@@ -770,8 +770,8 @@ fn setup_console_pane(
             parent.spawn((
                 Text::new(line),
                 TextFont {
-                    font: theme.text.font.clone(),
-                    font_size: 11.0,
+                    font: theme.text.font.clone().into(),
+                    font_size: FontSize::Px(11.0),
                     ..default()
                 },
                 TextColor(Color::srgb(0.76, 0.77, 0.79)),
@@ -801,8 +801,8 @@ fn setup_asset_store_pane(
         parent.spawn((
             Text::new(i18n.category_title),
             TextFont {
-                font: theme.text.font.clone(),
-                font_size: 12.0,
+                font: theme.text.font.clone().into(),
+                font_size: FontSize::Px(12.0),
                 ..default()
             },
             TextColor(Color::srgb(0.86, 0.86, 0.88)),
@@ -822,8 +822,8 @@ fn setup_asset_store_pane(
                     row.spawn((
                         Text::new(category),
                         TextFont {
-                            font: theme.text.font.clone(),
-                            font_size: 11.0,
+                            font: theme.text.font.clone().into(),
+                            font_size: FontSize::Px(11.0),
                             ..default()
                         },
                         TextColor(Color::srgb(0.74, 0.75, 0.77)),

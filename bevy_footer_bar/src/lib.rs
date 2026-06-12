@@ -64,7 +64,7 @@ fn footer_setup(
                 .with_child((
                     Text::new(VERSION),
                     TextFont {
-                        font: theme.text.font.clone(),
+                        font: theme.text.font.clone().into(),
                         font_size: 10.,
                         ..default()
                     },

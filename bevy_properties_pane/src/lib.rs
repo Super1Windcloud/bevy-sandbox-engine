@@ -1,6 +1,9 @@
 //! An interactive, reflection-based inspector for Bevy ECS data in running applications.
 
-use bevy::{prelude::*, reflect::*};
+use bevy::{
+    prelude::*,
+    reflect::{*, enums::EnumInfo, structs::StructInfo, tuple_struct::TupleStructInfo},
+};
 use bevy_editor_core::selection::{EditorSelection, common_conditions::primary_selection_changed};
 use bevy_editor_styles::{EditorLocale, Theme};
 use bevy_i_cant_believe_its_not_bsn::{Template, TemplateEntityCommandsExt, template};
@@ -84,8 +87,8 @@ fn properties_pane(selection: &EditorSelection, theme: &Theme, world: &World) ->
                 (
                     Text::new(empty_text),
                     TextFont {
-                        font: theme.text.font.clone(),
-                        font_size: 14.0,
+                        font: theme.text.font.clone().into(),
+                        font_size: FontSize::Px(14.0),
                         ..default()
                     },
                     TextColor(Color::srgb(0.514, 0.514, 0.522)),
@@ -134,8 +137,8 @@ fn summary_panel(entity: Entity, theme: &Theme, world: &World) -> Template {
             (
                 Text::new(title),
                 TextFont {
-                    font: theme.text.font.clone(),
-                    font_size: 13.0,
+                    font: theme.text.font.clone().into(),
+                    font_size: FontSize::Px(13.0),
                     ..default()
                 },
                 TextColor(Color::srgb(0.90, 0.90, 0.92)),
@@ -150,8 +153,8 @@ fn summary_panel(entity: Entity, theme: &Theme, world: &World) -> Template {
                 (
                     Text::new(format!("{entity_label} {}", entity.index())),
                     TextFont {
-                        font: theme.text.font.clone(),
-                        font_size: 11.0,
+                        font: theme.text.font.clone().into(),
+                        font_size: FontSize::Px(11.0),
                         ..default()
                     },
                     TextColor(Color::srgb(0.70, 0.71, 0.73)),
@@ -159,8 +162,8 @@ fn summary_panel(entity: Entity, theme: &Theme, world: &World) -> Template {
                 (
                     Text::new(format!("{component_label}: {component_count}")),
                     TextFont {
-                        font: theme.text.font.clone(),
-                        font_size: 11.0,
+                        font: theme.text.font.clone().into(),
+                        font_size: FontSize::Px(11.0),
                         ..default()
                     },
                     TextColor(Color::srgb(0.70, 0.71, 0.73)),
@@ -227,8 +230,8 @@ fn component_list(entity: Entity, theme: &Theme, world: &World) -> Template {
                             (
                                 Text::new("▼"),
                                 TextFont {
-                                    font: theme.text.font.clone(),
-                                    font_size: 12.0,
+                                    font: theme.text.font.clone().into(),
+                                    font_size: FontSize::Px(12.0),
                                     ..default()
                                 },
                                 TextColor(Color::srgb(0.769, 0.769, 0.769)),
@@ -236,8 +239,8 @@ fn component_list(entity: Entity, theme: &Theme, world: &World) -> Template {
                             (
                                 Text::new(name.clone()),
                                 TextFont {
-                                    font: theme.text.font.clone(),
-                                    font_size: 12.0,
+                                    font: theme.text.font.clone().into(),
+                                    font_size: FontSize::Px(12.0),
                                     ..default()
                                 },
                                 TextColor(Color::srgb(0.863, 0.863, 0.863)),
@@ -246,8 +249,8 @@ fn component_list(entity: Entity, theme: &Theme, world: &World) -> Template {
                         (
                             Text::new("⋯"),
                             TextFont {
-                                font: theme.text.font.clone(),
-                                font_size: 12.0,
+                                font: theme.text.font.clone().into(),
+                                font_size: FontSize::Px(12.0),
                                 ..default()
                             },
                             TextColor(Color::srgb(0.769, 0.769, 0.769)),
@@ -269,8 +272,8 @@ fn component_list(entity: Entity, theme: &Theme, world: &World) -> Template {
                                         EditorLocale::EnUs => "<reflection unavailable>",
                                     }),
                                     TextFont {
-                                        font: theme.text.font.clone(),
-                                        font_size: 11.0,
+                                        font: theme.text.font.clone().into(),
+                                        font_size: FontSize::Px(11.0),
                                         ..default()
                                     },
                                     TextColor(Color::srgb(0.514, 0.514, 0.522)),
@@ -325,8 +328,8 @@ fn reflected_struct(struct_info: &StructInfo, reflect: &dyn Reflect, theme: &The
                     (
                         Text::new(field.name()),
                         TextFont {
-                            font: theme.text.font.clone(),
-                            font_size: 12.0,
+                            font: theme.text.font.clone().into(),
+                            font_size: FontSize::Px(12.0),
                             ..default()
                         },
                         TextColor(Color::srgb(0.855, 0.855, 0.855)),
@@ -334,8 +337,8 @@ fn reflected_struct(struct_info: &StructInfo, reflect: &dyn Reflect, theme: &The
                     (
                         Text::new(value_string.clone()),
                         TextFont {
-                            font: theme.text.font.clone(),
-                            font_size: 12.0,
+                            font: theme.text.font.clone().into(),
+                            font_size: FontSize::Px(12.0),
                             ..default()
                         },
                         TextColor(Color::srgb(0.761, 0.761, 0.761)),
@@ -372,8 +375,8 @@ fn reflected_tuple_struct(tuple_struct_info: &TupleStructInfo, theme: &Theme) ->
                 (
                     Text::new(todo_label),
                     TextFont {
-                        font: theme.text.font.clone(),
-                        font_size: 10.0,
+                        font: theme.text.font.clone().into(),
+                        font_size: FontSize::Px(10.0),
                         ..default()
                     },
                 );
@@ -390,8 +393,8 @@ fn reflected_enum(enum_info: &EnumInfo, theme: &Theme) -> Template {
                 (
                     Text::new(variant.name()),
                     TextFont {
-                        font: theme.text.font.clone(),
-                        font_size: 10.0,
+                        font: theme.text.font.clone().into(),
+                        font_size: FontSize::Px(10.0),
                         ..default()
                     },
                 );

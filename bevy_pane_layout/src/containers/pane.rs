@@ -1,7 +1,7 @@
 use bevy::{
     feathers::{
         cursor::EntityCursor,
-        theme::{ThemeBackgroundColor, ThemeBorderColor, ThemeFontColor},
+        theme::{ThemeBackgroundColor, ThemeBorderColor, ThemeTextColor},
     },
     prelude::*,
     window::SystemCursorIcon,
@@ -52,11 +52,11 @@ pub fn header_title_row_node() -> Node {
     }
 }
 
-pub fn header_theme() -> (ThemeBackgroundColor, ThemeBorderColor, ThemeFontColor) {
+pub fn header_theme() -> (ThemeBackgroundColor, ThemeBorderColor, ThemeTextColor) {
     (
         ThemeBackgroundColor(PANE_HEADER_BG),
         ThemeBorderColor(PANE_HEADER_BORDER),
-        ThemeFontColor(PANE_HEADER_TEXT),
+        ThemeTextColor(PANE_HEADER_TEXT),
     )
 }
 
@@ -66,16 +66,16 @@ pub fn header_cursor() -> EntityCursor {
 
 pub fn title_font(theme: &Theme) -> TextFont {
     TextFont {
-        font: theme.text.font.clone(),
-        font_size: 12.0,
+        font: theme.text.font.clone().into(),
+        font_size: FontSize::Px(12.0),
         ..default()
     }
 }
 
 pub fn close_button_font(theme: &Theme) -> TextFont {
     TextFont {
-        font: theme.text.font.clone(),
-        font_size: 12.0,
+        font: theme.text.font.clone().into(),
+        font_size: FontSize::Px(12.0),
         ..default()
     }
 }

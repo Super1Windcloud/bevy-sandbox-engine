@@ -36,7 +36,7 @@ mod derive_construct;
 ///             // A text node with a custom font constructed from its asset path
 ///             (
 ///                 Text("Hello, World!"),
-///                 ConstructTextFont { font_size: 24.0, font: @"Inter-Regular.ttf" }
+///                 ConstructTextFont { font_size: FontSize::Px(24.0), font: @"Inter-Regular.ttf" }
 ///             ),
 ///
 ///             // A button with a click observer
