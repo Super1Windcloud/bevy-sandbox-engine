@@ -30,9 +30,11 @@ ron.workspace = true
 toml.workspace = true
 rfd.workspace = true
 regex = "1.12.2"
-rquickjs = "0.9.0"
+rquickjs = "0.12.0"
 walkdir = "2.5.0"
-sys-locale = "0.3"
+sys-locale = "0.3.2"
+image = { version = "0.25.10", default-features = false, features = ["png"] }
+winit = "0.30.13"
 
 [lints]
 workspace = true

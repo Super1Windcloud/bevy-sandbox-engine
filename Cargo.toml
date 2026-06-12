@@ -1,7 +1,7 @@
 [workspace]
 resolver = "3"
 members = ["bevy_*"]
-exclude = ["templates"]
+exclude = ["project_templates", "screenshot", "target", "assets"]
 default-members = ["bevy_editor_launcher"]
 
 [workspace.lints.clippy]
@@ -30,14 +30,14 @@ bevy = { version = "0.18.1", features = ["experimental_bevy_feathers", "experime
 bevy_egui = "0.39.1"
 bevy_derive = "0.18.1"
 bevy_macro_utils = "0.18.1"
-thiserror = "2"
+thiserror = "2.0.18"
 serde = { version = "1", features = ["derive"] }
 tracing-test = "0.2.6"
 tracing = "0.1.44"
 atomicow = "1.2.0"
 rfd = "0.17.2"
 ron = "0.12.1"
-toml = "0.8"
+toml = "1.1.2+spec-1.1.0"
 variadics_please = "2.0.0"
 
 # local crates

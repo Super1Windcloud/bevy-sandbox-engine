@@ -13,6 +13,7 @@
 
 use std::f32::consts::TAU;
 use std::time::Duration;
+use std::{path::PathBuf, sync::OnceLock};
 
 use bevy::app::App as BevyApp;
 use bevy::asset::UnapprovedPathMode;
@@ -24,7 +25,7 @@ use bevy::render::{
     settings::{Backends, RenderCreation, WgpuSettings},
 };
 use bevy::window::{MonitorSelection, WindowMode, WindowPlugin, WindowPosition};
-use bevy::window::{WindowCloseRequested, WindowClosed};
+use bevy::window::{PrimaryWindow, WindowCloseRequested, WindowClosed, WindowCreated};
 use bevy::{
     feathers::{FeathersPlugin, dark_theme::create_dark_theme, theme::UiTheme},
     input_focus::{InputDispatchPlugin, tab_navigation::TabNavigationPlugin},
@@ -34,6 +35,8 @@ use bevy::{
 pub use bevy;
 
 use bevy::winit::{UpdateMode, WinitSettings};
+#[cfg(target_os = "windows")]
+use bevy::winit::WINIT_WINDOWS;
 use bevy_context_menu::ContextMenuPlugin;
 use bevy_editor_core::EditorCorePlugin;
 use bevy_editor_core::selection::Selectable;
@@ -41,6 +44,10 @@ use bevy_editor_styles::StylesPlugin;
 use bevy_egui::EguiPlugin;
 use bevy_toolbar::ActiveTool;
 use bevy_transform_gizmos::{GizmoTransformable, TransformGizmoPlugin};
+use image::ImageReader;
+#[cfg(target_os = "windows")]
+use winit::platform::windows::WindowExtWindows;
+use winit::window::Icon;
 
 // Panes
 use bevy_2d_viewport::Viewport2dPanePlugin;
@@ -56,9 +63,11 @@ pub mod project;
 mod ui;
 
 const APP_WINDOW_BG: Color = Color::srgb(0.039, 0.047, 0.063);
+static APP_ICON: OnceLock<Option<Icon>> = OnceLock::new();
+
 #[derive(Resource, Default, Clone)]
 struct LaunchOptions {
-    project_path: Option<std::path::PathBuf>,
+    project_path: Option<PathBuf>,
 }
 
 fn log_window_close_requested(mut events: MessageReader<WindowCloseRequested>) {
@@ -74,6 +83,63 @@ fn log_window_closed(mut events: MessageReader<WindowClosed>) {
     for event in events.read() {
         warn!("Editor window closed for entity {:?}", event.window);
     }
+}
+
+fn load_app_icon() -> Option<Icon> {
+    let icon_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("assets")
+        .join("logo.png");
+
+    let image = ImageReader::open(&icon_path)
+        .ok()?
+        .decode()
+        .ok()?
+        .into_rgba8();
+    let (width, height) = image.dimensions();
+
+    Icon::from_rgba(image.into_raw(), width, height).ok()
+}
+
+fn set_app_icon_for_window(window_entity: Entity) -> bool {
+    let Some(icon) = APP_ICON.get_or_init(load_app_icon).clone() else {
+        warn!("Failed to load editor icon from assets/logo.png");
+        return false;
+    };
+
+    #[cfg(target_os = "windows")]
+    {
+        WINIT_WINDOWS.with_borrow(|winit_windows| {
+            let Some(window_id) = winit_windows.entity_to_winit.get(&window_entity) else {
+                return false;
+            };
+
+            if let Some(window) = winit_windows.windows.get(window_id) {
+                window.set_window_icon(Some(icon.clone()));
+                window.set_taskbar_icon(Some(icon));
+                true
+            } else {
+                false
+            }
+        })
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = window_entity;
+        let _ = icon;
+        false
+    }
+}
+
+fn set_app_icon(mut window_created_events: MessageReader<WindowCreated>) {
+    for event in window_created_events.read() {
+        let _ = set_app_icon_for_window(event.window);
+    }
+}
+
+fn ensure_primary_window_icon(primary_window_entity: Single<Entity, With<PrimaryWindow>>) {
+    let _ = set_app_icon_for_window(*primary_window_entity);
 }
 
 /// The plugin that handle the bare minimum to run the application
@@ -115,6 +181,8 @@ impl Plugin for RuntimePlugin {
             .add_systems(
                 Update,
                 (
+                    ensure_primary_window_icon,
+                    set_app_icon,
                     log_window_close_requested,
                     log_window_closed,
                 ),
@@ -229,18 +297,18 @@ fn dummy_setup(
     ));
 }
 
-fn parse_project_path_argument(args: &[String]) -> Option<std::path::PathBuf> {
+fn parse_project_path_argument(args: &[String]) -> Option<PathBuf> {
     let mut iter = args.iter();
     while let Some(arg) = iter.next() {
         if arg == "--project" {
-            return iter.next().map(std::path::PathBuf::from);
+            return iter.next().map(PathBuf::from);
         }
     }
 
     None
 }
 
-fn resolve_project_path(args: &[String], editor_mode: bool) -> Option<std::path::PathBuf> {
+fn resolve_project_path(args: &[String], editor_mode: bool) -> Option<PathBuf> {
     parse_project_path_argument(args).or_else(|| {
         if editor_mode {
             project::get_most_recent_project().map(|project| project.path)

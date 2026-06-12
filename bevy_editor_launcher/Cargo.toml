@@ -13,14 +13,14 @@ bevy_egui.workspace = true
 bevy_sandbox_engine.workspace = true
 image = { version = "0.25", default-features = false, features = ["png"] }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
-sys-locale = "0.3"
+sys-locale = "0.3.2"
 winit = "0.30.13"
 
 rfd.workspace = true
 
 [target.'cfg(target_os = "windows")'.dependencies]
 tray-item = "0.10.0"
-windows-sys = { version = "0.60.2", features = ["Win32_UI_WindowsAndMessaging"] }
+windows-sys = { version = "0.61.2", features = ["Win32_UI_WindowsAndMessaging"] }
 
 [build-dependencies]
-winres = "0.1"
+winres = "0.1.12"
