@@ -156,7 +156,7 @@ impl Plugin for EditorPlugin {
                 UiWidgetsPlugins,
                 InputDispatchPlugin,
                 TabNavigationPlugin,
-                FeathersPlugin,
+                FeathersPlugins,
             ))
             .add_plugins(CompatProjectPlugin)
             .insert_resource(WinitSettings {

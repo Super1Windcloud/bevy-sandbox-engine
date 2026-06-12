@@ -382,10 +382,10 @@ fn tick_running_projects(time: Res<Time>, mut running_projects: ResMut<RunningPr
 
 fn main() {
     let render_plugin = RenderPlugin {
-        render_creation: RenderCreation::Automatic(WgpuSettings {
+        render_creation: RenderCreation::Automatic(Box::new(WgpuSettings {
             backends: Some(default_render_backends()),
             ..default()
-        }),
+        })),
         ..default()
     };
 
