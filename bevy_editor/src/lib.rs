@@ -13,7 +13,7 @@
 
 use std::f32::consts::TAU;
 use std::time::Duration;
-use std::{path::PathBuf, sync::OnceLock};
+use std::path::PathBuf;
 
 use bevy::app::App as BevyApp;
 use bevy::asset::UnapprovedPathMode;
@@ -25,7 +25,7 @@ use bevy::render::{
     settings::{Backends, RenderCreation, WgpuSettings},
 };
 use bevy::window::{MonitorSelection, WindowMode, WindowPlugin, WindowPosition};
-use bevy::window::{PrimaryWindow, WindowCloseRequested, WindowClosed, WindowCreated};
+use bevy::window::{WindowCloseRequested, WindowClosed};
 use bevy::{
     feathers::{FeathersPlugin, dark_theme::create_dark_theme, theme::UiTheme},
     input_focus::{InputDispatchPlugin, tab_navigation::TabNavigationPlugin},
@@ -35,8 +35,6 @@ use bevy::{
 pub use bevy;
 
 use bevy::winit::{UpdateMode, WinitSettings};
-#[cfg(target_os = "windows")]
-use bevy::winit::WINIT_WINDOWS;
 use bevy_context_menu::ContextMenuPlugin;
 use bevy_editor_core::EditorCorePlugin;
 use bevy_editor_core::selection::Selectable;
@@ -44,10 +42,6 @@ use bevy_editor_styles::StylesPlugin;
 use bevy_egui::EguiPlugin;
 use bevy_toolbar::ActiveTool;
 use bevy_transform_gizmos::{GizmoTransformable, TransformGizmoPlugin};
-use image::ImageReader;
-#[cfg(target_os = "windows")]
-use winit::platform::windows::WindowExtWindows;
-use winit::window::Icon;
 
 // Panes
 use bevy_2d_viewport::Viewport2dPanePlugin;
@@ -56,14 +50,15 @@ use bevy_asset_browser::AssetBrowserPanePlugin;
 
 use crate::compat::CompatProjectPlugin;
 use crate::load_gltf::LoadGltfPlugin;
+use crate::window_icon::WindowIconPlugin;
 
 mod compat;
 mod load_gltf;
 pub mod project;
+pub mod window_icon;
 mod ui;
 
 const APP_WINDOW_BG: Color = Color::srgb(0.039, 0.047, 0.063);
-static APP_ICON: OnceLock<Option<Icon>> = OnceLock::new();
 
 #[derive(Resource, Default, Clone)]
 struct LaunchOptions {
@@ -83,63 +78,6 @@ fn log_window_closed(mut events: MessageReader<WindowClosed>) {
     for event in events.read() {
         warn!("Editor window closed for entity {:?}", event.window);
     }
-}
-
-fn load_app_icon() -> Option<Icon> {
-    let icon_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("assets")
-        .join("logo.png");
-
-    let image = ImageReader::open(&icon_path)
-        .ok()?
-        .decode()
-        .ok()?
-        .into_rgba8();
-    let (width, height) = image.dimensions();
-
-    Icon::from_rgba(image.into_raw(), width, height).ok()
-}
-
-fn set_app_icon_for_window(window_entity: Entity) -> bool {
-    let Some(icon) = APP_ICON.get_or_init(load_app_icon).clone() else {
-        warn!("Failed to load editor icon from assets/logo.png");
-        return false;
-    };
-
-    #[cfg(target_os = "windows")]
-    {
-        WINIT_WINDOWS.with_borrow(|winit_windows| {
-            let Some(window_id) = winit_windows.entity_to_winit.get(&window_entity) else {
-                return false;
-            };
-
-            if let Some(window) = winit_windows.windows.get(window_id) {
-                window.set_window_icon(Some(icon.clone()));
-                window.set_taskbar_icon(Some(icon));
-                true
-            } else {
-                false
-            }
-        })
-    }
-
-    #[cfg(not(target_os = "windows"))]
-    {
-        let _ = window_entity;
-        let _ = icon;
-        false
-    }
-}
-
-fn set_app_icon(mut window_created_events: MessageReader<WindowCreated>) {
-    for event in window_created_events.read() {
-        let _ = set_app_icon_for_window(event.window);
-    }
-}
-
-fn ensure_primary_window_icon(primary_window_entity: Single<Entity, With<PrimaryWindow>>) {
-    let _ = set_app_icon_for_window(*primary_window_entity);
 }
 
 /// The plugin that handle the bare minimum to run the application
@@ -177,12 +115,11 @@ impl Plugin for RuntimePlugin {
                     })
                     .set(render_plugin),
             )
+            .add_plugins(WindowIconPlugin)
             .insert_resource(ClearColor(APP_WINDOW_BG))
             .add_systems(
                 Update,
                 (
-                    ensure_primary_window_icon,
-                    set_app_icon,
                     log_window_close_requested,
                     log_window_closed,
                 ),

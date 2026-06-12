@@ -2,7 +2,7 @@
 //!
 //! The launcher provide a bunch of functionalities to manage your projects.
 
-use std::{collections::HashMap, path::PathBuf, process::Child, sync::OnceLock, time::Duration};
+use std::{collections::HashMap, path::PathBuf, process::Child, time::Duration};
 
 #[cfg(target_os = "windows")]
 use std::ptr::null_mut;
@@ -22,25 +22,20 @@ use bevy::{
         settings::{Backends, RenderCreation, WgpuSettings},
     },
     tasks::{IoTaskPool, Task, block_on, futures_lite::future},
-    window::{
-        MonitorSelection, PrimaryWindow, WindowCloseRequested, WindowCreated, WindowMode,
-        WindowPosition,
-    },
+    window::{MonitorSelection, PrimaryWindow, WindowCloseRequested, WindowMode, WindowPosition},
     winit::{EventLoopProxy, EventLoopProxyWrapper, WINIT_WINDOWS, WinitUserEvent},
 };
+use bevy::window::close_when_requested;
 use bevy_egui::{EguiPlugin, EguiPrimaryContextPass};
-use image::ImageReader;
 #[cfg(target_os = "windows")]
 use sys_locale::get_locale;
 #[cfg(target_os = "windows")]
 use tray_item::{IconSource, TrayItem};
-#[cfg(target_os = "windows")]
-use winit::platform::windows::WindowExtWindows;
-use winit::window::Icon;
 
 use bevy_sandbox_engine::project::{
     ProjectInfo, create_new_project, get_local_projects, run_project, set_project_list,
 };
+use bevy_sandbox_engine::window_icon::WindowIconPlugin;
 
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::UI::WindowsAndMessaging::{
@@ -191,58 +186,6 @@ struct TrayCommandQueue(Mutex<Receiver<TrayCommand>>);
 #[derive(Resource)]
 struct LauncherTray(TrayItem);
 
-static APP_ICON: OnceLock<Option<Icon>> = OnceLock::new();
-
-fn load_app_icon() -> Option<Icon> {
-    let icon_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("assets")
-        .join("logo.png");
-
-    let image = ImageReader::open(&icon_path)
-        .ok()?
-        .decode()
-        .ok()?
-        .into_rgba8();
-    let (width, height) = image.dimensions();
-
-    Icon::from_rgba(image.into_raw(), width, height).ok()
-}
-
-fn set_app_icon_for_window(window_entity: Entity) -> bool {
-    let Some(icon) = APP_ICON.get_or_init(load_app_icon).clone() else {
-        warn!("Failed to load app icon from assets/logo.png");
-        return false;
-    };
-
-    WINIT_WINDOWS.with_borrow(|winit_windows| {
-        let Some(window_id) = winit_windows.entity_to_winit.get(&window_entity) else {
-            return false;
-        };
-
-        if let Some(window) = winit_windows.windows.get(window_id) {
-            window.set_window_icon(Some(icon.clone()));
-
-            #[cfg(target_os = "windows")]
-            window.set_taskbar_icon(Some(icon));
-
-            true
-        } else {
-            false
-        }
-    })
-}
-
-fn set_app_icon(mut window_created_events: MessageReader<WindowCreated>) {
-    for event in window_created_events.read() {
-        let _ = set_app_icon_for_window(event.window);
-    }
-}
-
-fn ensure_primary_window_icon(primary_window_entity: Single<Entity, With<PrimaryWindow>>) {
-    let _ = set_app_icon_for_window(*primary_window_entity);
-}
-
 #[cfg(target_os = "windows")]
 struct TrayStrings {
     tooltip: &'static str,
@@ -284,7 +227,9 @@ fn send_tray_command(
 
 #[cfg(target_os = "windows")]
 fn load_tray_icon_handle() -> Option<isize> {
-    let icon_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets").join("app.ico");
+    let icon_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("assets")
+        .join("app.ico");
     let mut wide_path = icon_path
         .as_os_str()
         .to_string_lossy()
@@ -418,10 +363,7 @@ fn hide_launcher_on_request(
     ui_state.hide_window_requested = false;
 }
 
-fn tick_running_projects(
-    time: Res<Time>,
-    mut running_projects: ResMut<RunningProjects>,
-) {
+fn tick_running_projects(time: Res<Time>, mut running_projects: ResMut<RunningProjects>) {
     running_projects.0.retain(|_, running_project| {
         if let Ok(Some(_)) = running_project.child.try_wait() {
             return false;
@@ -456,15 +398,19 @@ fn main() {
                         resolution: bevy::window::WindowResolution::new(800, 600),
                         position: WindowPosition::Centered(MonitorSelection::Primary),
                         mode: WindowMode::Windowed,
+                        focused: true,
+                        decorations: true,
                         visible: false,
                         ..default()
                     }),
+
                     close_when_requested: false,
                     ..default()
                 })
                 .disable::<GilrsPlugin>()
                 .set(render_plugin),
             EguiPlugin::default(),
+            WindowIconPlugin,
         ))
         .insert_resource(ClearColor(Color::srgb(0.039, 0.047, 0.063)))
         .insert_resource(ProjectInfoList(get_local_projects()))
@@ -479,8 +425,6 @@ fn main() {
             Update,
             (
                 focus_primary_window_on_show,
-                ensure_primary_window_icon,
-                set_app_icon,
                 hide_launcher_on_request,
                 exit_launcher_on_close_request,
                 ui::sync_system_locale,
