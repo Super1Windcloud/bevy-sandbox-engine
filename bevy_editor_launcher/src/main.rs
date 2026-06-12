@@ -110,7 +110,9 @@ fn poll_create_project_task(
                 project_list.0.push(project_info.clone());
                 set_project_list(project_list.0.clone());
                 match run_project(&project_info) {
-                    Ok(_) => {}
+                    Ok(_) => {
+                        ui_state.hide_window_requested = true;
+                    }
                     Err(error) => {
                         error!("Failed to run new project after creation: {:?}", error);
                         ui_state.notifications.push(ui::Notification {
@@ -402,6 +404,20 @@ fn exit_launcher_on_close_request(
     }
 }
 
+fn hide_launcher_on_request(
+    mut primary_window: Single<&mut Window, With<PrimaryWindow>>,
+    mut window_state: ResMut<LauncherWindowState>,
+    mut ui_state: ResMut<ui::LauncherUiState>,
+) {
+    if !ui_state.hide_window_requested {
+        return;
+    }
+
+    primary_window.visible = false;
+    window_state.focus_requested = false;
+    ui_state.hide_window_requested = false;
+}
+
 fn tick_running_projects(
     time: Res<Time>,
     mut running_projects: ResMut<RunningProjects>,
@@ -465,6 +481,7 @@ fn main() {
                 focus_primary_window_on_show,
                 ensure_primary_window_icon,
                 set_app_icon,
+                hide_launcher_on_request,
                 exit_launcher_on_close_request,
                 ui::sync_system_locale,
                 poll_create_project_task.run_if(any_with_component::<CreateProjectTask>),

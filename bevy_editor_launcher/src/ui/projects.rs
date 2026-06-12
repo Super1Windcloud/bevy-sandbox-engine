@@ -470,6 +470,7 @@ pub(super) fn render_projects_page(
                                     launch_timer: Timer::from_seconds(2.0, TimerMode::Once),
                                 },
                             );
+                            ui_state.hide_window_requested = true;
                         }
                         Err(error) => match error.kind() {
                             ErrorKind::NotFound | ErrorKind::InvalidData => {
