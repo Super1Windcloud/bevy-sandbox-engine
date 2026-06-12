@@ -107,6 +107,10 @@ pub fn get_local_projects() -> Vec<ProjectInfo> {
     });
     let original_len = projects.len();
     projects.retain_mut(|project| {
+        if is_template_project_path(&project.path) {
+            return false;
+        }
+
         if !project.path.is_dir() {
             return false;
         }
@@ -141,6 +145,10 @@ pub fn update_project_info(project_root: Option<&Path>) {
         .map(Path::to_path_buf)
         .unwrap_or_else(|| std::env::current_dir().unwrap());
 
+    if is_template_project_path(&current_dir) {
+        return;
+    }
+
     match projects.iter_mut().find(|p| p.path == current_dir) {
         Some(project) => {
             // Update info
@@ -173,6 +181,10 @@ pub fn set_project_list(projects: Vec<ProjectInfo>) {
 
 /// Detect the project kind for a path.
 pub fn detect_project_kind(path: &Path) -> Option<ProjectKind> {
+    if is_template_project_path(path) {
+        return None;
+    }
+
     if is_rust_project(path) {
         Some(ProjectKind::Rust)
     } else if is_compat_project_root(path) {
@@ -180,6 +192,13 @@ pub fn detect_project_kind(path: &Path) -> Option<ProjectKind> {
     } else {
         None
     }
+}
+
+fn is_template_project_path(path: &Path) -> bool {
+    let normalized = path.to_string_lossy().replace('\\', "/").to_ascii_lowercase();
+    normalized == "project_templates"
+        || normalized.starts_with("project_templates/")
+        || normalized.contains("/project_templates/")
 }
 
 /// Run a project in editor mode.

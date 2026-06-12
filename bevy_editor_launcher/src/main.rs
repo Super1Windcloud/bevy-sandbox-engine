@@ -390,16 +390,14 @@ fn poll_tray_commands(
     }
 }
 
-fn hide_launcher_on_close_request(
+fn exit_launcher_on_close_request(
     mut close_requests: MessageReader<WindowCloseRequested>,
     primary_window_entity: Single<Entity, With<PrimaryWindow>>,
-    mut primary_window: Single<&mut Window, With<PrimaryWindow>>,
-    mut window_state: ResMut<LauncherWindowState>,
+    mut exit: MessageWriter<AppExit>,
 ) {
     for request in close_requests.read() {
         if request.window == *primary_window_entity {
-            primary_window.visible = false;
-            window_state.focus_requested = false;
+            exit.write(AppExit::Success);
         }
     }
 }
@@ -467,7 +465,7 @@ fn main() {
                 focus_primary_window_on_show,
                 ensure_primary_window_icon,
                 set_app_icon,
-                hide_launcher_on_close_request,
+                exit_launcher_on_close_request,
                 ui::sync_system_locale,
                 poll_create_project_task.run_if(any_with_component::<CreateProjectTask>),
                 ui::tick_notifications,

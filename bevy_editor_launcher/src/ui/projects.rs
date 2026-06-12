@@ -169,7 +169,7 @@ fn render_project_card(
     let text_offset = content_offset * 0.35;
     let glow_center = pointer_pos.unwrap_or(card_rect.center());
     let scaled_card_rect = if pointer_pos.is_some() {
-        egui::Rect::from_center_size(card_rect.center(), card_rect.size() * 1.05)
+        egui::Rect::from_center_size(card_rect.center(), card_rect.size() * 1.02)
     } else {
         card_rect
     };
@@ -491,7 +491,7 @@ pub(super) fn render_projects_page(
                     }
                 }
             }
-            ui.add_space(8.0);
+            ui.add_space(12.0);
         }
     });
 

@@ -141,6 +141,7 @@ pub struct Strings {
     pub failed_to_create_project: &'static str,
     pub imported_project: &'static str,
     pub invalid_project_folder: &'static str,
+    pub template_project_folder_blocked: &'static str,
     pub project_already_imported: &'static str,
     pub open_folder_failed: &'static str,
     pub rename_project_failed: &'static str,
@@ -189,6 +190,7 @@ pub fn strings(locale: LauncherLocale) -> Strings {
             failed_to_create_project: "创建项目失败",
             imported_project: "已导入项目",
             invalid_project_folder: "所选目录不是有效项目",
+            template_project_folder_blocked: "模板目录不能导入为项目",
             project_already_imported: "项目已在列表中",
             open_folder_failed: "打开项目文件夹失败",
             rename_project_failed: "项目名称不能为空",
@@ -234,6 +236,7 @@ pub fn strings(locale: LauncherLocale) -> Strings {
             failed_to_create_project: "Failed to create project",
             imported_project: "Imported project",
             invalid_project_folder: "Selected folder is not a valid project",
+            template_project_folder_blocked: "Template folders cannot be imported as projects",
             project_already_imported: "Project is already in the list",
             open_folder_failed: "Failed to open project folder",
             rename_project_failed: "Project name is required",
@@ -634,6 +637,25 @@ pub(super) fn import_project_folder(
     i18n: &Strings,
     project_path: PathBuf,
 ) {
+    let normalized = project_path
+        .to_string_lossy()
+        .replace('\\', "/")
+        .to_ascii_lowercase();
+    if normalized == "project_templates"
+        || normalized.starts_with("project_templates/")
+        || normalized.contains("/project_templates/")
+    {
+        push_notification(
+            ui_state,
+            format!(
+                "{}: {}",
+                i18n.template_project_folder_blocked,
+                project_path.display()
+            ),
+        );
+        return;
+    }
+
     if !is_valid_project_folder(&project_path) {
         push_notification(
             ui_state,
