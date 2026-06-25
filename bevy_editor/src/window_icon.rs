@@ -6,7 +6,7 @@ use bevy::window::{PrimaryWindow, WindowCreated};
 use bevy::winit::WINIT_WINDOWS;
 use image::ImageReader;
 #[cfg(target_os = "windows")]
-use raw_window_handle::{HasWindowHandle, RawWindowHandle};
+use raw_window_handle::RawWindowHandle;
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     GCLP_HICON, GCLP_HICONSM, GetSystemMetrics, ICON_BIG, ICON_SMALL, ICON_SMALL2, IMAGE_ICON,
@@ -237,7 +237,7 @@ fn set_native_window_icons(window: &winit::window::Window, icon_state: &mut Wind
         return;
     };
 
-    let Ok(window_handle) = window.window_handle() else {
+    let Ok(window_handle) = (unsafe { window.window_handle_any_thread() }) else {
         return;
     };
 

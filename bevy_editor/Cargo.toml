@@ -2,6 +2,7 @@
 name = "bevy-sandbox-engine"
 version = "0.1.0"
 edition = "2024"
+build = "build.rs"
 
 [dependencies]
 bevy.workspace = true
@@ -39,6 +40,9 @@ raw-window-handle = "0.6.2"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-sys = { version = "0.61.2", features = ["Win32_UI_WindowsAndMessaging"] }
+
+[build-dependencies]
+winres = "0.1.12"
 
 [lints]
 workspace = true
