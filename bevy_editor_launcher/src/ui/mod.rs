@@ -10,11 +10,11 @@ use bevy_egui::{
         self, ColorImage, FontData, FontDefinitions, FontFamily, TextureHandle, TextureOptions,
     },
 };
+use bevy_sandbox_engine::locale_env::SupportedLocale;
 use bevy_sandbox_engine::project::{
     ProjectInfo, ProjectKind, detect_project_kind, get_local_projects, set_project_list,
     templates::{TemplateDefinition, TemplateKind, TemplatePreviewStyle, list_templates},
 };
-use sys_locale::get_locale;
 
 use crate::{ProjectInfoList, RunningProjects, spawn_create_new_project_task};
 
@@ -86,12 +86,9 @@ pub enum LauncherLocale {
 
 impl LauncherLocale {
     fn detect() -> Self {
-        let locale = get_locale().unwrap_or_else(|| "en-US".to_string());
-        let normalized = locale.to_ascii_lowercase();
-        if normalized.starts_with("zh") {
-            Self::ZhCn
-        } else {
-            Self::EnUs
+        match SupportedLocale::detect() {
+            SupportedLocale::ZhCn => Self::ZhCn,
+            SupportedLocale::EnUs => Self::EnUs,
         }
     }
 }

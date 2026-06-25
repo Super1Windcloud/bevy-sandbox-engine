@@ -26,7 +26,6 @@ use bevy::{
     asset::{embedded_asset, io::embedded::EmbeddedAssetRegistry},
     prelude::*,
 };
-use sys_locale::get_locale;
 
 pub mod colors;
 pub mod icons;
@@ -43,7 +42,10 @@ pub enum EditorLocale {
 impl EditorLocale {
     /// Detect the preferred editor locale from the current system locale.
     pub fn detect() -> Self {
-        let locale = get_locale().unwrap_or_else(|| "en-US".to_string());
+        let locale = std::env::var("LC_ALL")
+            .or_else(|_| std::env::var("LC_CTYPE"))
+            .or_else(|_| std::env::var("LANG"))
+            .unwrap_or_else(|_| "en-US".to_string());
         if locale.to_ascii_lowercase().starts_with("zh") {
             Self::ZhCn
         } else {

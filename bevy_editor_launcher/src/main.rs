@@ -28,14 +28,13 @@ use bevy::{
 };
 use bevy_egui::{EguiPlugin, EguiPrimaryContextPass};
 #[cfg(target_os = "windows")]
-use sys_locale::get_locale;
-#[cfg(target_os = "windows")]
 use tray_item::{IconSource, TrayItem};
 
-use bevy_sandbox_engine::project::{
-    ProjectInfo, create_new_project, get_local_projects, run_project, set_project_list,
-};
 use bevy_sandbox_engine::window_icon::WindowIconPlugin;
+use bevy_sandbox_engine::{
+    locale_env::SupportedLocale,
+    project::{ProjectInfo, create_new_project, get_local_projects, run_project, set_project_list},
+};
 
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::UI::WindowsAndMessaging::{
@@ -196,21 +195,19 @@ struct TrayStrings {
 
 #[cfg(target_os = "windows")]
 fn tray_strings() -> TrayStrings {
-    let locale = get_locale().unwrap_or_else(|| "en-US".to_string());
-    if locale.to_ascii_lowercase().starts_with("zh") {
-        TrayStrings {
+    match SupportedLocale::detect() {
+        SupportedLocale::ZhCn => TrayStrings {
             tooltip: "Bevy Sandbox Engine Launcher",
             show: "打开主界面",
             hide: "隐藏窗口",
             exit: "退出",
-        }
-    } else {
-        TrayStrings {
+        },
+        SupportedLocale::EnUs => TrayStrings {
             tooltip: "Bevy Sandbox Engine Launcher",
             show: "Open Launcher",
             hide: "Hide Window",
             exit: "Exit",
-        }
+        },
     }
 }
 

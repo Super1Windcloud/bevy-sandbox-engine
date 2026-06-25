@@ -6,7 +6,8 @@ use bevy_properties_pane::PropertiesPanePlugin;
 use bevy_scene_tree::SceneTreePlugin;
 use bevy_toolbar::{ActiveTool, EditorTool};
 use bevy_transform_gizmos::{GizmoMode, TransformGizmoSettings};
-use sys_locale::get_locale;
+
+use crate::locale_env::SupportedLocale;
 
 pub struct EditorUIPlugin;
 
@@ -71,11 +72,9 @@ enum EditorLocale {
 
 impl EditorLocale {
     fn detect() -> Self {
-        let locale = get_locale().unwrap_or_else(|| "en-US".to_string());
-        if locale.to_ascii_lowercase().starts_with("zh") {
-            Self::ZhCn
-        } else {
-            Self::EnUs
+        match SupportedLocale::detect() {
+            SupportedLocale::ZhCn => Self::ZhCn,
+            SupportedLocale::EnUs => Self::EnUs,
         }
     }
 }
