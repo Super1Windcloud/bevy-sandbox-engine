@@ -594,8 +594,13 @@ fn nav_button(
     } else {
         egui::Color32::TRANSPARENT
     };
-    ui.painter()
-        .rect(rect, 8.0, fill, egui::Stroke::NONE, egui::StrokeKind::Inside);
+    ui.painter().rect(
+        rect,
+        8.0,
+        fill,
+        egui::Stroke::NONE,
+        egui::StrokeKind::Inside,
+    );
 
     let icon_rect = egui::Rect::from_center_size(
         egui::pos2(rect.left() + 24.0, rect.center().y),

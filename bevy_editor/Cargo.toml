@@ -35,6 +35,10 @@ walkdir = "2.5.0"
 sys-locale = "0.3.2"
 image = { version = "0.25.10", default-features = false, features = ["png"] }
 winit = "0.30.13"
+raw-window-handle = "0.6.2"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "0.61.2", features = ["Win32_UI_WindowsAndMessaging"] }
 
 [lints]
 workspace = true

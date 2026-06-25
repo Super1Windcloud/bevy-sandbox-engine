@@ -128,18 +128,17 @@ pub(crate) fn spawn_pane<'a>(
                     BackgroundColor(Color::srgb(0.20, 0.20, 0.21)),
                 ))
                 .with_children(|button| {
-                    button.spawn((
-                        Text::new("×"),
-                        containers::pane::close_button_font(theme),
-                    ));
+                    button.spawn((Text::new("×"), containers::pane::close_button_font(theme)));
                 })
-                .observe(move |trigger: On<Pointer<Release>>, mut commands: Commands| {
-                    if trigger.event().button != PointerButton::Primary {
-                        return;
-                    }
+                .observe(
+                    move |trigger: On<Pointer<Release>>, mut commands: Commands| {
+                        if trigger.event().button != PointerButton::Primary {
+                            return;
+                        }
 
-                    commands.run_system_cached_with(remove_pane, root);
-                });
+                        commands.run_system_cached_with(remove_pane, root);
+                    },
+                );
         })
         .id();
 

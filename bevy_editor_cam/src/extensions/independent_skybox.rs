@@ -7,7 +7,7 @@
 
 use bevy::app::prelude::*;
 use bevy::asset::Handle;
-use bevy::camera::{prelude::*, visibility::RenderLayers, Hdr};
+use bevy::camera::{Hdr, prelude::*, visibility::RenderLayers};
 use bevy::core_pipeline::Skybox;
 use bevy::ecs::prelude::*;
 use bevy::image::Image;

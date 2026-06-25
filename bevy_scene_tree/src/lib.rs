@@ -52,7 +52,9 @@ fn update_scene_tree(
     for scene_tree in &scene_trees {
         let tree_rows: Template = scene_entities
             .iter()
-            .flat_map(|(entity, name)| scene_tree_row_for_entity(entity, name, &selection, &theme, 0))
+            .flat_map(|(entity, name)| {
+                scene_tree_row_for_entity(entity, name, &selection, &theme, 0)
+            })
             .collect();
 
         commands.entity(scene_tree).build_children(tree_rows);

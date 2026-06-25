@@ -12,12 +12,13 @@
 //! - Finally, it will be a standalone application that communicates with a running Bevy game via the Bevy Remote Protocol.
 
 use std::f32::consts::TAU;
-use std::time::Duration;
 use std::path::PathBuf;
+use std::time::Duration;
 
 use bevy::app::App as BevyApp;
 use bevy::asset::UnapprovedPathMode;
 use bevy::color::palettes::tailwind;
+use bevy::feathers::{FeathersPlugins, dark_theme::create_dark_theme, theme::UiTheme};
 use bevy::gilrs::GilrsPlugin;
 use bevy::prelude::*;
 use bevy::render::{
@@ -26,11 +27,6 @@ use bevy::render::{
 };
 use bevy::window::{MonitorSelection, WindowMode, WindowPlugin, WindowPosition};
 use bevy::window::{WindowCloseRequested, WindowClosed};
-use bevy::{
-    feathers::{FeathersPlugins, dark_theme::create_dark_theme, theme::UiTheme},
-    input_focus::{InputDispatchPlugin, tab_navigation::TabNavigationPlugin},
-    ui_widgets::UiWidgetsPlugins,
-};
 // Re-export Bevy for project use
 pub use bevy;
 
@@ -55,14 +51,20 @@ use crate::window_icon::WindowIconPlugin;
 mod compat;
 mod load_gltf;
 pub mod project;
-pub mod window_icon;
 mod ui;
+pub mod window_icon;
 
 const APP_WINDOW_BG: Color = Color::srgb(0.039, 0.047, 0.063);
 
 #[derive(Resource, Default, Clone)]
 struct LaunchOptions {
     project_path: Option<PathBuf>,
+    editor_mode: bool,
+}
+
+#[derive(Resource)]
+struct DelayedWindowReveal {
+    remaining_frames: u8,
 }
 
 fn log_window_close_requested(mut events: MessageReader<WindowCloseRequested>) {
@@ -85,6 +87,11 @@ pub struct RuntimePlugin;
 
 impl Plugin for RuntimePlugin {
     fn build(&self, bevy_app: &mut BevyApp) {
+        let launch_options = bevy_app
+            .world()
+            .get_resource::<LaunchOptions>()
+            .cloned()
+            .unwrap_or_default();
         let render_plugin = RenderPlugin {
             render_creation: RenderCreation::Automatic(Box::new(WgpuSettings {
                 backends: Some(default_render_backends()),
@@ -102,7 +109,7 @@ impl Plugin for RuntimePlugin {
                             resolution: bevy::window::WindowResolution::new(1440, 900),
                             position: WindowPosition::Centered(MonitorSelection::Primary),
                             mode: WindowMode::Windowed,
-                            visible: true,
+                            visible: !launch_options.editor_mode,
                             ..default()
                         }),
                         ..default()
@@ -117,13 +124,7 @@ impl Plugin for RuntimePlugin {
             )
             .add_plugins(WindowIconPlugin)
             .insert_resource(ClearColor(APP_WINDOW_BG))
-            .add_systems(
-                Update,
-                (
-                    log_window_close_requested,
-                    log_window_closed,
-                ),
-            );
+            .add_systems(Update, (log_window_close_requested, log_window_closed));
     }
 }
 
@@ -153,20 +154,42 @@ impl Plugin for EditorPlugin {
                 LoadGltfPlugin,
                 MeshPickingPlugin,
                 TransformGizmoPlugin,
-                UiWidgetsPlugins,
-                InputDispatchPlugin,
-                TabNavigationPlugin,
                 FeathersPlugins,
             ))
             .add_plugins(CompatProjectPlugin)
+            .insert_resource(DelayedWindowReveal {
+                remaining_frames: 3,
+            })
             .insert_resource(WinitSettings {
                 focused_mode: UpdateMode::reactive(Duration::from_secs_f64(1.0 / 60.0)),
                 unfocused_mode: UpdateMode::reactive_low_power(Duration::from_secs(1)),
             })
             .insert_resource(UiTheme(create_dark_theme()))
             .init_resource::<ActiveTool>()
-            .add_systems(Startup, dummy_setup);
+            .add_systems(Startup, dummy_setup)
+            .add_systems(Update, reveal_editor_window_when_ready);
     }
+}
+
+fn reveal_editor_window_when_ready(
+    reveal: Option<ResMut<DelayedWindowReveal>>,
+    root_ui: Query<(), With<ui::RootUINode>>,
+    mut primary_window: Single<&mut Window, With<bevy::window::PrimaryWindow>>,
+) {
+    let Some(mut reveal) = reveal else {
+        return;
+    };
+
+    if root_ui.is_empty() {
+        return;
+    }
+
+    if reveal.remaining_frames > 0 {
+        reveal.remaining_frames -= 1;
+        return;
+    }
+
+    primary_window.visible = true;
 }
 
 /// Your game application
@@ -186,6 +209,7 @@ impl App {
         let editor_mode = !args.iter().any(|arg| arg == "-game");
         let launch_options = LaunchOptions {
             project_path: resolve_project_path(&args, editor_mode),
+            editor_mode,
         };
 
         let mut bevy_app = BevyApp::new();
@@ -225,7 +249,7 @@ fn dummy_setup(
 
     commands.spawn((
         DirectionalLight {
-            shadow_maps_enabled: true,
+            shadow_maps_enabled: false,
             ..default()
         },
         Transform::default().looking_to(vec3(-1., -1., 1.), Vec3::Y),

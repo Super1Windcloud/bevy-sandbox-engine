@@ -9,13 +9,13 @@ use bevy::{
     },
     platform::hash::FixedState,
     reflect::{
+        FromType, NamedField, PartialReflect, Reflect, ReflectKind, TypeInfo, TypePath,
+        TypeRegistration, TypeRegistry, TypeRegistryArc,
         enums::{DynamicEnum, DynamicVariant, StructVariantInfo},
         list::DynamicList,
         structs::{DynamicStruct, StructInfo},
         tuple::DynamicTuple,
         tuple_struct::DynamicTupleStruct,
-        FromType, NamedField, PartialReflect, Reflect, ReflectKind, TypeInfo, TypePath,
-        TypeRegistration, TypeRegistry, TypeRegistryArc,
     },
 };
 use thiserror::Error;

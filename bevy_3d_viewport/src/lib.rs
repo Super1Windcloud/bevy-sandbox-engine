@@ -91,8 +91,7 @@ fn on_pane_creation(
     let window_size = primary_window.resolution.physical_size();
     let width = window_size.x.max(1);
     let height = window_size.y.max(1);
-    let mut image =
-        Image::new_target_texture(width, height, TextureFormat::Bgra8UnormSrgb, None);
+    let mut image = Image::new_target_texture(width, height, TextureFormat::Bgra8UnormSrgb, None);
     image.texture_descriptor.usage |= TextureUsages::RENDER_ATTACHMENT;
     let image_handle = images.add(image);
 

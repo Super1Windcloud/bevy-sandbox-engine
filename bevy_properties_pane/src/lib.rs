@@ -2,7 +2,7 @@
 
 use bevy::{
     prelude::*,
-    reflect::{*, enums::EnumInfo, structs::StructInfo, tuple_struct::TupleStructInfo},
+    reflect::{enums::EnumInfo, structs::StructInfo, tuple_struct::TupleStructInfo, *},
 };
 use bevy_editor_core::selection::{EditorSelection, common_conditions::primary_selection_changed};
 use bevy_editor_styles::{EditorLocale, Theme};

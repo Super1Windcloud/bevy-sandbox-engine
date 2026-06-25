@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-use bevy_egui::EguiGlobalSettings;
 use bevy_editor_styles::{Theme, colors::EditorColors};
+use bevy_egui::EguiGlobalSettings;
 use bevy_pane_layout::{PaneLayoutPlugin, PaneLayoutSet, RootPaneLayoutNode, prelude::*};
 use bevy_properties_pane::PropertiesPanePlugin;
 use bevy_scene_tree::SceneTreePlugin;
@@ -18,7 +18,10 @@ impl Plugin for EditorUIPlugin {
                 ..default()
             })
             .add_systems(Startup, ui_setup.in_set(UISet))
-            .add_systems(Update, (sync_system_locale, handle_shell_buttons, sync_shell_labels))
+            .add_systems(
+                Update,
+                (sync_system_locale, handle_shell_buttons, sync_shell_labels),
+            )
             .add_plugins((PaneLayoutPlugin, SceneTreePlugin, PropertiesPanePlugin))
             .register_pane("Console", setup_console_pane)
             .register_pane("Asset Store", setup_asset_store_pane)
@@ -346,30 +349,118 @@ fn ui_setup(
                         BackgroundColor(Color::srgb(0.24, 0.24, 0.24)),
                     ))
                     .with_children(|group| {
-                        spawn_shell_button(group, &theme, "▶", ShellAction::Play, true, false, shell_state.play_state == PlayState::Playing, false);
-                        spawn_shell_button(group, &theme, "⏸", ShellAction::Pause, true, false, shell_state.play_state == PlayState::Paused, false);
-                        spawn_shell_button(group, &theme, "⏹", ShellAction::Stop, true, false, shell_state.play_state == PlayState::Editing, false);
+                        spawn_shell_button(
+                            group,
+                            &theme,
+                            "▶",
+                            ShellAction::Play,
+                            true,
+                            false,
+                            shell_state.play_state == PlayState::Playing,
+                            false,
+                        );
+                        spawn_shell_button(
+                            group,
+                            &theme,
+                            "⏸",
+                            ShellAction::Pause,
+                            true,
+                            false,
+                            shell_state.play_state == PlayState::Paused,
+                            false,
+                        );
+                        spawn_shell_button(
+                            group,
+                            &theme,
+                            "⏹",
+                            ShellAction::Stop,
+                            true,
+                            false,
+                            shell_state.play_state == PlayState::Editing,
+                            false,
+                        );
                         spawn_separator(group);
-                        spawn_shell_button(group, &theme, i18n.tool_select, ShellAction::Select, false, true, active_tool.0 == EditorTool::Select, false);
-                        spawn_shell_button(group, &theme, i18n.tool_move, ShellAction::Move, false, true, active_tool.0 == EditorTool::Move, false);
-                        spawn_shell_button(group, &theme, i18n.tool_rotate, ShellAction::Rotate, false, true, active_tool.0 == EditorTool::Rotate, false);
-                        spawn_shell_button(group, &theme, i18n.tool_scale, ShellAction::Scale, false, true, active_tool.0 == EditorTool::Scale, false);
+                        spawn_shell_button(
+                            group,
+                            &theme,
+                            i18n.tool_select,
+                            ShellAction::Select,
+                            false,
+                            true,
+                            active_tool.0 == EditorTool::Select,
+                            false,
+                        );
+                        spawn_shell_button(
+                            group,
+                            &theme,
+                            i18n.tool_move,
+                            ShellAction::Move,
+                            false,
+                            true,
+                            active_tool.0 == EditorTool::Move,
+                            false,
+                        );
+                        spawn_shell_button(
+                            group,
+                            &theme,
+                            i18n.tool_rotate,
+                            ShellAction::Rotate,
+                            false,
+                            true,
+                            active_tool.0 == EditorTool::Rotate,
+                            false,
+                        );
+                        spawn_shell_button(
+                            group,
+                            &theme,
+                            i18n.tool_scale,
+                            ShellAction::Scale,
+                            false,
+                            true,
+                            active_tool.0 == EditorTool::Scale,
+                            false,
+                        );
                         spawn_separator(group);
-                        spawn_shell_button(group, &theme, "◎", ShellAction::Pivot, true, false, false, false);
-                        spawn_shell_button(group, &theme, "L", ShellAction::LocalGlobal, true, false, false, false);
-                        spawn_shell_button(group, &theme, ">", ShellAction::Step, true, false, false, false);
+                        spawn_shell_button(
+                            group,
+                            &theme,
+                            "◎",
+                            ShellAction::Pivot,
+                            true,
+                            false,
+                            false,
+                            false,
+                        );
+                        spawn_shell_button(
+                            group,
+                            &theme,
+                            "L",
+                            ShellAction::LocalGlobal,
+                            true,
+                            false,
+                            false,
+                            false,
+                        );
+                        spawn_shell_button(
+                            group,
+                            &theme,
+                            ">",
+                            ShellAction::Step,
+                            true,
+                            false,
+                            false,
+                            false,
+                        );
                     });
 
                 toolbar
-                    .spawn((
-                        Node {
-                            width: Val::Px(360.0),
-                            align_items: AlignItems::Center,
-                            justify_content: JustifyContent::FlexEnd,
-                            column_gap: Val::Px(8.0),
-                            ..default()
-                        },
-                    ))
+                    .spawn((Node {
+                        width: Val::Px(360.0),
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::FlexEnd,
+                        column_gap: Val::Px(8.0),
+                        ..default()
+                    },))
                     .with_children(|right| {
                         right.spawn((
                             Text::new(i18n.coordinate_text),
@@ -403,16 +494,14 @@ fn ui_setup(
                     });
             });
 
-            root.spawn((
-                Node {
-                    flex_grow: 1.0,
-                    min_height: Val::Px(0.0),
-                    ..default()
-                },
-            ))
-            .with_children(|workspace| {
-                workspace.spawn(RootPaneLayoutNode);
-            });
+            root.spawn((Node {
+                flex_grow: 1.0,
+                min_height: Val::Px(0.0),
+                ..default()
+            },))
+                .with_children(|workspace| {
+                    workspace.spawn(RootPaneLayoutNode);
+                });
 
             root.spawn((
                 Node {
@@ -550,13 +639,20 @@ fn handle_shell_buttons(
     let i18n = strings(ui_state.locale);
 
     for (interaction, button, mut background) in &mut interaction_query {
-        let selected = is_selected(button.0, active_tool.0, shell_state.play_state, gizmo_settings.snap_enabled);
+        let selected = is_selected(
+            button.0,
+            active_tool.0,
+            shell_state.play_state,
+            gizmo_settings.snap_enabled,
+        );
         match *interaction {
             Interaction::Pressed => {
                 match button.0 {
                     ShellAction::File => shell_state.status = i18n.menu_file_message.to_string(),
                     ShellAction::Edit => shell_state.status = i18n.menu_edit_message.to_string(),
-                    ShellAction::Window => shell_state.status = i18n.menu_window_message.to_string(),
+                    ShellAction::Window => {
+                        shell_state.status = i18n.menu_window_message.to_string()
+                    }
                     ShellAction::GameObject => {
                         shell_state.status = i18n.menu_game_object_message.to_string()
                     }
@@ -609,7 +705,12 @@ fn handle_shell_buttons(
                 }
 
                 *background = BackgroundColor(button_color(
-                    is_selected(button.0, active_tool.0, shell_state.play_state, gizmo_settings.snap_enabled),
+                    is_selected(
+                        button.0,
+                        active_tool.0,
+                        shell_state.play_state,
+                        gizmo_settings.snap_enabled,
+                    ),
                     is_ghost(button.0),
                 ));
             }
@@ -662,7 +763,12 @@ fn sync_shell_labels(
     if active_tool.is_changed() || shell_state.is_changed() || gizmo_settings.is_changed() {
         for (button, mut background) in &mut button_query {
             *background = BackgroundColor(button_color(
-                is_selected(button.0, active_tool.0, shell_state.play_state, gizmo_settings.snap_enabled),
+                is_selected(
+                    button.0,
+                    active_tool.0,
+                    shell_state.play_state,
+                    gizmo_settings.snap_enabled,
+                ),
                 is_ghost(button.0),
             ));
         }

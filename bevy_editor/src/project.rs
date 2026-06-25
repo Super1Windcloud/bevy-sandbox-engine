@@ -195,7 +195,10 @@ pub fn detect_project_kind(path: &Path) -> Option<ProjectKind> {
 }
 
 fn is_template_project_path(path: &Path) -> bool {
-    let normalized = path.to_string_lossy().replace('\\', "/").to_ascii_lowercase();
+    let normalized = path
+        .to_string_lossy()
+        .replace('\\', "/")
+        .to_ascii_lowercase();
     normalized == "project_templates"
         || normalized.starts_with("project_templates/")
         || normalized.contains("/project_templates/")
@@ -261,9 +264,6 @@ fn run_compat_project(project: &ProjectInfo) -> std::io::Result<Child> {
         ));
     }
 
-    #[cfg(target_os = "windows")]
-    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-
     let mut command = if let Some(editor_binary) = find_editor_binary() {
         let mut command = Command::new(editor_binary);
         command.arg(COMPAT_PROJECT_ROOT_ARG).arg(&project.path);
@@ -284,9 +284,6 @@ fn run_compat_project(project: &ProjectInfo) -> std::io::Result<Child> {
             .arg(&project.path);
         command
     };
-
-    #[cfg(target_os = "windows")]
-    command.creation_flags(CREATE_NO_WINDOW);
 
     let child = command.spawn().map_err(|error| {
         std::io::Error::other(format!("Failed to run compatibility project: {error}"))

@@ -250,18 +250,16 @@ fn render_project_card(
                 .map(|entry| entry.phase)
                 .unwrap_or(ProjectLaunchPhase::Ready);
             let (action_label, action_fill) = match project_phase {
-                ProjectLaunchPhase::Ready => (
-                    i18n.launch_project,
-                    egui::Color32::from_rgb(72, 112, 168),
-                ),
+                ProjectLaunchPhase::Ready => {
+                    (i18n.launch_project, egui::Color32::from_rgb(72, 112, 168))
+                }
                 ProjectLaunchPhase::Launching => (
                     i18n.launching_project,
                     egui::Color32::from_rgb(162, 128, 56),
                 ),
-                ProjectLaunchPhase::Running => (
-                    i18n.terminate_project,
-                    egui::Color32::from_rgb(152, 74, 74),
-                ),
+                ProjectLaunchPhase::Running => {
+                    (i18n.terminate_project, egui::Color32::from_rgb(152, 74, 74))
+                }
             };
             let action_size = egui::vec2(84.0, 32.0);
             let (button_rect, _) = ui.allocate_exact_size(action_size, egui::Sense::hover());
@@ -436,7 +434,10 @@ pub(super) fn render_projects_page(
         for project in &project_list.0 {
             let (action_response, menu_rect) =
                 render_project_card(ui, project, running_projects, ui_state, i18n);
-            if action_response.as_ref().is_some_and(egui::Response::clicked) {
+            if action_response
+                .as_ref()
+                .is_some_and(egui::Response::clicked)
+            {
                 if !Path::new(&project.path).exists() {
                     let project_name = project.name().unwrap_or_else(|| "Unknown".to_string());
                     push_notification(

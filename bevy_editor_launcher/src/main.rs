@@ -12,6 +12,7 @@ use std::sync::{
     mpsc::{Receiver, Sender, TryRecvError, channel},
 };
 
+use bevy::window::close_when_requested;
 use bevy::{
     diagnostic::FrameCount,
     ecs::schedule::common_conditions::any_with_component,
@@ -25,7 +26,6 @@ use bevy::{
     window::{MonitorSelection, PrimaryWindow, WindowCloseRequested, WindowMode, WindowPosition},
     winit::{EventLoopProxy, EventLoopProxyWrapper, WINIT_WINDOWS, WinitUserEvent},
 };
-use bevy::window::close_when_requested;
 use bevy_egui::{EguiPlugin, EguiPrimaryContextPass};
 #[cfg(target_os = "windows")]
 use sys_locale::get_locale;
