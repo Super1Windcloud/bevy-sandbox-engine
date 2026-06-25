@@ -381,6 +381,8 @@ fn tick_running_projects(time: Res<Time>, mut running_projects: ResMut<RunningPr
 }
 
 fn main() {
+    bevy_sandbox_engine::locale_env::normalize_process_locale();
+
     let render_plugin = RenderPlugin {
         render_creation: RenderCreation::Automatic(Box::new(WgpuSettings {
             backends: Some(default_render_backends()),

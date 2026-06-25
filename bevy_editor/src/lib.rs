@@ -50,6 +50,7 @@ use crate::window_icon::WindowIconPlugin;
 
 mod compat;
 mod load_gltf;
+pub mod locale_env;
 pub mod project;
 mod ui;
 pub mod window_icon;
