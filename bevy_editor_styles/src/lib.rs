@@ -20,7 +20,12 @@
 //!     let button_color = EditorColors::BUTTON_DEFAULT;
 //! }
 //! ```
-use bevy::{asset::embedded_asset, prelude::*};
+use std::path::{Path, PathBuf};
+
+use bevy::{
+    asset::{embedded_asset, io::embedded::EmbeddedAssetRegistry},
+    prelude::*,
+};
 use sys_locale::get_locale;
 
 pub mod colors;
@@ -52,10 +57,21 @@ pub struct StylesPlugin;
 
 impl Plugin for StylesPlugin {
     fn build(&self, app: &mut App) {
-        embedded_asset!(app, "assets/fonts/Inter-Regular.ttf");
+        register_editor_font(app);
         embedded_asset!(app, "assets/icons/Lucide.ttf");
         app.init_resource::<Theme>();
     }
+}
+
+const EDITOR_TEXT_FONT: &str = "bevy_editor_styles/assets/fonts/NotoSansCJKsc-Regular.otf";
+
+fn register_editor_font(app: &mut App) {
+    let registry = app.world_mut().resource_mut::<EmbeddedAssetRegistry>();
+    registry.insert_asset(
+        PathBuf::new(),
+        Path::new(EDITOR_TEXT_FONT),
+        include_bytes!("../../assets/fonts/NotoSansCJKsc-Regular.otf").as_slice(),
+    );
 }
 
 /// The core resource for the editor's color palette and fonts. This resource is used to store the current theme of the editor.
@@ -190,8 +206,7 @@ impl FromWorld for Theme {
                 low_priority: EditorColors::TEXT_MUTED,
                 text_color: EditorColors::TEXT_PRIMARY,
                 high_priority: EditorColors::ACCENT_BLUE,
-                font: asset_server
-                    .load("embedded://bevy_editor_styles/assets/fonts/Inter-Regular.ttf"),
+                font: asset_server.load(format!("embedded://{EDITOR_TEXT_FONT}")),
             },
             icon: IconStyles {
                 font: asset_server.load("embedded://bevy_editor_styles/assets/icons/Lucide.ttf"),
