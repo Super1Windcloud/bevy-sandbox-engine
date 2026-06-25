@@ -12,7 +12,7 @@
 //! - Finally, it will be a standalone application that communicates with a running Bevy game via the Bevy Remote Protocol.
 
 use std::f32::consts::TAU;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use bevy::app::App as BevyApp;
@@ -117,7 +117,7 @@ impl Plugin for RuntimePlugin {
                     })
                     .disable::<GilrsPlugin>()
                     .set(AssetPlugin {
-                        file_path: "../assets".to_string(),
+                        file_path: asset_root_for_launch_options(&launch_options),
                         unapproved_path_mode: UnapprovedPathMode::Deny,
                         ..default()
                     })
@@ -226,10 +226,15 @@ impl App {
 
 /// This is temporary, until we can load maps from the asset browser
 fn dummy_setup(
+    launch_options: Res<LaunchOptions>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials_3d: ResMut<Assets<StandardMaterial>>,
 ) {
+    if launch_options.project_path.is_some() {
+        return;
+    }
+
     commands.spawn((
         Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(2.5)))),
         MeshMaterial3d(materials_3d.add(Color::WHITE)),
@@ -257,6 +262,25 @@ fn dummy_setup(
         GizmoTransformable,
         Name::new("DirectionalLight"),
     ));
+}
+
+fn asset_root_for_launch_options(launch_options: &LaunchOptions) -> String {
+    launch_options
+        .project_path
+        .as_deref()
+        .and_then(project_asset_root)
+        .unwrap_or_else(|| {
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("..")
+                .join("assets")
+        })
+        .display()
+        .to_string()
+}
+
+fn project_asset_root(project_path: &Path) -> Option<PathBuf> {
+    let assets = project_path.join("Assets");
+    assets.is_dir().then_some(assets)
 }
 
 fn parse_project_path_argument(args: &[String]) -> Option<PathBuf> {

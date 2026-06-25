@@ -14,6 +14,10 @@ watch:
     if (-not (Get-Command cargo-watch -ErrorAction SilentlyContinue)) { Write-Error "cargo-watch is required. Install it with: cargo install cargo-watch"; exit 1 }
     cargo watch -x "run -p bevy-sandbox-engine-launcher"
 
+sandbox-watch:
+    if (-not (Get-Command cargo-watch -ErrorAction SilentlyContinue)) { Write-Error "cargo-watch is required. Install it with: cargo install cargo-watch"; exit 1 }
+    cargo watch -x "run -p bevy-sandbox-engine"
+
 launcher-backend backend="vulkan":
     $env:WGPU_BACKEND = "{{ backend }}"
     cargo run -p bevy-sandbox-engine-launcher

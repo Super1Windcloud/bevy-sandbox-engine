@@ -190,7 +190,8 @@ impl FromWorld for Theme {
                 low_priority: EditorColors::TEXT_MUTED,
                 text_color: EditorColors::TEXT_PRIMARY,
                 high_priority: EditorColors::ACCENT_BLUE,
-                font: asset_server.load("fonts/NotoSansCJKsc-Regular.otf"),
+                font: asset_server
+                    .load("embedded://bevy_editor_styles/assets/fonts/Inter-Regular.ttf"),
             },
             icon: IconStyles {
                 font: asset_server.load("embedded://bevy_editor_styles/assets/icons/Lucide.ttf"),

@@ -512,6 +512,7 @@ pub struct CompatNode {
     pub name: String,
     pub source: CompatNodeSource,
     pub script_components: Vec<String>,
+    pub transform: Transform,
 }
 
 #[derive(Debug, Clone)]
@@ -749,13 +750,12 @@ fn build_scene_summaries(manifest: &CompatProjectManifest) -> Vec<SceneSummary> 
         let Ok(bytes) = fs::read(&absolute_path) else {
             continue;
         };
-        let raw_strings = extract_readable_strings(&bytes);
         let scene_name = scene_path
             .file_stem()
             .unwrap_or_default()
             .to_string_lossy()
             .to_string();
-        let nodes = extract_scene_nodes(&raw_strings, &prefab_by_name, &prefab_by_uuid);
+        let nodes = extract_scene_nodes_from_bytes(&bytes, &prefab_by_name, &prefab_by_uuid);
 
         scenes.push(SceneSummary {
             path: scene_path.clone(),
@@ -1220,32 +1220,34 @@ fn find_component_classes(code: &str) -> Vec<String> {
         .collect()
 }
 
-fn extract_scene_nodes(
-    strings: &[String],
+fn extract_scene_nodes_from_bytes(
+    bytes: &[u8],
     prefab_by_name: &BTreeMap<String, &PrefabSummary>,
     prefab_by_uuid: &BTreeMap<String, &PrefabSummary>,
 ) -> Vec<CompatNode> {
     let mut nodes = Vec::new();
-    let mut index = 0;
+    let mut cursor = 0;
 
-    while index < strings.len() {
-        if strings[index] != "name" {
-            index += 1;
+    while let Some(type_offset) = find_bytes(bytes, b"BLOCKMAN3.GameObject", cursor) {
+        let next_offset =
+            find_bytes(bytes, b"BLOCKMAN3.GameObject", type_offset + 1).unwrap_or(bytes.len());
+        let block = &bytes[type_offset..next_offset];
+        cursor = next_offset;
+
+        let Some(name) = read_string_field(block, b"name") else {
+            continue;
+        };
+        if !should_capture_scene_name(&name) {
             continue;
         }
 
-        let Some(name) = strings.get(index + 1).cloned() else {
-            break;
+        let transform = Transform {
+            translation: read_vec3_field(block, b"t").unwrap_or(Vec3::ZERO),
+            rotation: read_quat_field(block, b"r").unwrap_or(Quat::IDENTITY),
+            scale: read_vec3_field(block, b"s").unwrap_or(Vec3::ONE),
         };
 
-        if !should_capture_scene_name(&name) {
-            index += 1;
-            continue;
-        }
-
-        let end = (index + 32).min(strings.len());
-        let window = &strings[index..end];
-        let prefab_uuid = find_prefab_uuid_in_window(window);
+        let prefab_uuid = read_uuid_after_field(block, b"id");
         let prefab = prefab_uuid
             .as_ref()
             .and_then(|uuid| prefab_by_uuid.get(uuid).copied())
@@ -1269,25 +1271,84 @@ fn extract_scene_nodes(
             name,
             source,
             script_components,
+            transform,
         });
-
-        index += 2;
     }
 
     dedupe_nodes(nodes)
 }
 
-fn find_prefab_uuid_in_window(window: &[String]) -> Option<String> {
-    for pair in window.windows(2) {
-        if pair[0] == "id" && is_uuid_string(&pair[1]) {
-            return Some(pair[1].to_ascii_uppercase());
-        }
-    }
-    None
+fn find_bytes(haystack: &[u8], needle: &[u8], start: usize) -> Option<usize> {
+    haystack
+        .get(start..)?
+        .windows(needle.len())
+        .position(|window| window == needle)
+        .map(|offset| start + offset)
 }
 
-fn is_uuid_string(value: &str) -> bool {
-    value.len() == 32 && value.chars().all(|ch| ch.is_ascii_hexdigit())
+fn read_string_field(block: &[u8], field: &[u8]) -> Option<String> {
+    let offset = find_field(block, field)?;
+    let length_offset = offset + 1 + field.len();
+    let length = read_u32_le(block, length_offset)? as usize;
+    let value_start = length_offset + 4;
+    let value = block.get(value_start..value_start + length)?;
+    String::from_utf8(value.to_vec()).ok()
+}
+
+fn read_vec3_field(block: &[u8], field: &[u8]) -> Option<Vec3> {
+    let offset = find_field(block, field)?;
+    let value_start = offset + 1 + field.len() + 4;
+    let x = read_f32_le(block, value_start)?;
+    let y = read_f32_le(block, value_start + 4)?;
+    let z = read_f32_le(block, value_start + 8)?;
+    Some(Vec3::new(x, y, z))
+}
+
+fn read_quat_field(block: &[u8], field: &[u8]) -> Option<Quat> {
+    let offset = find_field(block, field)?;
+    let value_start = offset + 1 + field.len() + 4;
+    let x = read_f32_le(block, value_start)?;
+    let y = read_f32_le(block, value_start + 4)?;
+    let z = read_f32_le(block, value_start + 8)?;
+    let w = read_f32_le(block, value_start + 12)?;
+    Some(Quat::from_xyzw(x, y, z, w).normalize())
+}
+
+fn read_uuid_after_field(block: &[u8], field: &[u8]) -> Option<String> {
+    let offset = find_field(block, field)?;
+    let length_offset = offset + 1 + field.len();
+    let length = read_u32_le(block, length_offset)? as usize;
+    if length != 16 {
+        return None;
+    }
+    let value_start = length_offset + 4;
+    let bytes = block.get(value_start..value_start + 16)?;
+    Some(uuid_bytes_to_string(bytes))
+}
+
+fn find_field(block: &[u8], field: &[u8]) -> Option<usize> {
+    block
+        .windows(field.len() + 1)
+        .position(|window| window[0] as usize == field.len() && &window[1..] == field)
+}
+
+fn read_u32_le(bytes: &[u8], offset: usize) -> Option<u32> {
+    Some(u32::from_le_bytes(
+        bytes.get(offset..offset + 4)?.try_into().ok()?,
+    ))
+}
+
+fn read_f32_le(bytes: &[u8], offset: usize) -> Option<f32> {
+    Some(f32::from_le_bytes(
+        bytes.get(offset..offset + 4)?.try_into().ok()?,
+    ))
+}
+
+fn uuid_bytes_to_string(bytes: &[u8]) -> String {
+    bytes
+        .iter()
+        .map(|byte| format!("{byte:02X}"))
+        .collect::<String>()
 }
 
 fn resolve_prefab_by_name<'a>(
@@ -1389,7 +1450,7 @@ fn migrate_default_scene(
         ))
         .id();
 
-    for (index, node) in scene.nodes.iter().enumerate() {
+    for node in &scene.nodes {
         let source_label = match &node.source {
             CompatNodeSource::NativeSceneObject => "scene-object".to_string(),
             CompatNodeSource::PrefabInstance {
@@ -1420,11 +1481,7 @@ fn migrate_default_scene(
                 CompatScriptList(node.script_components.clone()),
                 Mesh3d(meshes.add(Cuboid::from_size(Vec3::splat(0.35)))),
                 MeshMaterial3d(materials.add(Color::from(color))),
-                Transform::from_xyz(
-                    (index as f32 % 10.0) * 0.7,
-                    0.2,
-                    (index as f32 / 10.0) * 0.7,
-                ),
+                node.transform,
                 Visibility::default(),
             ))
             .id();
