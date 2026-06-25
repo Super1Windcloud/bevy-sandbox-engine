@@ -80,6 +80,9 @@ bevy_tooltips = { path = "bevy_tooltips" }
 bevy_transform_gizmos = { path = "bevy_transform_gizmos" }
 bevy_undo = { path = "bevy_undo" }
 
+[patch.crates-io]
+icu_segmenter = { path = "third_party/icu_segmenter" }
+
 
 
 [profile.dev]
