@@ -120,11 +120,11 @@ fn setup(
         .insert(ChildOf(*panes_root))
         .id();
 
-    spawn_pane(&mut commands, &theme, 0.19, "Hierarchy").insert(ChildOf(divider));
+    spawn_pane(&mut commands, &theme, 0.20, "Hierarchy").insert(ChildOf(divider));
 
     spawn_resize_handle(&mut commands, Divider::Horizontal).insert(ChildOf(divider));
 
-    let center_workspace = spawn_divider(&mut commands, Divider::Vertical, 0.61)
+    let center_workspace = spawn_divider(&mut commands, Divider::Vertical, 0.60)
         .insert(ChildOf(divider))
         .id();
 

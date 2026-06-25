@@ -9,6 +9,10 @@ use bevy_transform_gizmos::{GizmoMode, TransformGizmoSettings};
 
 use crate::locale_env::SupportedLocale;
 
+mod menus;
+
+use menus::{EditorMenuState, render_menu_overlays};
+
 pub struct EditorUIPlugin;
 
 impl Plugin for EditorUIPlugin {
@@ -25,7 +29,7 @@ impl Plugin for EditorUIPlugin {
                     sync_system_locale,
                     handle_shell_buttons,
                     sync_shell_labels,
-                    render_help_overlays,
+                    render_menu_overlays,
                 ),
             )
             .add_plugins((PaneLayoutPlugin, SceneTreePlugin, PropertiesPanePlugin))
@@ -49,15 +53,8 @@ struct EditorShellState {
     play_state: PlayState,
 }
 
-#[derive(Resource, Default)]
-struct EditorMenuState {
-    game_object_menu_open: bool,
-    help_menu_open: bool,
-    about_dialog_open: bool,
-}
-
 #[derive(Resource)]
-struct EditorUiState {
+pub(super) struct EditorUiState {
     locale: EditorLocale,
 }
 
@@ -78,7 +75,7 @@ enum PlayState {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum EditorLocale {
+pub(super) enum EditorLocale {
     ZhCn,
     EnUs,
 }
@@ -92,7 +89,7 @@ impl EditorLocale {
     }
 }
 
-struct EditorStrings {
+pub(super) struct EditorStrings {
     menu_file: &'static str,
     menu_edit: &'static str,
     menu_window: &'static str,
@@ -104,6 +101,24 @@ struct EditorStrings {
     menu_window_message: &'static str,
     menu_game_object_message: &'static str,
     menu_component_message: &'static str,
+    file_new_scene: &'static str,
+    file_open_scene: &'static str,
+    file_open_recent_scene: &'static str,
+    file_save: &'static str,
+    file_save_all: &'static str,
+    file_save_as: &'static str,
+    file_auto_backup_settings: &'static str,
+    file_restore_backup: &'static str,
+    file_publish_game: &'static str,
+    file_new_project: &'static str,
+    file_open_project: &'static str,
+    file_exit: &'static str,
+    file_start_server: &'static str,
+    window_ai: &'static str,
+    window_layout: &'static str,
+    window_view: &'static str,
+    window_renderer: &'static str,
+    window_reduce_tools: &'static str,
     game_object_create_empty: &'static str,
     game_object_create_child: &'static str,
     game_object_create_parent: &'static str,
@@ -126,6 +141,8 @@ struct EditorStrings {
     status_new_entity: &'static str,
     status_new_child_entity: &'static str,
     status_new_parent_entity: &'static str,
+    status_file_menu_item: &'static str,
+    status_window_category: &'static str,
     status_game_object_category: &'static str,
     status_snap_on: &'static str,
     status_snap_off: &'static str,
@@ -145,7 +162,7 @@ struct EditorStrings {
     coordinate_text: &'static str,
 }
 
-fn strings(locale: EditorLocale) -> EditorStrings {
+pub(super) fn strings(locale: EditorLocale) -> EditorStrings {
     match locale {
         EditorLocale::ZhCn => EditorStrings {
             menu_file: "文件",
@@ -159,6 +176,24 @@ fn strings(locale: EditorLocale) -> EditorStrings {
             menu_window_message: "窗口菜单暂未接线",
             menu_game_object_message: "对象菜单暂未接线",
             menu_component_message: "组件菜单暂未接线",
+            file_new_scene: "新建场景",
+            file_open_scene: "打开场景",
+            file_open_recent_scene: "打开最近的场景",
+            file_save: "保存",
+            file_save_all: "保存全部",
+            file_save_as: "另存为",
+            file_auto_backup_settings: "自动备份设置",
+            file_restore_backup: "恢复备份",
+            file_publish_game: "发布游戏",
+            file_new_project: "新建项目",
+            file_open_project: "打开项目",
+            file_exit: "退出",
+            file_start_server: "启动服务器...",
+            window_ai: "AI",
+            window_layout: "布局",
+            window_view: "视图",
+            window_renderer: "渲染器",
+            window_reduce_tools: "减面工具",
             game_object_create_empty: "创建空对象",
             game_object_create_child: "创建空子级",
             game_object_create_parent: "创建空父级",
@@ -181,6 +216,8 @@ fn strings(locale: EditorLocale) -> EditorStrings {
             status_new_entity: "已创建新对象",
             status_new_child_entity: "已创建新子对象",
             status_new_parent_entity: "已创建新父对象",
+            status_file_menu_item: "该文件操作暂未接线",
+            status_window_category: "该窗口分类暂未接线",
             status_game_object_category: "该游戏对象分类暂未接线",
             status_snap_on: "已启用变换捕捉",
             status_snap_off: "已关闭变换捕捉",
@@ -216,6 +253,24 @@ fn strings(locale: EditorLocale) -> EditorStrings {
             menu_window_message: "Window menu is not wired yet",
             menu_game_object_message: "Game object menu is not wired yet",
             menu_component_message: "Component menu is not wired yet",
+            file_new_scene: "New Scene",
+            file_open_scene: "Open Scene",
+            file_open_recent_scene: "Open Recent Scene",
+            file_save: "Save",
+            file_save_all: "Save All",
+            file_save_as: "Save As",
+            file_auto_backup_settings: "Auto Backup Settings",
+            file_restore_backup: "Restore Backup",
+            file_publish_game: "Publish Game",
+            file_new_project: "New Project",
+            file_open_project: "Open Project",
+            file_exit: "Exit",
+            file_start_server: "Start Server...",
+            window_ai: "AI",
+            window_layout: "Layout",
+            window_view: "View",
+            window_renderer: "Renderer",
+            window_reduce_tools: "Reduce Tools",
             game_object_create_empty: "Create Empty",
             game_object_create_child: "Create Empty Child",
             game_object_create_parent: "Create Empty Parent",
@@ -238,6 +293,8 @@ fn strings(locale: EditorLocale) -> EditorStrings {
             status_new_entity: "Spawned a new entity",
             status_new_child_entity: "Spawned a new child entity",
             status_new_parent_entity: "Spawned a new parent entity",
+            status_file_menu_item: "This file action is not wired yet",
+            status_window_category: "This window category is not wired yet",
             status_game_object_category: "This game object category is not wired yet",
             status_snap_on: "Transform snapping enabled",
             status_snap_off: "Transform snapping disabled",
@@ -277,13 +334,10 @@ struct PlayText;
 struct SnapButtonText;
 
 #[derive(Component)]
-struct ShellButton(ShellAction);
-
-#[derive(Component)]
-struct HelpOverlayElement;
+pub(super) struct ShellButton(ShellAction);
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum ShellAction {
+pub(super) enum ShellAction {
     File,
     Edit,
     Window,
@@ -293,6 +347,8 @@ enum ShellAction {
     About,
     CloseAbout,
     CloseMenus,
+    FileMenuItem,
+    WindowCategory,
     CreateEmptyObject,
     CreateEmptyChild,
     CreateEmptyParent,
@@ -353,7 +409,7 @@ fn ui_setup(
                     height: Val::Px(28.0),
                     align_items: AlignItems::Center,
                     padding: UiRect::horizontal(Val::Px(8.0)),
-                    column_gap: Val::Px(12.0),
+                    column_gap: Val::Px(4.0),
                     ..default()
                 },
                 BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
@@ -367,7 +423,7 @@ fn ui_setup(
                     (i18n.menu_component, ShellAction::Component),
                     (i18n.menu_help, ShellAction::Help),
                 ] {
-                    spawn_shell_button(menu, &theme, label, action, false, false, false, false);
+                    spawn_menu_bar_button(menu, &theme, label, action);
                 }
             });
 
@@ -650,12 +706,10 @@ fn spawn_shell_button(
     });
 }
 
-fn spawn_menu_item(
+fn spawn_menu_bar_button(
     parent: &mut ChildSpawnerCommands,
     theme: &Theme,
     label: &str,
-    shortcut: Option<&str>,
-    has_submenu: bool,
     action: ShellAction,
 ) {
     parent
@@ -663,17 +717,17 @@ fn spawn_menu_item(
             Button,
             ShellButton(action),
             Node {
-                width: Val::Percent(100.0),
                 height: Val::Px(22.0),
                 align_items: AlignItems::Center,
-                justify_content: JustifyContent::SpaceBetween,
-                padding: UiRect::horizontal(Val::Px(8.0)),
+                justify_content: JustifyContent::Center,
+                padding: UiRect::horizontal(Val::Px(5.0)),
+                border_radius: BorderRadius::all(Val::Px(3.0)),
                 ..default()
             },
-            BackgroundColor(Color::NONE),
+            BackgroundColor(EditorColors::BUTTON_DEFAULT),
         ))
-        .with_children(|item| {
-            item.spawn((
+        .with_children(|button| {
+            button.spawn((
                 Text::new(label),
                 TextFont {
                     font: theme.text.font.clone().into(),
@@ -681,22 +735,6 @@ fn spawn_menu_item(
                     ..default()
                 },
                 TextColor(theme.text.text_color),
-            ));
-
-            let trailing = if has_submenu {
-                "›"
-            } else {
-                shortcut.unwrap_or("")
-            };
-
-            item.spawn((
-                Text::new(trailing),
-                TextFont {
-                    font: theme.text.font.clone().into(),
-                    font_size: FontSize::Px(11.0),
-                    ..default()
-                },
-                TextColor(theme.text.low_priority),
             ));
         });
 }
@@ -751,13 +789,25 @@ fn handle_shell_buttons(
         match *interaction {
             Interaction::Pressed => {
                 match button.0 {
-                    ShellAction::File => shell_state.status = i18n.menu_file_message.to_string(),
+                    ShellAction::File => {
+                        menu_state.file_menu_open = !menu_state.file_menu_open;
+                        menu_state.window_menu_open = false;
+                        menu_state.game_object_menu_open = false;
+                        menu_state.help_menu_open = false;
+                        shell_state.status = i18n.menu_file_message.to_string();
+                    }
                     ShellAction::Edit => shell_state.status = i18n.menu_edit_message.to_string(),
                     ShellAction::Window => {
-                        shell_state.status = i18n.menu_window_message.to_string()
+                        menu_state.window_menu_open = !menu_state.window_menu_open;
+                        menu_state.file_menu_open = false;
+                        menu_state.game_object_menu_open = false;
+                        menu_state.help_menu_open = false;
+                        shell_state.status = i18n.menu_window_message.to_string();
                     }
                     ShellAction::GameObject => {
                         menu_state.game_object_menu_open = !menu_state.game_object_menu_open;
+                        menu_state.file_menu_open = false;
+                        menu_state.window_menu_open = false;
                         menu_state.help_menu_open = false;
                         shell_state.status = i18n.menu_game_object_message.to_string();
                     }
@@ -766,19 +816,25 @@ fn handle_shell_buttons(
                     }
                     ShellAction::Help => {
                         menu_state.help_menu_open = !menu_state.help_menu_open;
+                        menu_state.file_menu_open = false;
+                        menu_state.window_menu_open = false;
                         menu_state.game_object_menu_open = false;
                     }
                     ShellAction::About => {
-                        menu_state.help_menu_open = false;
-                        menu_state.game_object_menu_open = false;
+                        menu_state.close_menus();
                         menu_state.about_dialog_open = true;
                     }
                     ShellAction::CloseAbout => {
                         menu_state.about_dialog_open = false;
                     }
                     ShellAction::CloseMenus => {
-                        menu_state.game_object_menu_open = false;
-                        menu_state.help_menu_open = false;
+                        menu_state.close_menus();
+                    }
+                    ShellAction::FileMenuItem => {
+                        shell_state.status = i18n.status_file_menu_item.to_string();
+                    }
+                    ShellAction::WindowCategory => {
+                        shell_state.status = i18n.status_window_category.to_string();
                     }
                     ShellAction::CreateEmptyObject => {
                         menu_state.game_object_menu_open = false;
@@ -931,223 +987,6 @@ fn sync_shell_labels(
     }
 }
 
-fn render_help_overlays(
-    mut commands: Commands,
-    menu_state: Res<EditorMenuState>,
-    theme: Res<Theme>,
-    ui_state: Res<EditorUiState>,
-    overlays: Query<Entity, With<HelpOverlayElement>>,
-) {
-    if !menu_state.is_changed() {
-        return;
-    }
-
-    for entity in &overlays {
-        commands.entity(entity).despawn();
-    }
-
-    let i18n = strings(ui_state.locale);
-
-    if menu_state.game_object_menu_open || menu_state.help_menu_open {
-        commands.spawn((
-            Button,
-            ShellButton(ShellAction::CloseMenus),
-            Node {
-                position_type: PositionType::Absolute,
-                top: Val::Px(0.0),
-                bottom: Val::Px(0.0),
-                left: Val::Px(0.0),
-                right: Val::Px(0.0),
-                ..default()
-            },
-            BackgroundColor(Color::NONE),
-            ZIndex(99),
-            HelpOverlayElement,
-        ));
-    }
-
-    if menu_state.game_object_menu_open {
-        commands
-            .spawn((
-                Node {
-                    position_type: PositionType::Absolute,
-                    top: Val::Px(28.0),
-                    left: Val::Px(208.0),
-                    width: Val::Px(220.0),
-                    padding: UiRect::vertical(Val::Px(4.0)),
-                    flex_direction: FlexDirection::Column,
-                    border: UiRect::all(Val::Px(1.0)),
-                    ..default()
-                },
-                BackgroundColor(Color::srgb(0.19, 0.19, 0.19)),
-                BorderColor::all(Color::srgb(0.34, 0.34, 0.34)),
-                ZIndex(100),
-                HelpOverlayElement,
-            ))
-            .with_children(|menu| {
-                spawn_menu_item(
-                    menu,
-                    &theme,
-                    i18n.game_object_create_empty,
-                    Some("Ctrl+Shift+N"),
-                    false,
-                    ShellAction::CreateEmptyObject,
-                );
-                spawn_menu_item(
-                    menu,
-                    &theme,
-                    i18n.game_object_create_child,
-                    Some("Alt+Shift+N"),
-                    false,
-                    ShellAction::CreateEmptyChild,
-                );
-                spawn_menu_item(
-                    menu,
-                    &theme,
-                    i18n.game_object_create_parent,
-                    Some("Ctrl+Shift+G"),
-                    false,
-                    ShellAction::CreateEmptyParent,
-                );
-                spawn_menu_item(
-                    menu,
-                    &theme,
-                    i18n.game_object_3d_object,
-                    None,
-                    true,
-                    ShellAction::GameObjectCategory,
-                );
-                spawn_menu_item(
-                    menu,
-                    &theme,
-                    i18n.game_object_effects,
-                    None,
-                    true,
-                    ShellAction::GameObjectCategory,
-                );
-                spawn_menu_item(
-                    menu,
-                    &theme,
-                    i18n.game_object_light,
-                    None,
-                    true,
-                    ShellAction::GameObjectCategory,
-                );
-                spawn_menu_item(
-                    menu,
-                    &theme,
-                    i18n.game_object_audio,
-                    None,
-                    true,
-                    ShellAction::GameObjectCategory,
-                );
-                spawn_menu_item(
-                    menu,
-                    &theme,
-                    i18n.game_object_camera,
-                    None,
-                    false,
-                    ShellAction::GameObjectCategory,
-                );
-            });
-    }
-
-    if menu_state.help_menu_open {
-        commands
-            .spawn((
-                Node {
-                    position_type: PositionType::Absolute,
-                    top: Val::Px(30.0),
-                    left: Val::Px(330.0),
-                    width: Val::Px(180.0),
-                    padding: UiRect::all(Val::Px(4.0)),
-                    flex_direction: FlexDirection::Column,
-                    row_gap: Val::Px(2.0),
-                    border_radius: BorderRadius::all(Val::Px(4.0)),
-                    ..default()
-                },
-                BackgroundColor(Color::srgb(0.12, 0.12, 0.13)),
-                ZIndex(100),
-                HelpOverlayElement,
-            ))
-            .with_children(|menu| {
-                spawn_shell_button(
-                    menu,
-                    &theme,
-                    i18n.about_menu_item,
-                    ShellAction::About,
-                    false,
-                    false,
-                    false,
-                    false,
-                );
-            });
-    }
-
-    if menu_state.about_dialog_open {
-        commands
-            .spawn((
-                Node {
-                    position_type: PositionType::Absolute,
-                    top: Val::Px(0.0),
-                    bottom: Val::Px(0.0),
-                    left: Val::Px(0.0),
-                    right: Val::Px(0.0),
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    ..default()
-                },
-                BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.48)),
-                ZIndex(101),
-                HelpOverlayElement,
-            ))
-            .with_children(|overlay| {
-                overlay
-                    .spawn((
-                        Node {
-                            width: Val::Px(360.0),
-                            padding: UiRect::all(Val::Px(18.0)),
-                            flex_direction: FlexDirection::Column,
-                            row_gap: Val::Px(12.0),
-                            border_radius: BorderRadius::all(Val::Px(6.0)),
-                            ..default()
-                        },
-                        BackgroundColor(Color::srgb(0.13, 0.13, 0.15)),
-                    ))
-                    .with_children(|dialog| {
-                        dialog.spawn((
-                            Text::new(i18n.about_title),
-                            TextFont {
-                                font: theme.text.font.clone().into(),
-                                font_size: FontSize::Px(16.0),
-                                ..default()
-                            },
-                            TextColor(theme.text.text_color),
-                        ));
-                        dialog.spawn((
-                            Text::new(i18n.about_body),
-                            TextFont {
-                                font: theme.text.font.clone().into(),
-                                font_size: FontSize::Px(12.0),
-                                ..default()
-                            },
-                            TextColor(theme.text.low_priority),
-                        ));
-                        spawn_shell_button(
-                            dialog,
-                            &theme,
-                            i18n.dialog_close,
-                            ShellAction::CloseAbout,
-                            false,
-                            false,
-                            false,
-                            false,
-                        );
-                    });
-            });
-    }
-}
-
 fn is_ghost(action: ShellAction) -> bool {
     matches!(
         action,
@@ -1165,6 +1004,8 @@ fn is_menu_item(action: ShellAction) -> bool {
     matches!(
         action,
         ShellAction::About
+            | ShellAction::FileMenuItem
+            | ShellAction::WindowCategory
             | ShellAction::CreateEmptyObject
             | ShellAction::CreateEmptyChild
             | ShellAction::CreateEmptyParent
