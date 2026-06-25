@@ -21,12 +21,18 @@ impl Plugin for EditorUIPlugin {
             .add_systems(Startup, ui_setup.in_set(UISet))
             .add_systems(
                 Update,
-                (sync_system_locale, handle_shell_buttons, sync_shell_labels),
+                (
+                    sync_system_locale,
+                    handle_shell_buttons,
+                    sync_shell_labels,
+                    render_help_overlays,
+                ),
             )
             .add_plugins((PaneLayoutPlugin, SceneTreePlugin, PropertiesPanePlugin))
             .register_pane("Console", setup_console_pane)
             .register_pane("Asset Store", setup_asset_store_pane)
             .init_resource::<EditorShellState>()
+            .init_resource::<EditorMenuState>()
             .init_resource::<EditorUiState>();
     }
 }
@@ -41,6 +47,13 @@ pub struct RootUINode;
 struct EditorShellState {
     status: String,
     play_state: PlayState,
+}
+
+#[derive(Resource, Default)]
+struct EditorMenuState {
+    game_object_menu_open: bool,
+    help_menu_open: bool,
+    about_dialog_open: bool,
 }
 
 #[derive(Resource)]
@@ -80,7 +93,6 @@ impl EditorLocale {
 }
 
 struct EditorStrings {
-    engine_name: &'static str,
     menu_file: &'static str,
     menu_edit: &'static str,
     menu_window: &'static str,
@@ -92,7 +104,18 @@ struct EditorStrings {
     menu_window_message: &'static str,
     menu_game_object_message: &'static str,
     menu_component_message: &'static str,
-    menu_help_message: &'static str,
+    game_object_create_empty: &'static str,
+    game_object_create_child: &'static str,
+    game_object_create_parent: &'static str,
+    game_object_3d_object: &'static str,
+    game_object_effects: &'static str,
+    game_object_light: &'static str,
+    game_object_audio: &'static str,
+    game_object_camera: &'static str,
+    about_menu_item: &'static str,
+    about_title: &'static str,
+    about_body: &'static str,
+    dialog_close: &'static str,
     tool_select: &'static str,
     tool_move: &'static str,
     tool_rotate: &'static str,
@@ -101,6 +124,9 @@ struct EditorStrings {
     action_snap_on: &'static str,
     action_snap_off: &'static str,
     status_new_entity: &'static str,
+    status_new_child_entity: &'static str,
+    status_new_parent_entity: &'static str,
+    status_game_object_category: &'static str,
     status_snap_on: &'static str,
     status_snap_off: &'static str,
     status_playing: &'static str,
@@ -122,7 +148,6 @@ struct EditorStrings {
 fn strings(locale: EditorLocale) -> EditorStrings {
     match locale {
         EditorLocale::ZhCn => EditorStrings {
-            engine_name: "Sandmod Engine",
             menu_file: "文件",
             menu_edit: "编辑",
             menu_window: "窗口",
@@ -134,7 +159,18 @@ fn strings(locale: EditorLocale) -> EditorStrings {
             menu_window_message: "窗口菜单暂未接线",
             menu_game_object_message: "对象菜单暂未接线",
             menu_component_message: "组件菜单暂未接线",
-            menu_help_message: "帮助菜单暂未接线",
+            game_object_create_empty: "创建空对象",
+            game_object_create_child: "创建空子级",
+            game_object_create_parent: "创建空父级",
+            game_object_3d_object: "3D 对象",
+            game_object_effects: "特效",
+            game_object_light: "光源",
+            game_object_audio: "音频",
+            game_object_camera: "摄像机",
+            about_menu_item: "关于 Bevy Sandbox",
+            about_title: "关于 Bevy Sandbox",
+            about_body: "Bevy Sandbox 是用于构建和调试沙盒项目的编辑器原型。",
+            dialog_close: "关闭",
             tool_select: "选择",
             tool_move: "移动",
             tool_rotate: "旋转",
@@ -143,6 +179,9 @@ fn strings(locale: EditorLocale) -> EditorStrings {
             action_snap_on: "捕捉: 开",
             action_snap_off: "捕捉: 关",
             status_new_entity: "已创建新对象",
+            status_new_child_entity: "已创建新子对象",
+            status_new_parent_entity: "已创建新父对象",
+            status_game_object_category: "该游戏对象分类暂未接线",
             status_snap_on: "已启用变换捕捉",
             status_snap_off: "已关闭变换捕捉",
             status_playing: "运行中",
@@ -166,7 +205,6 @@ fn strings(locale: EditorLocale) -> EditorStrings {
             coordinate_text: "坐标 5.00   缩放 1.0   旋转 0.01",
         },
         EditorLocale::EnUs => EditorStrings {
-            engine_name: "Bevy Sandbox Engine",
             menu_file: "File",
             menu_edit: "Edit",
             menu_window: "Window",
@@ -178,7 +216,18 @@ fn strings(locale: EditorLocale) -> EditorStrings {
             menu_window_message: "Window menu is not wired yet",
             menu_game_object_message: "Game object menu is not wired yet",
             menu_component_message: "Component menu is not wired yet",
-            menu_help_message: "Help menu is not wired yet",
+            game_object_create_empty: "Create Empty",
+            game_object_create_child: "Create Empty Child",
+            game_object_create_parent: "Create Empty Parent",
+            game_object_3d_object: "3D Object",
+            game_object_effects: "Effects",
+            game_object_light: "Light",
+            game_object_audio: "Audio",
+            game_object_camera: "Camera",
+            about_menu_item: "About Bevy Sandbox",
+            about_title: "About Bevy Sandbox",
+            about_body: "Bevy Sandbox is an editor prototype for building and debugging sandbox projects.",
+            dialog_close: "Close",
             tool_select: "Select",
             tool_move: "Move",
             tool_rotate: "Rotate",
@@ -187,6 +236,9 @@ fn strings(locale: EditorLocale) -> EditorStrings {
             action_snap_on: "Snap: On",
             action_snap_off: "Snap: Off",
             status_new_entity: "Spawned a new entity",
+            status_new_child_entity: "Spawned a new child entity",
+            status_new_parent_entity: "Spawned a new parent entity",
+            status_game_object_category: "This game object category is not wired yet",
             status_snap_on: "Transform snapping enabled",
             status_snap_off: "Transform snapping disabled",
             status_playing: "Playing",
@@ -227,6 +279,9 @@ struct SnapButtonText;
 #[derive(Component)]
 struct ShellButton(ShellAction);
 
+#[derive(Component)]
+struct HelpOverlayElement;
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum ShellAction {
     File,
@@ -235,6 +290,12 @@ enum ShellAction {
     GameObject,
     Component,
     Help,
+    About,
+    CloseAbout,
+    CreateEmptyObject,
+    CreateEmptyChild,
+    CreateEmptyParent,
+    GameObjectCategory,
     Play,
     Pause,
     Stop,
@@ -297,16 +358,6 @@ fn ui_setup(
                 BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
             ))
             .with_children(|menu| {
-                menu.spawn((
-                    Text::new(i18n.engine_name),
-                    TextFont {
-                        font: theme.text.font.clone().into(),
-                        font_size: FontSize::Px(13.0),
-                        ..default()
-                    },
-                    TextColor(theme.text.text_color),
-                ));
-
                 for (label, action) in [
                     (i18n.menu_file, ShellAction::File),
                     (i18n.menu_edit, ShellAction::Edit),
@@ -598,6 +649,57 @@ fn spawn_shell_button(
     });
 }
 
+fn spawn_menu_item(
+    parent: &mut ChildSpawnerCommands,
+    theme: &Theme,
+    label: &str,
+    shortcut: Option<&str>,
+    has_submenu: bool,
+    action: ShellAction,
+) {
+    parent
+        .spawn((
+            Button,
+            ShellButton(action),
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Px(22.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::SpaceBetween,
+                padding: UiRect::horizontal(Val::Px(8.0)),
+                ..default()
+            },
+            BackgroundColor(Color::NONE),
+        ))
+        .with_children(|item| {
+            item.spawn((
+                Text::new(label),
+                TextFont {
+                    font: theme.text.font.clone().into(),
+                    font_size: FontSize::Px(11.0),
+                    ..default()
+                },
+                TextColor(theme.text.text_color),
+            ));
+
+            let trailing = if has_submenu {
+                "›"
+            } else {
+                shortcut.unwrap_or("")
+            };
+
+            item.spawn((
+                Text::new(trailing),
+                TextFont {
+                    font: theme.text.font.clone().into(),
+                    font_size: FontSize::Px(11.0),
+                    ..default()
+                },
+                TextColor(theme.text.low_priority),
+            ));
+        });
+}
+
 fn spawn_separator(parent: &mut ChildSpawnerCommands) {
     parent.spawn((
         Node {
@@ -631,6 +733,7 @@ fn handle_shell_buttons(
     >,
     mut shell_state: ResMut<EditorShellState>,
     ui_state: Res<EditorUiState>,
+    mut menu_state: ResMut<EditorMenuState>,
     mut active_tool: ResMut<ActiveTool>,
     mut gizmo_settings: ResMut<TransformGizmoSettings>,
     mut commands: Commands,
@@ -653,12 +756,43 @@ fn handle_shell_buttons(
                         shell_state.status = i18n.menu_window_message.to_string()
                     }
                     ShellAction::GameObject => {
-                        shell_state.status = i18n.menu_game_object_message.to_string()
+                        menu_state.game_object_menu_open = !menu_state.game_object_menu_open;
+                        menu_state.help_menu_open = false;
+                        shell_state.status = i18n.menu_game_object_message.to_string();
                     }
                     ShellAction::Component => {
                         shell_state.status = i18n.menu_component_message.to_string()
                     }
-                    ShellAction::Help => shell_state.status = i18n.menu_help_message.to_string(),
+                    ShellAction::Help => {
+                        menu_state.help_menu_open = !menu_state.help_menu_open;
+                        menu_state.game_object_menu_open = false;
+                    }
+                    ShellAction::About => {
+                        menu_state.help_menu_open = false;
+                        menu_state.game_object_menu_open = false;
+                        menu_state.about_dialog_open = true;
+                    }
+                    ShellAction::CloseAbout => {
+                        menu_state.about_dialog_open = false;
+                    }
+                    ShellAction::CreateEmptyObject => {
+                        menu_state.game_object_menu_open = false;
+                        spawn_named_entity(&mut commands, "GameObject");
+                        shell_state.status = i18n.status_new_entity.to_string();
+                    }
+                    ShellAction::CreateEmptyChild => {
+                        menu_state.game_object_menu_open = false;
+                        spawn_named_entity(&mut commands, "Child GameObject");
+                        shell_state.status = i18n.status_new_child_entity.to_string();
+                    }
+                    ShellAction::CreateEmptyParent => {
+                        menu_state.game_object_menu_open = false;
+                        spawn_named_entity(&mut commands, "Parent GameObject");
+                        shell_state.status = i18n.status_new_parent_entity.to_string();
+                    }
+                    ShellAction::GameObjectCategory => {
+                        shell_state.status = i18n.status_game_object_category.to_string();
+                    }
                     ShellAction::Play => {
                         shell_state.play_state = PlayState::Playing;
                         shell_state.status = i18n.status_playing.to_string();
@@ -690,7 +824,7 @@ fn handle_shell_buttons(
                         shell_state.status = i18n.status_local_global.to_string()
                     }
                     ShellAction::NewEntity => {
-                        spawn_new_entity(&mut commands);
+                        spawn_named_entity(&mut commands, "New Entity");
                         shell_state.status = i18n.status_new_entity.to_string();
                     }
                     ShellAction::ToggleSnap => {
@@ -714,7 +848,11 @@ fn handle_shell_buttons(
                 ));
             }
             Interaction::Hovered => {
-                *background = BackgroundColor(EditorColors::BUTTON_HOVER);
+                *background = BackgroundColor(if is_menu_item(button.0) {
+                    Color::srgb(0.32, 0.32, 0.32)
+                } else {
+                    EditorColors::BUTTON_HOVER
+                });
             }
             Interaction::None => {
                 *background = BackgroundColor(button_color(selected, is_ghost(button.0)));
@@ -774,6 +912,205 @@ fn sync_shell_labels(
     }
 }
 
+fn render_help_overlays(
+    mut commands: Commands,
+    menu_state: Res<EditorMenuState>,
+    theme: Res<Theme>,
+    ui_state: Res<EditorUiState>,
+    overlays: Query<Entity, With<HelpOverlayElement>>,
+) {
+    if !menu_state.is_changed() {
+        return;
+    }
+
+    for entity in &overlays {
+        commands.entity(entity).despawn();
+    }
+
+    let i18n = strings(ui_state.locale);
+
+    if menu_state.game_object_menu_open {
+        commands
+            .spawn((
+                Node {
+                    position_type: PositionType::Absolute,
+                    top: Val::Px(28.0),
+                    left: Val::Px(208.0),
+                    width: Val::Px(220.0),
+                    padding: UiRect::vertical(Val::Px(4.0)),
+                    flex_direction: FlexDirection::Column,
+                    border: UiRect::all(Val::Px(1.0)),
+                    ..default()
+                },
+                BackgroundColor(Color::srgb(0.19, 0.19, 0.19)),
+                BorderColor::all(Color::srgb(0.34, 0.34, 0.34)),
+                ZIndex(100),
+                HelpOverlayElement,
+            ))
+            .with_children(|menu| {
+                spawn_menu_item(
+                    menu,
+                    &theme,
+                    i18n.game_object_create_empty,
+                    Some("Ctrl+Shift+N"),
+                    false,
+                    ShellAction::CreateEmptyObject,
+                );
+                spawn_menu_item(
+                    menu,
+                    &theme,
+                    i18n.game_object_create_child,
+                    Some("Alt+Shift+N"),
+                    false,
+                    ShellAction::CreateEmptyChild,
+                );
+                spawn_menu_item(
+                    menu,
+                    &theme,
+                    i18n.game_object_create_parent,
+                    Some("Ctrl+Shift+G"),
+                    false,
+                    ShellAction::CreateEmptyParent,
+                );
+                spawn_menu_item(
+                    menu,
+                    &theme,
+                    i18n.game_object_3d_object,
+                    None,
+                    true,
+                    ShellAction::GameObjectCategory,
+                );
+                spawn_menu_item(
+                    menu,
+                    &theme,
+                    i18n.game_object_effects,
+                    None,
+                    true,
+                    ShellAction::GameObjectCategory,
+                );
+                spawn_menu_item(
+                    menu,
+                    &theme,
+                    i18n.game_object_light,
+                    None,
+                    true,
+                    ShellAction::GameObjectCategory,
+                );
+                spawn_menu_item(
+                    menu,
+                    &theme,
+                    i18n.game_object_audio,
+                    None,
+                    true,
+                    ShellAction::GameObjectCategory,
+                );
+                spawn_menu_item(
+                    menu,
+                    &theme,
+                    i18n.game_object_camera,
+                    None,
+                    false,
+                    ShellAction::GameObjectCategory,
+                );
+            });
+    }
+
+    if menu_state.help_menu_open {
+        commands
+            .spawn((
+                Node {
+                    position_type: PositionType::Absolute,
+                    top: Val::Px(30.0),
+                    left: Val::Px(330.0),
+                    width: Val::Px(180.0),
+                    padding: UiRect::all(Val::Px(4.0)),
+                    flex_direction: FlexDirection::Column,
+                    row_gap: Val::Px(2.0),
+                    border_radius: BorderRadius::all(Val::Px(4.0)),
+                    ..default()
+                },
+                BackgroundColor(Color::srgb(0.12, 0.12, 0.13)),
+                ZIndex(100),
+                HelpOverlayElement,
+            ))
+            .with_children(|menu| {
+                spawn_shell_button(
+                    menu,
+                    &theme,
+                    i18n.about_menu_item,
+                    ShellAction::About,
+                    false,
+                    false,
+                    false,
+                    false,
+                );
+            });
+    }
+
+    if menu_state.about_dialog_open {
+        commands
+            .spawn((
+                Node {
+                    position_type: PositionType::Absolute,
+                    top: Val::Px(0.0),
+                    bottom: Val::Px(0.0),
+                    left: Val::Px(0.0),
+                    right: Val::Px(0.0),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    ..default()
+                },
+                BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.48)),
+                ZIndex(101),
+                HelpOverlayElement,
+            ))
+            .with_children(|overlay| {
+                overlay
+                    .spawn((
+                        Node {
+                            width: Val::Px(360.0),
+                            padding: UiRect::all(Val::Px(18.0)),
+                            flex_direction: FlexDirection::Column,
+                            row_gap: Val::Px(12.0),
+                            border_radius: BorderRadius::all(Val::Px(6.0)),
+                            ..default()
+                        },
+                        BackgroundColor(Color::srgb(0.13, 0.13, 0.15)),
+                    ))
+                    .with_children(|dialog| {
+                        dialog.spawn((
+                            Text::new(i18n.about_title),
+                            TextFont {
+                                font: theme.text.font.clone().into(),
+                                font_size: FontSize::Px(16.0),
+                                ..default()
+                            },
+                            TextColor(theme.text.text_color),
+                        ));
+                        dialog.spawn((
+                            Text::new(i18n.about_body),
+                            TextFont {
+                                font: theme.text.font.clone().into(),
+                                font_size: FontSize::Px(12.0),
+                                ..default()
+                            },
+                            TextColor(theme.text.low_priority),
+                        ));
+                        spawn_shell_button(
+                            dialog,
+                            &theme,
+                            i18n.dialog_close,
+                            ShellAction::CloseAbout,
+                            false,
+                            false,
+                            false,
+                            false,
+                        );
+                    });
+            });
+    }
+}
+
 fn is_ghost(action: ShellAction) -> bool {
     matches!(
         action,
@@ -783,6 +1120,18 @@ fn is_ghost(action: ShellAction) -> bool {
             | ShellAction::Step
             | ShellAction::Pivot
             | ShellAction::LocalGlobal
+            | ShellAction::Help
+    )
+}
+
+fn is_menu_item(action: ShellAction) -> bool {
+    matches!(
+        action,
+        ShellAction::About
+            | ShellAction::CreateEmptyObject
+            | ShellAction::CreateEmptyChild
+            | ShellAction::CreateEmptyParent
+            | ShellAction::GameObjectCategory
     )
 }
 
@@ -845,12 +1194,8 @@ fn play_state_name(state: PlayState, i18n: &EditorStrings) -> &'static str {
     }
 }
 
-fn spawn_new_entity(commands: &mut Commands) {
-    commands.spawn((
-        Name::new("New Entity"),
-        Transform::default(),
-        Visibility::default(),
-    ));
+fn spawn_named_entity(commands: &mut Commands, name: &'static str) {
+    commands.spawn((Name::new(name), Transform::default(), Visibility::default()));
 }
 
 fn setup_console_pane(
