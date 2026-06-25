@@ -292,6 +292,7 @@ enum ShellAction {
     Help,
     About,
     CloseAbout,
+    CloseMenus,
     CreateEmptyObject,
     CreateEmptyChild,
     CreateEmptyParent,
@@ -775,6 +776,10 @@ fn handle_shell_buttons(
                     ShellAction::CloseAbout => {
                         menu_state.about_dialog_open = false;
                     }
+                    ShellAction::CloseMenus => {
+                        menu_state.game_object_menu_open = false;
+                        menu_state.help_menu_open = false;
+                    }
                     ShellAction::CreateEmptyObject => {
                         menu_state.game_object_menu_open = false;
                         spawn_named_entity(&mut commands, "GameObject");
@@ -837,25 +842,35 @@ fn handle_shell_buttons(
                     }
                 }
 
-                *background = BackgroundColor(button_color(
-                    is_selected(
-                        button.0,
-                        active_tool.0,
-                        shell_state.play_state,
-                        gizmo_settings.snap_enabled,
-                    ),
-                    is_ghost(button.0),
-                ));
+                *background = BackgroundColor(if is_dismiss_overlay(button.0) {
+                    Color::NONE
+                } else {
+                    button_color(
+                        is_selected(
+                            button.0,
+                            active_tool.0,
+                            shell_state.play_state,
+                            gizmo_settings.snap_enabled,
+                        ),
+                        is_ghost(button.0),
+                    )
+                });
             }
             Interaction::Hovered => {
                 *background = BackgroundColor(if is_menu_item(button.0) {
                     Color::srgb(0.32, 0.32, 0.32)
+                } else if is_dismiss_overlay(button.0) {
+                    Color::NONE
                 } else {
                     EditorColors::BUTTON_HOVER
                 });
             }
             Interaction::None => {
-                *background = BackgroundColor(button_color(selected, is_ghost(button.0)));
+                *background = BackgroundColor(if is_dismiss_overlay(button.0) {
+                    Color::NONE
+                } else {
+                    button_color(selected, is_ghost(button.0))
+                });
             }
         }
     }
@@ -899,15 +914,19 @@ fn sync_shell_labels(
 
     if active_tool.is_changed() || shell_state.is_changed() || gizmo_settings.is_changed() {
         for (button, mut background) in &mut button_query {
-            *background = BackgroundColor(button_color(
-                is_selected(
-                    button.0,
-                    active_tool.0,
-                    shell_state.play_state,
-                    gizmo_settings.snap_enabled,
-                ),
-                is_ghost(button.0),
-            ));
+            *background = BackgroundColor(if is_dismiss_overlay(button.0) {
+                Color::NONE
+            } else {
+                button_color(
+                    is_selected(
+                        button.0,
+                        active_tool.0,
+                        shell_state.play_state,
+                        gizmo_settings.snap_enabled,
+                    ),
+                    is_ghost(button.0),
+                )
+            });
         }
     }
 }
@@ -928,6 +947,24 @@ fn render_help_overlays(
     }
 
     let i18n = strings(ui_state.locale);
+
+    if menu_state.game_object_menu_open || menu_state.help_menu_open {
+        commands.spawn((
+            Button,
+            ShellButton(ShellAction::CloseMenus),
+            Node {
+                position_type: PositionType::Absolute,
+                top: Val::Px(0.0),
+                bottom: Val::Px(0.0),
+                left: Val::Px(0.0),
+                right: Val::Px(0.0),
+                ..default()
+            },
+            BackgroundColor(Color::NONE),
+            ZIndex(99),
+            HelpOverlayElement,
+        ));
+    }
 
     if menu_state.game_object_menu_open {
         commands
@@ -1133,6 +1170,10 @@ fn is_menu_item(action: ShellAction) -> bool {
             | ShellAction::CreateEmptyParent
             | ShellAction::GameObjectCategory
     )
+}
+
+fn is_dismiss_overlay(action: ShellAction) -> bool {
+    matches!(action, ShellAction::CloseMenus)
 }
 
 fn is_selected(
