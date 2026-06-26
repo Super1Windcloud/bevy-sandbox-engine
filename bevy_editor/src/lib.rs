@@ -58,8 +58,8 @@ pub mod window_icon;
 const APP_WINDOW_BG: Color = Color::srgb(0.039, 0.047, 0.063);
 
 #[derive(Resource, Default, Clone)]
-struct LaunchOptions {
-    project_path: Option<PathBuf>,
+pub(crate) struct LaunchOptions {
+    pub(crate) project_path: Option<PathBuf>,
     editor_mode: bool,
 }
 

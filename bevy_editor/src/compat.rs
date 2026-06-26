@@ -7,14 +7,18 @@ use std::{
 };
 
 use bevy::{
+    asset::RenderAssetUsages,
     color::palettes::tailwind,
     log::{error, info, warn},
+    mesh::{Indices, PrimitiveTopology},
     prelude::*,
 };
 use regex::Regex;
 use rquickjs::{Context, Runtime, function::Func};
-use serde_json::json;
+use serde_json::{Value, json};
 use walkdir::WalkDir;
+
+use crate::LaunchOptions;
 
 pub const COMPAT_PROJECT_ROOT_ARG: &str = "--project";
 
@@ -469,6 +473,7 @@ pub struct CompatProjectResource {
 #[derive(Debug, Clone)]
 pub struct CompatProjectManifest {
     pub root: PathBuf,
+    pub assets_root: PathBuf,
     pub scripts: Vec<PathBuf>,
     pub declarations: Vec<PathBuf>,
     pub prefabs: Vec<PrefabSummary>,
@@ -481,6 +486,7 @@ pub struct CompatProjectManifest {
     pub textures: Vec<PathBuf>,
     pub audio: Vec<PathBuf>,
     pub ui: Vec<PathBuf>,
+    pub uuid_index: BTreeMap<String, PathBuf>,
 }
 
 #[derive(Debug, Clone)]
@@ -489,6 +495,13 @@ pub struct PrefabSummary {
     pub name: String,
     pub uuid: Option<String>,
     pub ts_components: Vec<String>,
+    pub render_nodes: Vec<PrefabRenderNode>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PrefabRenderNode {
+    pub name: String,
+    pub transform: Transform,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -554,8 +567,10 @@ impl Plugin for CompatProjectPlugin {
     }
 }
 
-fn initialize_compat_project(mut commands: Commands) {
-    let Some(root) = compat_project_root_from_args() else {
+fn initialize_compat_project(mut commands: Commands, launch_options: Option<Res<LaunchOptions>>) {
+    let Some(root) = compat_project_root_from_launch_options(launch_options.as_deref())
+        .or_else(compat_project_root_from_args)
+    else {
         return;
     };
 
@@ -604,6 +619,14 @@ fn initialize_compat_project(mut commands: Commands) {
     }
 }
 
+fn compat_project_root_from_launch_options(
+    launch_options: Option<&LaunchOptions>,
+) -> Option<PathBuf> {
+    launch_options
+        .and_then(|launch_options| launch_options.project_path.clone())
+        .filter(|path| is_compat_project_root(path))
+}
+
 fn compat_project_root_from_args() -> Option<PathBuf> {
     let mut args = std::env::args_os();
     while let Some(arg) = args.next() {
@@ -635,6 +658,7 @@ fn load_compat_project(root: &Path) -> std::io::Result<CompatProjectResource> {
 
 fn scan_project(root: &Path) -> std::io::Result<CompatProjectManifest> {
     let root = fs::canonicalize(root)?;
+    let assets_root = root.join("Assets");
     let mut scripts = Vec::new();
     let mut declarations = Vec::new();
     let mut prefabs = Vec::new();
@@ -647,6 +671,7 @@ fn scan_project(root: &Path) -> std::io::Result<CompatProjectManifest> {
     let mut textures = Vec::new();
     let mut audio = Vec::new();
     let mut ui = Vec::new();
+    let mut uuid_index = BTreeMap::new();
 
     for entry in WalkDir::new(&root) {
         let Ok(entry) = entry else {
@@ -665,6 +690,15 @@ fn scan_project(root: &Path) -> std::io::Result<CompatProjectManifest> {
             .extension()
             .and_then(|value| value.to_str())
             .unwrap_or_default();
+
+        if extension == "meta"
+            && let Some(asset_path) = asset_path_from_meta(path)
+            && asset_path.is_file()
+            && let Some(uuid) = load_uuid_from_meta_for_meta_path(path)
+            && let Ok(relative_asset_path) = asset_path.strip_prefix(&assets_root)
+        {
+            uuid_index.insert(uuid, relative_asset_path.to_path_buf());
+        }
 
         match extension {
             "ts" => {
@@ -687,6 +721,7 @@ fn scan_project(root: &Path) -> std::io::Result<CompatProjectManifest> {
                     path: relative_path,
                     uuid: load_uuid_from_meta(path),
                     ts_components: extract_ts_component_names(&bytes),
+                    render_nodes: extract_prefab_render_nodes_from_bytes(&bytes),
                 });
             }
             "scene" => scenes.push(relative_path),
@@ -717,6 +752,7 @@ fn scan_project(root: &Path) -> std::io::Result<CompatProjectManifest> {
 
     Ok(CompatProjectManifest {
         root,
+        assets_root,
         scripts,
         declarations,
         prefabs,
@@ -729,6 +765,7 @@ fn scan_project(root: &Path) -> std::io::Result<CompatProjectManifest> {
         textures,
         audio,
         ui,
+        uuid_index,
     })
 }
 
@@ -922,6 +959,17 @@ fn extract_ts_component_names(bytes: &[u8]) -> Vec<String> {
     components.into_iter().collect()
 }
 
+fn extract_prefab_render_nodes_from_bytes(bytes: &[u8]) -> Vec<PrefabRenderNode> {
+    extract_game_object_nodes_from_bytes(bytes)
+        .into_iter()
+        .filter(|node| !node.name.is_empty())
+        .map(|node| PrefabRenderNode {
+            name: node.name,
+            transform: node.transform,
+        })
+        .collect()
+}
+
 fn prefab_name_from_bytes(bytes: &[u8]) -> Option<String> {
     let strings = extract_readable_strings(bytes);
     strings.windows(2).find_map(|pair| {
@@ -962,11 +1010,21 @@ fn load_uuid_from_meta(path: &Path) -> Option<String> {
             .and_then(|ext| ext.to_str())
             .unwrap_or_default()
     ));
+    load_uuid_from_meta_for_meta_path(&meta_path)
+}
+
+fn load_uuid_from_meta_for_meta_path(meta_path: &Path) -> Option<String> {
     let text = fs::read_to_string(meta_path).ok()?;
     let uuid_pattern = Regex::new(r#""uuid"\s*:\s*"([A-Fa-f0-9]{32})""#).expect("uuid regex");
     uuid_pattern
         .captures(&text)
         .map(|capture| capture[1].to_ascii_uppercase())
+}
+
+fn asset_path_from_meta(meta_path: &Path) -> Option<PathBuf> {
+    let file_name = meta_path.file_name()?.to_string_lossy();
+    let asset_name = file_name.strip_suffix(".meta")?;
+    Some(meta_path.with_file_name(asset_name))
 }
 
 fn is_component_name(value: &str) -> bool {
@@ -1225,6 +1283,49 @@ fn extract_scene_nodes_from_bytes(
     prefab_by_name: &BTreeMap<String, &PrefabSummary>,
     prefab_by_uuid: &BTreeMap<String, &PrefabSummary>,
 ) -> Vec<CompatNode> {
+    let nodes = extract_game_object_nodes_from_bytes(bytes)
+        .into_iter()
+        .filter_map(|node| {
+            let prefab_uuid = node.prefab_uuid;
+            let prefab = prefab_uuid
+                .as_ref()
+                .and_then(|uuid| prefab_by_uuid.get(uuid).copied())
+                .or_else(|| resolve_prefab_by_name(&node.name, prefab_by_name));
+
+            let source = if let Some(prefab) = prefab {
+                CompatNodeSource::PrefabInstance {
+                    prefab_path: Some(prefab.path.clone()),
+                    prefab_name: Some(prefab.name.clone()),
+                    prefab_uuid: prefab.uuid.clone().or(prefab_uuid.clone()),
+                }
+            } else {
+                CompatNodeSource::NativeSceneObject
+            };
+
+            let script_components = prefab
+                .map(|prefab| prefab.ts_components.clone())
+                .unwrap_or_default();
+
+            Some(CompatNode {
+                name: node.name,
+                source,
+                script_components,
+                transform: node.transform,
+            })
+        })
+        .collect();
+
+    dedupe_nodes(nodes)
+}
+
+#[derive(Debug)]
+struct RawGameObjectNode {
+    name: String,
+    transform: Transform,
+    prefab_uuid: Option<String>,
+}
+
+fn extract_game_object_nodes_from_bytes(bytes: &[u8]) -> Vec<RawGameObjectNode> {
     let mut nodes = Vec::new();
     let mut cursor = 0;
 
@@ -1248,34 +1349,15 @@ fn extract_scene_nodes_from_bytes(
         };
 
         let prefab_uuid = read_uuid_after_field(block, b"id");
-        let prefab = prefab_uuid
-            .as_ref()
-            .and_then(|uuid| prefab_by_uuid.get(uuid).copied())
-            .or_else(|| resolve_prefab_by_name(&name, prefab_by_name));
 
-        let source = if let Some(prefab) = prefab {
-            CompatNodeSource::PrefabInstance {
-                prefab_path: Some(prefab.path.clone()),
-                prefab_name: Some(prefab.name.clone()),
-                prefab_uuid: prefab.uuid.clone().or(prefab_uuid.clone()),
-            }
-        } else {
-            CompatNodeSource::NativeSceneObject
-        };
-
-        let script_components = prefab
-            .map(|prefab| prefab.ts_components.clone())
-            .unwrap_or_default();
-
-        nodes.push(CompatNode {
+        nodes.push(RawGameObjectNode {
             name,
-            source,
-            script_components,
             transform,
+            prefab_uuid,
         });
     }
 
-    dedupe_nodes(nodes)
+    nodes
 }
 
 fn find_bytes(haystack: &[u8], needle: &[u8], start: usize) -> Option<usize> {
@@ -1422,6 +1504,7 @@ fn migrate_default_scene(
     existing_roots: Query<Entity, With<CompatSceneRoot>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>,
 ) {
     let Some(compat_project) = compat_project else {
         return;
@@ -1468,25 +1551,39 @@ fn migrate_default_scene(
             ),
         };
 
-        let color = if node.script_components.is_empty() {
-            tailwind::SLATE_500
-        } else {
-            tailwind::EMERALD_500
-        };
-
         let entity = commands
             .spawn((
                 Name::new(node.name.clone()),
                 CompatNodeMarker { source_label },
                 CompatScriptList(node.script_components.clone()),
-                Mesh3d(meshes.add(Cuboid::from_size(Vec3::splat(0.35)))),
-                MeshMaterial3d(materials.add(Color::from(color))),
                 node.transform,
                 Visibility::default(),
             ))
             .id();
 
         commands.entity(root).add_child(entity);
+
+        let spawned_render_assets = spawn_prefab_render_assets(
+            &mut commands,
+            &compat_project.manifest,
+            node,
+            entity,
+            &mut meshes,
+            &mut materials,
+            &asset_server,
+        );
+
+        if !spawned_render_assets {
+            let color = if node.script_components.is_empty() {
+                tailwind::SLATE_500
+            } else {
+                tailwind::EMERALD_500
+            };
+            commands.entity(entity).insert((
+                Mesh3d(meshes.add(Cuboid::from_size(Vec3::splat(0.35)))),
+                MeshMaterial3d(materials.add(Color::from(color))),
+            ));
+        }
     }
 
     info!(
@@ -1494,4 +1591,337 @@ fn migrate_default_scene(
         scene.path.display(),
         scene.nodes.len()
     );
+}
+
+fn spawn_prefab_render_assets(
+    commands: &mut Commands,
+    manifest: &CompatProjectManifest,
+    node: &CompatNode,
+    parent: Entity,
+    meshes: &mut Assets<Mesh>,
+    materials: &mut Assets<StandardMaterial>,
+    asset_server: &AssetServer,
+) -> bool {
+    let CompatNodeSource::PrefabInstance {
+        prefab_path: Some(prefab_path),
+        ..
+    } = &node.source
+    else {
+        return false;
+    };
+
+    let Some(prefab) = manifest
+        .prefabs
+        .iter()
+        .find(|prefab| &prefab.path == prefab_path)
+    else {
+        return false;
+    };
+
+    let prefab_asset_dir = prefab_path.parent().unwrap_or_else(|| Path::new(""));
+    let mesh_dir = prefab_asset_dir.join("Mesh");
+    let material_dir = prefab_asset_dir.join("Material");
+    let mut spawned_any = false;
+
+    for render_node in &prefab.render_nodes {
+        let Some(mesh_path) =
+            find_named_asset(&manifest.assets_root, &mesh_dir, &render_node.name, "mesh")
+        else {
+            continue;
+        };
+
+        let absolute_mesh_path = manifest.assets_root.join(&mesh_path);
+        let Some(mesh) = load_compat_mesh(&absolute_mesh_path) else {
+            warn!(
+                "Failed to decode compatibility mesh '{}'",
+                absolute_mesh_path.display()
+            );
+            continue;
+        };
+
+        let material = find_named_asset(
+            &manifest.assets_root,
+            &material_dir,
+            &render_node.name,
+            "mat",
+        )
+        .and_then(|path| load_compat_material(manifest, &path, materials, asset_server))
+        .unwrap_or_else(|| materials.add(default_preview_material(&render_node.name)));
+
+        commands.entity(parent).with_children(|parent| {
+            parent.spawn((
+                Name::new(format!("{} mesh", render_node.name)),
+                Mesh3d(meshes.add(mesh)),
+                MeshMaterial3d(material),
+                render_node.transform,
+                Visibility::default(),
+            ));
+        });
+        spawned_any = true;
+    }
+
+    spawned_any
+}
+
+fn find_named_asset(
+    assets_root: &Path,
+    preferred_dir: &Path,
+    name: &str,
+    extension: &str,
+) -> Option<PathBuf> {
+    let direct = preferred_dir.join(format!("{name}.{extension}"));
+    if assets_root.join(&direct).is_file() {
+        return Some(direct);
+    }
+
+    let normalized_name = normalize_lookup_key(name);
+    WalkDir::new(assets_root)
+        .into_iter()
+        .filter_map(Result::ok)
+        .find_map(|entry| {
+            if !entry.file_type().is_file() {
+                return None;
+            }
+            let path = entry.path();
+            if path.extension().and_then(|value| value.to_str()) != Some(extension) {
+                return None;
+            }
+            let stem = path.file_stem()?.to_string_lossy();
+            if normalize_lookup_key(&stem) == normalized_name {
+                path.strip_prefix(assets_root).ok().map(Path::to_path_buf)
+            } else {
+                None
+            }
+        })
+}
+
+fn default_preview_material(name: &str) -> StandardMaterial {
+    let palette = [
+        tailwind::SKY_500,
+        tailwind::EMERALD_500,
+        tailwind::AMBER_500,
+        tailwind::ROSE_500,
+        tailwind::VIOLET_500,
+    ];
+    let hash = name.bytes().fold(0usize, |acc, byte| {
+        acc.wrapping_mul(31).wrapping_add(byte as usize)
+    });
+    StandardMaterial {
+        base_color: Color::from(palette[hash % palette.len()]),
+        perceptual_roughness: 0.8,
+        ..default()
+    }
+}
+
+fn load_compat_material(
+    manifest: &CompatProjectManifest,
+    relative_path: &Path,
+    materials: &mut Assets<StandardMaterial>,
+    asset_server: &AssetServer,
+) -> Option<Handle<StandardMaterial>> {
+    let text = fs::read_to_string(manifest.assets_root.join(relative_path)).ok()?;
+    let value = serde_json::from_str::<Value>(&text).ok()?;
+    let base_color = material_color(&value).unwrap_or(Color::WHITE);
+    let texture_path = material_main_texture_path(manifest, &value);
+    let base_color_texture = texture_path.map(|path| {
+        let asset_path = path.to_string_lossy().replace('\\', "/");
+        asset_server.load(asset_path)
+    });
+
+    Some(materials.add(StandardMaterial {
+        base_color,
+        base_color_texture,
+        perceptual_roughness: 0.8,
+        ..default()
+    }))
+}
+
+fn material_color(value: &Value) -> Option<Color> {
+    let vectors = value.get("vectors")?.as_array()?;
+    let color = vectors.iter().find(|entry| {
+        entry
+            .get("name")
+            .and_then(Value::as_str)
+            .is_some_and(|name| name == "_Color")
+    })?;
+    let rgba = color.get("value")?.as_array()?;
+    let r = rgba.first()?.as_f64()? as f32;
+    let g = rgba.get(1)?.as_f64()? as f32;
+    let b = rgba.get(2)?.as_f64()? as f32;
+    let a = rgba.get(3).and_then(Value::as_f64).unwrap_or(1.0) as f32;
+    Some(Color::srgba(r, g, b, a))
+}
+
+fn material_main_texture_path(manifest: &CompatProjectManifest, value: &Value) -> Option<PathBuf> {
+    let textures = value.get("textures")?.as_array()?;
+    let texture = textures.iter().find(|entry| {
+        entry
+            .get("name")
+            .and_then(Value::as_str)
+            .is_some_and(|name| name == "_MainTex")
+    })?;
+    let uuid = texture
+        .get("value")?
+        .get("id")?
+        .as_str()?
+        .to_ascii_uppercase();
+    manifest.uuid_index.get(&uuid).cloned()
+}
+
+fn load_compat_mesh(path: &Path) -> Option<Mesh> {
+    let bytes = fs::read(path).ok()?;
+    let indices = read_mesh_indices(&bytes)?;
+    let vertex_data_start = find_bytes(&bytes, b"vertex_data", 0)?;
+    let data_field = find_bytes(&bytes, b"data", vertex_data_start)?;
+    let vertex_bytes_start = data_field + b"data".len() + 4;
+    let max_index = indices.iter().copied().max()? as usize;
+    let vertex_count = max_index + 1;
+
+    find_positions_in_vertex_blob(&bytes[vertex_bytes_start..], vertex_count, &indices)
+        .map(|positions| mesh_from_positions_and_indices(positions, indices))
+}
+
+fn read_mesh_indices(bytes: &[u8]) -> Option<Vec<u32>> {
+    let field_offset = find_field(bytes, b"indices")?;
+    let byte_len_offset = field_offset + 1 + b"indices".len();
+    let byte_len = read_u32_le(bytes, byte_len_offset)? as usize;
+    let data_start = byte_len_offset + 8;
+    let index_byte_len = byte_len.checked_sub(4)?;
+    let data = bytes.get(data_start..data_start + index_byte_len)?;
+    if data.len() % 2 != 0 {
+        return None;
+    }
+    Some(
+        data.chunks_exact(2)
+            .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]) as u32)
+            .collect(),
+    )
+}
+
+fn find_positions_in_vertex_blob(
+    blob: &[u8],
+    vertex_count: usize,
+    indices: &[u32],
+) -> Option<Vec<[f32; 3]>> {
+    let byte_len = vertex_count.checked_mul(12)?;
+    if byte_len > blob.len() {
+        return None;
+    }
+
+    let mut best: Option<(usize, Vec<[f32; 3]>, f32)> = None;
+    let search_len = blob.len().saturating_sub(byte_len).min(4096);
+    for offset in (0..search_len).step_by(4) {
+        let Some(positions) = read_position_candidate(blob, offset, vertex_count) else {
+            continue;
+        };
+        let score = score_position_candidate(&positions, indices);
+        if score <= 0.0 {
+            continue;
+        }
+        if best
+            .as_ref()
+            .is_none_or(|(_, _, best_score)| score > *best_score)
+        {
+            best = Some((offset, positions, score));
+        }
+    }
+
+    best.map(|(_, positions, _)| positions)
+}
+
+fn read_position_candidate(
+    blob: &[u8],
+    offset: usize,
+    vertex_count: usize,
+) -> Option<Vec<[f32; 3]>> {
+    let mut positions = Vec::with_capacity(vertex_count);
+    for vertex in 0..vertex_count {
+        let base = offset + vertex * 12;
+        let x = read_f32_le(blob, base)?;
+        let y = read_f32_le(blob, base + 4)?;
+        let z = read_f32_le(blob, base + 8)?;
+        if !x.is_finite() || !y.is_finite() || !z.is_finite() {
+            return None;
+        }
+        positions.push([x, y, z]);
+    }
+    Some(positions)
+}
+
+fn score_position_candidate(positions: &[[f32; 3]], indices: &[u32]) -> f32 {
+    if positions.is_empty() {
+        return 0.0;
+    }
+
+    let mut min = Vec3::splat(f32::INFINITY);
+    let mut max = Vec3::splat(f32::NEG_INFINITY);
+    let mut finite_count = 0usize;
+    for position in positions {
+        let p = Vec3::from_array(*position);
+        if p.length_squared() > 10_000.0 {
+            return 0.0;
+        }
+        min = min.min(p);
+        max = max.max(p);
+        finite_count += 1;
+    }
+
+    let extent = max - min;
+    if extent.min_element() < 0.0001 || extent.max_element() > 100.0 {
+        return 0.0;
+    }
+
+    let mut triangle_area = 0.0;
+    let mut triangle_count = 0usize;
+    for tri in indices.chunks_exact(3).take(128) {
+        let a = Vec3::from_array(positions[tri[0] as usize]);
+        let b = Vec3::from_array(positions[tri[1] as usize]);
+        let c = Vec3::from_array(positions[tri[2] as usize]);
+        triangle_area += (b - a).cross(c - a).length();
+        triangle_count += 1;
+    }
+
+    if triangle_count == 0 || triangle_area <= 0.0001 {
+        return 0.0;
+    }
+
+    finite_count as f32 + triangle_area.min(1000.0)
+}
+
+fn mesh_from_positions_and_indices(positions: Vec<[f32; 3]>, indices: Vec<u32>) -> Mesh {
+    let normals = generate_normals(&positions, &indices);
+    let uvs = vec![[0.0, 0.0]; positions.len()];
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::default(),
+    );
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+    mesh.insert_indices(Indices::U32(indices));
+    mesh
+}
+
+fn generate_normals(positions: &[[f32; 3]], indices: &[u32]) -> Vec<[f32; 3]> {
+    let mut normals = vec![Vec3::ZERO; positions.len()];
+    for tri in indices.chunks_exact(3) {
+        let ia = tri[0] as usize;
+        let ib = tri[1] as usize;
+        let ic = tri[2] as usize;
+        if ia >= positions.len() || ib >= positions.len() || ic >= positions.len() {
+            continue;
+        }
+        let a = Vec3::from_array(positions[ia]);
+        let b = Vec3::from_array(positions[ib]);
+        let c = Vec3::from_array(positions[ic]);
+        let normal = (b - a).cross(c - a);
+        normals[ia] += normal;
+        normals[ib] += normal;
+        normals[ic] += normal;
+    }
+
+    normals
+        .into_iter()
+        .map(|normal| normal.try_normalize().unwrap_or(Vec3::Y).to_array())
+        .collect()
 }
