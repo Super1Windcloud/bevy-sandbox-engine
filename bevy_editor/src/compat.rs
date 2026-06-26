@@ -14,7 +14,7 @@ use bevy::{
     prelude::*,
 };
 use regex::Regex;
-use rquickjs::{Context, Runtime, function::Func};
+use rquickjs::{CatchResultExt, Context, Runtime, function::Func};
 use serde_json::{Value, json};
 use walkdir::WalkDir;
 
@@ -239,17 +239,6 @@ class Component extends EngineObject {
 class CharacterController extends Component {
     SimpleMove(direction) {
         __rust_log("info", "CharacterController.SimpleMove " + JSON.stringify(direction));
-    }
-}
-
-class CharacterHealth extends Component {
-    constructor() {
-        super();
-        this.IsDead = false;
-    }
-
-    RefresHealth() {
-        this.IsDead = false;
     }
 }
 
@@ -558,6 +547,13 @@ pub struct ScriptHostSummary {
     pub components: Vec<String>,
 }
 
+struct PreparedScript {
+    path: PathBuf,
+    code: String,
+    classes: Vec<String>,
+    base_classes: Vec<String>,
+}
+
 pub struct CompatProjectPlugin;
 
 impl Plugin for CompatProjectPlugin {
@@ -851,7 +847,7 @@ fn build_script_registry(
         return registry;
     }
 
-    let mut discovered_classes = BTreeSet::new();
+    let mut prepared_scripts = Vec::new();
     for script_path in &manifest.scripts {
         let absolute_path = manifest.root.join(script_path);
         let source = match fs::read_to_string(&absolute_path) {
@@ -873,19 +869,34 @@ fn build_script_registry(
             ));
         }
 
-        for class_name in find_component_classes(&transpiled.code) {
+        prepared_scripts.push(PreparedScript {
+            path: script_path.clone(),
+            classes: find_declared_classes(&transpiled.code),
+            base_classes: find_base_classes(&transpiled.code),
+            code: transpiled.code,
+        });
+    }
+
+    let mut discovered_classes = BTreeSet::new();
+    for script in &prepared_scripts {
+        for class_name in find_component_classes(&script.code) {
             discovered_classes.insert(class_name);
         }
+    }
 
+    let prepared_scripts = order_scripts_by_class_dependencies(prepared_scripts);
+
+    for script in &prepared_scripts {
         let eval_result = context.with(|ctx| {
-            ctx.eval::<(), _>(transpiled.code.as_str())?;
-            Ok::<(), rquickjs::Error>(())
+            ctx.eval::<(), _>(script.code.as_str())
+                .catch(&ctx)
+                .map_err(|error| error.to_string())
         });
 
         if let Err(error) = eval_result {
             registry.eval_failures.push(format!(
                 "QuickJS failed to evaluate '{}': {error}",
-                script_path.display()
+                script.path.display()
             ));
         }
     }
@@ -921,8 +932,9 @@ fn initialize_script_hosts(
                         __compat.initializeNodeHost(host);
                     }})({expression});"
                 );
-                ctx.eval::<(), _>(script.as_str())?;
-                Ok::<(), rquickjs::Error>(())
+                ctx.eval::<(), _>(script.as_str())
+                    .catch(&ctx)
+                    .map_err(|error| error.to_string())
             });
 
             match eval_result {
@@ -1055,6 +1067,36 @@ fn transpile_typescript_compat(source: &str) -> TranspileOutput {
     let decorator_pattern = Regex::new(r"(?m)^[ \t]*@[^\r\n]+(?:\r?\n)?").expect("decorator regex");
     code = decorator_pattern.replace_all(&code, "").into_owned();
 
+    let type_alias_pattern =
+        Regex::new(r"(?m)^[ \t]*type\s+[A-Za-z_][A-Za-z0-9_]*\s*=.*?;[ \t]*(?:\r?\n)?")
+            .expect("type alias regex");
+    code = type_alias_pattern.replace_all(&code, "").into_owned();
+
+    let definite_assignment_pattern =
+        Regex::new(r"([A-Za-z_][A-Za-z0-9_]*)!\s*:").expect("definite assignment regex");
+    code = definite_assignment_pattern
+        .replace_all(&code, "$1:")
+        .into_owned();
+
+    let optional_annotation_pattern =
+        Regex::new(r"([A-Za-z_][A-Za-z0-9_]*)\?\s*:").expect("optional annotation regex");
+    code = optional_annotation_pattern
+        .replace_all(&code, "$1:")
+        .into_owned();
+
+    let abstract_method_pattern =
+        Regex::new(r"(?m)^([ \t]*)(?:protected|public|private)?\s*abstract\s+([A-Za-z_][A-Za-z0-9_]*)\s*(\([^;\r\n]*\))\s*:\s*[^;\r\n]+;")
+            .expect("abstract method regex");
+    code = abstract_method_pattern
+        .replace_all(&code, "$1$2$3 {}")
+        .into_owned();
+
+    let new_generic_pattern =
+        Regex::new(r"\bnew\s+([A-Za-z_][A-Za-z0-9_]*)<[^>\r\n]+>").expect("new generic regex");
+    code = new_generic_pattern
+        .replace_all(&code, "new $1")
+        .into_owned();
+
     let generic_call_pattern =
         Regex::new(r"([A-Za-z_][A-Za-z0-9_]*)<[^>\r\n]+>\(").expect("generic call regex");
     code = generic_call_pattern.replace_all(&code, "$1(").into_owned();
@@ -1073,12 +1115,48 @@ fn transpile_typescript_compat(source: &str) -> TranspileOutput {
     let export_pattern = Regex::new(r"\bexport\s+").expect("export regex");
     code = export_pattern.replace_all(&code, "").into_owned();
 
+    code = remove_initializer_type_annotations(&code);
     code = remove_type_annotations(&code);
+    code = remove_as_assertions(&code);
+    code = remove_non_null_assertions(&code);
+    code = strip_comments(&code);
 
     TranspileOutput {
         converted: !contains_obvious_typescript_syntax(&code),
         code,
     }
+}
+
+fn remove_initializer_type_annotations(input: &str) -> String {
+    let mut code = input.to_string();
+    let map_initializer_pattern =
+        Regex::new(r":\s*Map<[^=\r\n]+>\s*=\s*new\s+Map\b").expect("map initializer regex");
+    code = map_initializer_pattern
+        .replace_all(&code, " = new Map")
+        .into_owned();
+
+    let array_initializer_pattern =
+        Regex::new(r":\s*Array<[^=\r\n]+>\s*=\s*new\s+Array\b").expect("array initializer regex");
+    array_initializer_pattern
+        .replace_all(&code, " = new Array")
+        .into_owned()
+}
+
+fn remove_as_assertions(input: &str) -> String {
+    let as_pattern = Regex::new(r"\s+as\s+[A-Za-z_][A-Za-z0-9_]*(?:\[\])?").expect("as regex");
+    as_pattern.replace_all(input, "").into_owned()
+}
+
+fn remove_non_null_assertions(input: &str) -> String {
+    let non_null_pattern = Regex::new(r"([A-Za-z0-9_\]\)])!").expect("non-null regex");
+    non_null_pattern.replace_all(input, "$1").into_owned()
+}
+
+fn strip_comments(input: &str) -> String {
+    let block_comment_pattern = Regex::new(r"(?s)/\*.*?\*/").expect("block comment regex");
+    let code = block_comment_pattern.replace_all(input, "");
+    let line_comment_pattern = Regex::new(r"(?m)//[^\r\n]*").expect("line comment regex");
+    line_comment_pattern.replace_all(&code, "").into_owned()
 }
 
 fn transpile_enum_block(name: &str, body: &str) -> String {
@@ -1186,7 +1264,16 @@ fn remove_type_annotations(input: &str) -> String {
                 cursor += 1;
             }
 
-            if matches!(previous, Some(ch) if ch.is_ascii_alphanumeric() || matches!(ch, '_' | ')' | '?'))
+            if chars
+                .get(cursor)
+                .is_some_and(|ch| ch.is_ascii_digit() || matches!(ch, '-' | '('))
+            {
+                output.push(current);
+                index += 1;
+                continue;
+            }
+
+            if matches!(previous, Some(ch) if ch.is_ascii_alphanumeric() || matches!(ch, '_' | ')'))
                 && let Some((end_index, valid_type)) = scan_type_annotation(&chars, cursor)
                 && valid_type
             {
@@ -1211,6 +1298,7 @@ fn scan_type_annotation(chars: &[char], start: usize) -> Option<(usize, bool)> {
     let mut angle_depth = 0usize;
     let mut bracket_depth = 0usize;
     let mut paren_depth = 0usize;
+    let mut brace_depth = 0usize;
     let mut seen_content = false;
 
     while index < chars.len() {
@@ -1220,20 +1308,27 @@ fn scan_type_annotation(chars: &[char], start: usize) -> Option<(usize, bool)> {
             '>' => angle_depth = angle_depth.saturating_sub(1),
             '[' => bracket_depth += 1,
             ']' => bracket_depth = bracket_depth.saturating_sub(1),
+            '{' => {
+                if angle_depth == 0 && bracket_depth == 0 && paren_depth == 0 && seen_content {
+                    return Some((index, seen_content));
+                }
+                brace_depth += 1;
+            }
+            '}' => brace_depth = brace_depth.saturating_sub(1),
             '(' => paren_depth += 1,
             ')' => {
-                if angle_depth == 0 && bracket_depth == 0 && paren_depth == 0 {
+                if angle_depth == 0 && bracket_depth == 0 && paren_depth == 0 && brace_depth == 0 {
                     return Some((index, seen_content));
                 }
                 paren_depth = paren_depth.saturating_sub(1);
             }
-            '=' | ';' | '{' | ',' => {
-                if angle_depth == 0 && bracket_depth == 0 && paren_depth == 0 {
+            '=' | ';' | ',' => {
+                if angle_depth == 0 && bracket_depth == 0 && paren_depth == 0 && brace_depth == 0 {
                     return Some((index, seen_content));
                 }
             }
             '\n' => {
-                if angle_depth == 0 && bracket_depth == 0 && paren_depth == 0 {
+                if angle_depth == 0 && bracket_depth == 0 && paren_depth == 0 && brace_depth == 0 {
                     return Some((index, seen_content));
                 }
             }
@@ -1245,7 +1340,19 @@ fn scan_type_annotation(chars: &[char], start: usize) -> Option<(usize, bool)> {
             if !(current.is_ascii_alphanumeric()
                 || matches!(
                     current,
-                    '_' | '.' | '|' | '&' | '?' | '[' | ']' | '<' | '>' | ',' | ' '
+                    '_' | '.'
+                        | '|'
+                        | '&'
+                        | '?'
+                        | '['
+                        | ']'
+                        | '<'
+                        | '>'
+                        | ','
+                        | ' '
+                        | '{'
+                        | '}'
+                        | ':'
                 ))
             {
                 return None;
@@ -1266,6 +1373,11 @@ fn contains_obvious_typescript_syntax(code: &str) -> bool {
         || code.contains(": string")
         || code.contains(": Vector3")
         || code.contains(": Quaternion")
+        || code.contains("| null")
+        || code.contains("| undefined")
+        || code.contains("!:")
+        || code.contains("?:")
+        || code.contains(" abstract ")
         || code.contains(" as ")
 }
 
@@ -1276,6 +1388,49 @@ fn find_component_classes(code: &str) -> Vec<String> {
         .captures_iter(code)
         .map(|capture| capture[1].to_string())
         .collect()
+}
+
+fn find_declared_classes(code: &str) -> Vec<String> {
+    let pattern = Regex::new(r"\bclass\s+([A-Za-z_][A-Za-z0-9_]*)\b").expect("class regex");
+    pattern
+        .captures_iter(code)
+        .map(|capture| capture[1].to_string())
+        .collect()
+}
+
+fn find_base_classes(code: &str) -> Vec<String> {
+    let pattern =
+        Regex::new(r"\bclass\s+[A-Za-z_][A-Za-z0-9_]*\s+extends\s+([A-Za-z_][A-Za-z0-9_]*)\b")
+            .expect("extends regex");
+    pattern
+        .captures_iter(code)
+        .map(|capture| capture[1].to_string())
+        .filter(|class_name| class_name != "Component")
+        .collect()
+}
+
+fn order_scripts_by_class_dependencies(scripts: Vec<PreparedScript>) -> Vec<PreparedScript> {
+    let mut remaining = scripts;
+    let mut ordered = Vec::new();
+    let mut available = BTreeSet::new();
+
+    while !remaining.is_empty() {
+        let ready_index = remaining.iter().position(|script| {
+            script
+                .base_classes
+                .iter()
+                .all(|base_class| available.contains(base_class))
+        });
+
+        let index = ready_index.unwrap_or(0);
+        let script = remaining.remove(index);
+        for class_name in &script.classes {
+            available.insert(class_name.clone());
+        }
+        ordered.push(script);
+    }
+
+    ordered
 }
 
 fn extract_scene_nodes_from_bytes(
@@ -1409,9 +1564,15 @@ fn read_uuid_after_field(block: &[u8], field: &[u8]) -> Option<String> {
 }
 
 fn find_field(block: &[u8], field: &[u8]) -> Option<usize> {
+    find_field_from(block, field, 0)
+}
+
+fn find_field_from(block: &[u8], field: &[u8], start: usize) -> Option<usize> {
     block
+        .get(start..)?
         .windows(field.len() + 1)
         .position(|window| window[0] as usize == field.len() && &window[1..] == field)
+        .map(|offset| start + offset)
 }
 
 fn read_u32_le(bytes: &[u8], offset: usize) -> Option<u32> {
@@ -1772,22 +1933,25 @@ fn load_compat_mesh(path: &Path) -> Option<Mesh> {
     let bytes = fs::read(path).ok()?;
     let indices = read_mesh_indices(&bytes)?;
     let vertex_data_start = find_bytes(&bytes, b"vertex_data", 0)?;
-    let data_field = find_bytes(&bytes, b"data", vertex_data_start)?;
-    let vertex_bytes_start = data_field + b"data".len() + 4;
+    let data_field = find_field_from(&bytes, b"data", vertex_data_start + b"vertex_data".len())?;
+    let vertex_data = read_field_bytes_at(&bytes, data_field, b"data")?;
     let max_index = indices.iter().copied().max()? as usize;
     let vertex_count = max_index + 1;
+    let stride = vertex_data.len().checked_div(vertex_count)?;
 
-    find_positions_in_vertex_blob(&bytes[vertex_bytes_start..], vertex_count, &indices)
-        .map(|positions| mesh_from_positions_and_indices(positions, indices))
+    if stride >= 12 && stride.checked_mul(vertex_count)? == vertex_data.len() {
+        read_positions_with_stride(vertex_data, vertex_count, stride)
+            .filter(|positions| score_position_candidate(positions, &indices) > 0.0)
+            .map(|positions| mesh_from_positions_and_indices(positions, indices.clone()))
+    } else {
+        find_positions_in_vertex_blob(vertex_data, vertex_count, &indices)
+            .map(|positions| mesh_from_positions_and_indices(positions, indices))
+    }
 }
 
 fn read_mesh_indices(bytes: &[u8]) -> Option<Vec<u32>> {
     let field_offset = find_field(bytes, b"indices")?;
-    let byte_len_offset = field_offset + 1 + b"indices".len();
-    let byte_len = read_u32_le(bytes, byte_len_offset)? as usize;
-    let data_start = byte_len_offset + 8;
-    let index_byte_len = byte_len.checked_sub(4)?;
-    let data = bytes.get(data_start..data_start + index_byte_len)?;
+    let data = read_field_bytes_at(bytes, field_offset, b"indices")?;
     if data.len() % 2 != 0 {
         return None;
     }
@@ -1796,6 +1960,32 @@ fn read_mesh_indices(bytes: &[u8]) -> Option<Vec<u32>> {
             .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]) as u32)
             .collect(),
     )
+}
+
+fn read_field_bytes_at<'a>(bytes: &'a [u8], field_offset: usize, field: &[u8]) -> Option<&'a [u8]> {
+    let byte_len_offset = field_offset + 1 + field.len();
+    let byte_len = read_u32_le(bytes, byte_len_offset)? as usize;
+    let data_start = byte_len_offset + 4;
+    bytes.get(data_start..data_start + byte_len)
+}
+
+fn read_positions_with_stride(
+    blob: &[u8],
+    vertex_count: usize,
+    stride: usize,
+) -> Option<Vec<[f32; 3]>> {
+    let mut positions = Vec::with_capacity(vertex_count);
+    for vertex in 0..vertex_count {
+        let base = vertex.checked_mul(stride)?;
+        let x = read_f32_le(blob, base)?;
+        let y = read_f32_le(blob, base + 4)?;
+        let z = read_f32_le(blob, base + 8)?;
+        if !x.is_finite() || !y.is_finite() || !z.is_finite() {
+            return None;
+        }
+        positions.push([x, y, z]);
+    }
+    Some(positions)
 }
 
 fn find_positions_in_vertex_blob(
@@ -1867,7 +2057,7 @@ fn score_position_candidate(positions: &[[f32; 3]], indices: &[u32]) -> f32 {
     }
 
     let extent = max - min;
-    if extent.min_element() < 0.0001 || extent.max_element() > 100.0 {
+    if extent.max_element() < 0.0001 || extent.max_element() > 100.0 {
         return 0.0;
     }
 
@@ -1924,4 +2114,95 @@ fn generate_normals(positions: &[[f32; 3]], indices: &[u32]) -> Vec<[f32; 3]> {
         .into_iter()
         .map(|normal| normal.try_normalize().unwrap_or(Vec3::Y).to_array())
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn decodes_blockman_scene_meshes() {
+        for path in [
+            r"C:\Users\superuse\Downloads\shooting\Assets\Resources\Scene\Plane\Plane.mesh",
+            r"C:\Users\superuse\Downloads\shooting\Assets\Resources\Scene\RadarCar\RadarCar.mesh",
+            r"C:\Users\superuse\Downloads\shooting\Assets\Resources\Scene\Car_01\Car_01.mesh",
+        ] {
+            let path = Path::new(path);
+            if path.exists() {
+                assert!(load_compat_mesh(path).is_some(), "{}", path.display());
+            }
+        }
+    }
+
+    #[test]
+    fn transpiles_blockman_scripts_without_obvious_typescript_syntax() {
+        let script_root = Path::new(r"C:\Users\superuse\Downloads\shooting\Assets\Scripts");
+        if !script_root.exists() {
+            return;
+        }
+
+        for entry in WalkDir::new(script_root).into_iter().filter_map(Result::ok) {
+            if !entry.file_type().is_file()
+                || entry.path().extension().and_then(|value| value.to_str()) != Some("ts")
+            {
+                continue;
+            }
+
+            let source = fs::read_to_string(entry.path()).expect("script should be readable");
+            let transpiled = transpile_typescript_compat(&source);
+            assert!(
+                transpiled.converted,
+                "{}\n{}",
+                entry.path().display(),
+                transpiled.code
+            );
+        }
+    }
+
+    #[test]
+    fn evaluates_blockman_scripts() {
+        let script_root = Path::new(r"C:\Users\superuse\Downloads\shooting\Assets\Scripts");
+        if !script_root.exists() {
+            return;
+        }
+
+        let runtime = Runtime::new().expect("QuickJS runtime");
+        let context = Context::full(&runtime).expect("QuickJS context");
+        context
+            .with(|ctx| ctx.eval::<(), _>(QUICKJS_BOOTSTRAP))
+            .expect("bootstrap should evaluate");
+
+        let mut scripts = Vec::new();
+        for entry in WalkDir::new(script_root).into_iter().filter_map(Result::ok) {
+            if !entry.file_type().is_file()
+                || entry.path().extension().and_then(|value| value.to_str()) != Some("ts")
+            {
+                continue;
+            }
+
+            let source = fs::read_to_string(entry.path()).expect("script should be readable");
+            let transpiled = transpile_typescript_compat(&source);
+            scripts.push(PreparedScript {
+                path: entry.path().to_path_buf(),
+                classes: find_declared_classes(&transpiled.code),
+                base_classes: find_base_classes(&transpiled.code),
+                code: transpiled.code,
+            });
+        }
+
+        for script in order_scripts_by_class_dependencies(scripts) {
+            let result = context.with(|ctx| {
+                ctx.eval::<(), _>(script.code.as_str())
+                    .catch(&ctx)
+                    .map_err(|error| error.to_string())
+            });
+            assert!(
+                result.is_ok(),
+                "{}\n{:?}\n{}",
+                script.path.display(),
+                result,
+                script.code
+            );
+        }
+    }
 }
