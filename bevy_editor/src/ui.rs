@@ -1,11 +1,9 @@
 use bevy::prelude::*;
-use bevy_editor_styles::{Theme, colors::EditorColors};
+use bevy_editor_styles::{Theme, colors::EditorColors, icons};
 use bevy_egui::EguiGlobalSettings;
 use bevy_pane_layout::{PaneLayoutPlugin, PaneLayoutSet, RootPaneLayoutNode, prelude::*};
 use bevy_properties_pane::PropertiesPanePlugin;
 use bevy_scene_tree::SceneTreePlugin;
-use bevy_toolbar::{ActiveTool, EditorTool};
-use bevy_transform_gizmos::{GizmoMode, TransformGizmoSettings};
 
 use crate::locale_env::SupportedLocale;
 
@@ -131,35 +129,23 @@ pub(super) struct EditorStrings {
     about_title: &'static str,
     about_body: &'static str,
     dialog_close: &'static str,
-    tool_select: &'static str,
-    tool_move: &'static str,
-    tool_rotate: &'static str,
-    tool_scale: &'static str,
-    action_new_entity: &'static str,
-    action_snap_on: &'static str,
-    action_snap_off: &'static str,
     status_new_entity: &'static str,
     status_new_child_entity: &'static str,
     status_new_parent_entity: &'static str,
     status_file_menu_item: &'static str,
     status_window_category: &'static str,
     status_game_object_category: &'static str,
-    status_snap_on: &'static str,
-    status_snap_off: &'static str,
     status_playing: &'static str,
     status_paused: &'static str,
-    status_stopped: &'static str,
     status_step: &'static str,
     status_pivot_center: &'static str,
     status_local_global: &'static str,
-    tool_prefix: &'static str,
     state_editing: &'static str,
     state_playing: &'static str,
     state_paused: &'static str,
     category_title: &'static str,
     categories: [&'static str; 5],
     console_lines: [&'static str; 4],
-    coordinate_text: &'static str,
 }
 
 pub(super) fn strings(locale: EditorLocale) -> EditorStrings {
@@ -206,28 +192,17 @@ pub(super) fn strings(locale: EditorLocale) -> EditorStrings {
             about_title: "关于 Bevy Sandbox",
             about_body: "Bevy Sandbox 是用于构建和调试沙盒项目的编辑器原型。",
             dialog_close: "关闭",
-            tool_select: "选择",
-            tool_move: "移动",
-            tool_rotate: "旋转",
-            tool_scale: "缩放",
-            action_new_entity: "新建对象",
-            action_snap_on: "捕捉: 开",
-            action_snap_off: "捕捉: 关",
             status_new_entity: "已创建新对象",
             status_new_child_entity: "已创建新子对象",
             status_new_parent_entity: "已创建新父对象",
             status_file_menu_item: "该文件操作暂未接线",
             status_window_category: "该窗口分类暂未接线",
             status_game_object_category: "该游戏对象分类暂未接线",
-            status_snap_on: "已启用变换捕捉",
-            status_snap_off: "已关闭变换捕捉",
             status_playing: "运行中",
             status_paused: "已暂停",
-            status_stopped: "已停止运行",
             status_step: "单步执行",
             status_pivot_center: "切换枢轴模式",
             status_local_global: "切换本地/世界坐标",
-            tool_prefix: "工具",
             state_editing: "状态: 编辑",
             state_playing: "状态: 运行",
             state_paused: "状态: 暂停",
@@ -239,7 +214,6 @@ pub(super) fn strings(locale: EditorLocale) -> EditorStrings {
                 "[警告] 脚本桥接当前仍使用替身引擎 API",
                 "[信息] 点击播放后继续逼近运行态一致性",
             ],
-            coordinate_text: "坐标 5.00   缩放 1.0   旋转 0.01",
         },
         EditorLocale::EnUs => EditorStrings {
             menu_file: "File",
@@ -283,28 +257,17 @@ pub(super) fn strings(locale: EditorLocale) -> EditorStrings {
             about_title: "About Bevy Sandbox",
             about_body: "Bevy Sandbox is an editor prototype for building and debugging sandbox projects.",
             dialog_close: "Close",
-            tool_select: "Select",
-            tool_move: "Move",
-            tool_rotate: "Rotate",
-            tool_scale: "Scale",
-            action_new_entity: "New Entity",
-            action_snap_on: "Snap: On",
-            action_snap_off: "Snap: Off",
             status_new_entity: "Spawned a new entity",
             status_new_child_entity: "Spawned a new child entity",
             status_new_parent_entity: "Spawned a new parent entity",
             status_file_menu_item: "This file action is not wired yet",
             status_window_category: "This window category is not wired yet",
             status_game_object_category: "This game object category is not wired yet",
-            status_snap_on: "Transform snapping enabled",
-            status_snap_off: "Transform snapping disabled",
             status_playing: "Playing",
             status_paused: "Paused",
-            status_stopped: "Stopped",
             status_step: "Step",
             status_pivot_center: "Toggle pivot mode",
             status_local_global: "Toggle local/world space",
-            tool_prefix: "Tool",
             state_editing: "State: Editing",
             state_playing: "State: Playing",
             state_paused: "State: Paused",
@@ -316,7 +279,6 @@ pub(super) fn strings(locale: EditorLocale) -> EditorStrings {
                 "[Warn] Script bridge is still running with stub engine APIs",
                 "[Info] Press Play to keep closing the runtime parity gap",
             ],
-            coordinate_text: "Pivot 5.00   Scale 1.0   Rotate 0.01",
         },
     }
 }
@@ -325,13 +287,7 @@ pub(super) fn strings(locale: EditorLocale) -> EditorStrings {
 struct StatusText;
 
 #[derive(Component)]
-struct ToolText;
-
-#[derive(Component)]
 struct PlayText;
-
-#[derive(Component)]
-struct SnapButtonText;
 
 #[derive(Component)]
 pub(super) struct ShellButton(ShellAction);
@@ -355,22 +311,14 @@ pub(super) enum ShellAction {
     GameObjectCategory,
     Play,
     Pause,
-    Stop,
     Step,
-    Select,
-    Move,
-    Rotate,
-    Scale,
     Pivot,
     LocalGlobal,
-    NewEntity,
-    ToggleSnap,
 }
 
 fn ui_setup(
     mut commands: Commands,
     theme: Res<Theme>,
-    active_tool: Res<ActiveTool>,
     shell_state: Res<EditorShellState>,
     ui_state: Res<EditorUiState>,
 ) {
@@ -429,174 +377,75 @@ fn ui_setup(
 
             root.spawn((
                 Node {
-                    height: Val::Px(56.0),
+                    height: Val::Px(36.0),
                     align_items: AlignItems::Center,
-                    justify_content: JustifyContent::SpaceBetween,
-                    padding: UiRect::horizontal(Val::Px(12.0)),
+                    padding: UiRect::horizontal(Val::Px(8.0)),
                     ..default()
                 },
                 BackgroundColor(Color::srgb(0.18, 0.18, 0.18)),
             ))
             .with_children(|toolbar| {
-                toolbar.spawn(Node {
-                    width: Val::Px(180.0),
-                    ..default()
-                });
-
                 toolbar
                     .spawn((
                         Node {
                             align_items: AlignItems::Center,
                             justify_content: JustifyContent::Center,
-                            column_gap: Val::Px(6.0),
-                            padding: UiRect::all(Val::Px(8.0)),
-                            border_radius: BorderRadius::all(Val::Px(6.0)),
+                            column_gap: Val::Px(2.0),
+                            padding: UiRect::all(Val::Px(4.0)),
+                            border_radius: BorderRadius::all(Val::Px(2.0)),
                             ..default()
                         },
-                        BackgroundColor(Color::srgb(0.24, 0.24, 0.24)),
+                        BackgroundColor(Color::srgb(0.22, 0.22, 0.22)),
                     ))
                     .with_children(|group| {
-                        spawn_shell_button(
+                        spawn_toolbar_icon_button(
                             group,
                             &theme,
-                            "▶",
+                            icons::PLAY,
                             ShellAction::Play,
-                            true,
-                            false,
                             shell_state.play_state == PlayState::Playing,
-                            false,
+                            true,
                         );
-                        spawn_shell_button(
+                        spawn_toolbar_icon_button(
                             group,
                             &theme,
-                            "⏸",
+                            icons::PAUSE,
                             ShellAction::Pause,
-                            true,
-                            false,
                             shell_state.play_state == PlayState::Paused,
                             false,
                         );
-                        spawn_shell_button(
+                        spawn_toolbar_icon_button(
                             group,
                             &theme,
-                            "⏹",
-                            ShellAction::Stop,
-                            true,
-                            false,
-                            shell_state.play_state == PlayState::Editing,
-                            false,
-                        );
-                        spawn_separator(group);
-                        spawn_shell_button(
-                            group,
-                            &theme,
-                            i18n.tool_select,
-                            ShellAction::Select,
-                            false,
-                            true,
-                            active_tool.0 == EditorTool::Select,
-                            false,
-                        );
-                        spawn_shell_button(
-                            group,
-                            &theme,
-                            i18n.tool_move,
-                            ShellAction::Move,
-                            false,
-                            true,
-                            active_tool.0 == EditorTool::Move,
-                            false,
-                        );
-                        spawn_shell_button(
-                            group,
-                            &theme,
-                            i18n.tool_rotate,
-                            ShellAction::Rotate,
-                            false,
-                            true,
-                            active_tool.0 == EditorTool::Rotate,
-                            false,
-                        );
-                        spawn_shell_button(
-                            group,
-                            &theme,
-                            i18n.tool_scale,
-                            ShellAction::Scale,
-                            false,
-                            true,
-                            active_tool.0 == EditorTool::Scale,
-                            false,
-                        );
-                        spawn_separator(group);
-                        spawn_shell_button(
-                            group,
-                            &theme,
-                            "◎",
-                            ShellAction::Pivot,
-                            true,
-                            false,
-                            false,
-                            false,
-                        );
-                        spawn_shell_button(
-                            group,
-                            &theme,
-                            "L",
-                            ShellAction::LocalGlobal,
-                            true,
-                            false,
-                            false,
-                            false,
-                        );
-                        spawn_shell_button(
-                            group,
-                            &theme,
-                            ">",
+                            icons::STEP_FORWARD,
                             ShellAction::Step,
-                            true,
-                            false,
-                            false,
-                            false,
-                        );
-                    });
-
-                toolbar
-                    .spawn((Node {
-                        width: Val::Px(360.0),
-                        align_items: AlignItems::Center,
-                        justify_content: JustifyContent::FlexEnd,
-                        column_gap: Val::Px(8.0),
-                        ..default()
-                    },))
-                    .with_children(|right| {
-                        right.spawn((
-                            Text::new(i18n.coordinate_text),
-                            TextFont {
-                                font: theme.text.font.clone().into(),
-                                font_size: FontSize::Px(12.0),
-                                ..default()
-                            },
-                            TextColor(theme.text.low_priority),
-                        ));
-                        spawn_shell_button(
-                            right,
-                            &theme,
-                            i18n.action_new_entity,
-                            ShellAction::NewEntity,
-                            false,
-                            false,
                             false,
                             false,
                         );
-                        spawn_shell_button(
-                            right,
+                        spawn_separator(group);
+                        spawn_toolbar_icon_button(
+                            group,
                             &theme,
-                            i18n.action_snap_off,
-                            ShellAction::ToggleSnap,
-                            false,
-                            false,
+                            icons::BOT,
+                            ShellAction::Pivot,
                             false,
                             true,
+                        );
+                        spawn_toolbar_icon_button(
+                            group,
+                            &theme,
+                            icons::BRUSH_CLEANING,
+                            ShellAction::LocalGlobal,
+                            false,
+                            false,
+                        );
+                        spawn_toolbar_icon_button(
+                            group,
+                            &theme,
+                            icons::ELLIPSIS_VERTICAL,
+                            ShellAction::LocalGlobal,
+                            false,
+                            false,
                         );
                     });
             });
@@ -632,20 +481,6 @@ fn ui_setup(
                     StatusText,
                 ));
                 status_bar.spawn((
-                    Text::new(format!(
-                        "{}: {}",
-                        i18n.tool_prefix,
-                        tool_name(active_tool.0, ui_state.locale)
-                    )),
-                    TextFont {
-                        font: theme.text.font.clone().into(),
-                        font_size: FontSize::Px(11.0),
-                        ..default()
-                    },
-                    TextColor(theme.text.low_priority),
-                    ToolText,
-                ));
-                status_bar.spawn((
                     Text::new(play_state_name(shell_state.play_state, &i18n)),
                     TextFont {
                         font: theme.text.font.clone().into(),
@@ -659,51 +494,47 @@ fn ui_setup(
         });
 }
 
-fn spawn_shell_button(
+fn spawn_toolbar_icon_button(
     parent: &mut ChildSpawnerCommands,
     theme: &Theme,
-    label: &str,
+    icon: &str,
     action: ShellAction,
-    compact: bool,
-    ghost: bool,
     selected: bool,
-    mark_snap_text: bool,
+    accent: bool,
 ) {
-    let width = if compact { 26.0 } else { 66.0 };
-    let mut entity = parent.spawn((
-        Button,
-        ShellButton(action),
-        Node {
-            min_width: Val::Px(width),
-            height: Val::Px(24.0),
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::Center,
-            padding: UiRect::horizontal(Val::Px(8.0)),
-            border_radius: BorderRadius::all(Val::Px(4.0)),
-            ..default()
-        },
-        BackgroundColor(button_color(selected, ghost)),
-    ));
-
-    if mark_snap_text {
-        entity.insert(SnapButtonText);
-    }
-
-    entity.with_children(|button| {
-        button.spawn((
-            Text::new(label),
-            TextFont {
-                font: theme.text.font.clone().into(),
-                font_size: FontSize::Px(if compact { 12.0 } else { 11.0 }),
+    parent
+        .spawn((
+            Button,
+            ShellButton(action),
+            Node {
+                width: Val::Px(28.0),
+                height: Val::Px(26.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                border_radius: BorderRadius::all(Val::Px(2.0)),
                 ..default()
             },
-            TextColor(if selected {
-                Color::WHITE
+            BackgroundColor(if selected {
+                Color::srgb(0.43, 0.56, 0.28)
             } else {
-                theme.text.text_color
+                Color::srgb(0.25, 0.25, 0.25)
             }),
-        ));
-    });
+        ))
+        .with_children(|button| {
+            button.spawn((
+                Text::new(icon),
+                TextFont {
+                    font: theme.icon.font.clone().into(),
+                    font_size: FontSize::Px(17.0),
+                    ..default()
+                },
+                TextColor(if accent {
+                    Color::srgb(0.58, 0.84, 0.28)
+                } else {
+                    Color::srgb(0.78, 0.78, 0.78)
+                }),
+            ));
+        });
 }
 
 fn spawn_menu_bar_button(
@@ -773,19 +604,12 @@ fn handle_shell_buttons(
     mut shell_state: ResMut<EditorShellState>,
     ui_state: Res<EditorUiState>,
     mut menu_state: ResMut<EditorMenuState>,
-    mut active_tool: ResMut<ActiveTool>,
-    mut gizmo_settings: ResMut<TransformGizmoSettings>,
     mut commands: Commands,
 ) {
     let i18n = strings(ui_state.locale);
 
     for (interaction, button, mut background) in &mut interaction_query {
-        let selected = is_selected(
-            button.0,
-            active_tool.0,
-            shell_state.play_state,
-            gizmo_settings.snap_enabled,
-        );
+        let selected = is_selected(button.0, shell_state.play_state);
         match *interaction {
             Interaction::Pressed => {
                 match button.0 {
@@ -862,39 +686,10 @@ fn handle_shell_buttons(
                         shell_state.play_state = PlayState::Paused;
                         shell_state.status = i18n.status_paused.to_string();
                     }
-                    ShellAction::Stop => {
-                        shell_state.play_state = PlayState::Editing;
-                        shell_state.status = i18n.status_stopped.to_string();
-                    }
                     ShellAction::Step => shell_state.status = i18n.status_step.to_string(),
-                    ShellAction::Select => active_tool.0 = EditorTool::Select,
-                    ShellAction::Move => {
-                        active_tool.0 = EditorTool::Move;
-                        gizmo_settings.mode = GizmoMode::Translate;
-                    }
-                    ShellAction::Rotate => {
-                        active_tool.0 = EditorTool::Rotate;
-                        gizmo_settings.mode = GizmoMode::Rotate;
-                    }
-                    ShellAction::Scale => {
-                        active_tool.0 = EditorTool::Scale;
-                        gizmo_settings.mode = GizmoMode::Scale;
-                    }
                     ShellAction::Pivot => shell_state.status = i18n.status_pivot_center.to_string(),
                     ShellAction::LocalGlobal => {
                         shell_state.status = i18n.status_local_global.to_string()
-                    }
-                    ShellAction::NewEntity => {
-                        spawn_named_entity(&mut commands, "New Entity");
-                        shell_state.status = i18n.status_new_entity.to_string();
-                    }
-                    ShellAction::ToggleSnap => {
-                        gizmo_settings.snap_enabled = !gizmo_settings.snap_enabled;
-                        shell_state.status = if gizmo_settings.snap_enabled {
-                            i18n.status_snap_on.to_string()
-                        } else {
-                            i18n.status_snap_off.to_string()
-                        };
                     }
                 }
 
@@ -902,12 +697,7 @@ fn handle_shell_buttons(
                     Color::NONE
                 } else {
                     button_color(
-                        is_selected(
-                            button.0,
-                            active_tool.0,
-                            shell_state.play_state,
-                            gizmo_settings.snap_enabled,
-                        ),
+                        is_selected(button.0, shell_state.play_state),
                         is_ghost(button.0),
                     )
                 });
@@ -935,13 +725,9 @@ fn handle_shell_buttons(
 fn sync_shell_labels(
     shell_state: Res<EditorShellState>,
     ui_state: Res<EditorUiState>,
-    active_tool: Res<ActiveTool>,
-    gizmo_settings: Res<TransformGizmoSettings>,
     mut text_queries: ParamSet<(
         Query<&mut Text, With<StatusText>>,
-        Query<&mut Text, With<ToolText>>,
         Query<&mut Text, With<PlayText>>,
-        Query<&mut Text, With<SnapButtonText>>,
     )>,
     mut button_query: Query<(&ShellButton, &mut BackgroundColor), With<Button>>,
 ) {
@@ -951,35 +737,15 @@ fn sync_shell_labels(
         text.0 = shell_state.status.clone();
     }
     for mut text in &mut text_queries.p1() {
-        text.0 = format!(
-            "{}: {}",
-            i18n.tool_prefix,
-            tool_name(active_tool.0, ui_state.locale)
-        );
-    }
-    for mut text in &mut text_queries.p2() {
         text.0 = play_state_name(shell_state.play_state, &i18n).to_string();
     }
-    for mut text in &mut text_queries.p3() {
-        text.0 = if gizmo_settings.snap_enabled {
-            i18n.action_snap_on.to_string()
-        } else {
-            i18n.action_snap_off.to_string()
-        };
-    }
-
-    if active_tool.is_changed() || shell_state.is_changed() || gizmo_settings.is_changed() {
+    if shell_state.is_changed() {
         for (button, mut background) in &mut button_query {
             *background = BackgroundColor(if is_dismiss_overlay(button.0) {
                 Color::NONE
             } else {
                 button_color(
-                    is_selected(
-                        button.0,
-                        active_tool.0,
-                        shell_state.play_state,
-                        gizmo_settings.snap_enabled,
-                    ),
+                    is_selected(button.0, shell_state.play_state),
                     is_ghost(button.0),
                 )
             });
@@ -992,7 +758,6 @@ fn is_ghost(action: ShellAction) -> bool {
         action,
         ShellAction::Play
             | ShellAction::Pause
-            | ShellAction::Stop
             | ShellAction::Step
             | ShellAction::Pivot
             | ShellAction::LocalGlobal
@@ -1017,54 +782,11 @@ fn is_dismiss_overlay(action: ShellAction) -> bool {
     matches!(action, ShellAction::CloseMenus)
 }
 
-fn is_selected(
-    action: ShellAction,
-    active_tool: EditorTool,
-    play_state: PlayState,
-    snap_enabled: bool,
-) -> bool {
+fn is_selected(action: ShellAction, play_state: PlayState) -> bool {
     match action {
         ShellAction::Play => play_state == PlayState::Playing,
         ShellAction::Pause => play_state == PlayState::Paused,
-        ShellAction::Stop => play_state == PlayState::Editing,
-        ShellAction::Select => active_tool == EditorTool::Select,
-        ShellAction::Move => active_tool == EditorTool::Move,
-        ShellAction::Rotate => active_tool == EditorTool::Rotate,
-        ShellAction::Scale => active_tool == EditorTool::Scale,
-        ShellAction::ToggleSnap => snap_enabled,
         _ => false,
-    }
-}
-
-fn tool_name(tool: EditorTool, locale: EditorLocale) -> &'static str {
-    match tool {
-        EditorTool::Select => match locale {
-            EditorLocale::ZhCn => "选择",
-            EditorLocale::EnUs => "Select",
-        },
-        EditorTool::Move => match locale {
-            EditorLocale::ZhCn => "移动",
-            EditorLocale::EnUs => "Move",
-        },
-        EditorTool::Rotate => match locale {
-            EditorLocale::ZhCn => "旋转",
-            EditorLocale::EnUs => "Rotate",
-        },
-        EditorTool::Scale => match locale {
-            EditorLocale::ZhCn => "缩放",
-            EditorLocale::EnUs => "Scale",
-        },
-        EditorTool::NewEntity => match locale {
-            EditorLocale::ZhCn => "新建对象",
-            EditorLocale::EnUs => "New Entity",
-        },
-        EditorTool::Save => "Save",
-        EditorTool::Load => "Load",
-        EditorTool::Undo => "Undo",
-        EditorTool::Redo => "Redo",
-        EditorTool::Play => "Play",
-        EditorTool::Pause => "Pause",
-        EditorTool::Stop => "Stop",
     }
 }
 

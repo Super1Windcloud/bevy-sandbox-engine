@@ -106,7 +106,7 @@ pub(crate) fn spawn_pane<'a>(
                 .with_children(|parent| {
                     parent.spawn((
                         Text::new(pane_icon_glyph(&header_spec.icon)),
-                        containers::pane::title_font(theme),
+                        containers::pane::title_icon_font(theme),
                     ));
                     parent.spawn((
                         Text::new(format!(" {}", header_spec.title)),
@@ -163,7 +163,17 @@ pub(crate) fn spawn_pane<'a>(
 }
 
 fn pane_icon_glyph(_icon: &Icon) -> &'static str {
-    icons::CHEVRON_DOWN
+    match _icon {
+        icon if *icon == icondata::LuPanelLeft => icons::PANEL_LEFT,
+        icon if *icon == icondata::LuScanEye => icons::SCAN_EYE,
+        icon if *icon == icondata::LuGamepad2 => icons::GAMEPAD_2,
+        icon if *icon == icondata::LuFolderOpen => icons::FOLDER_OPEN,
+        icon if *icon == icondata::LuTerminal => icons::TERMINAL,
+        icon if *icon == icondata::LuSquareMousePointer => icons::SQUARE_MOUSE_POINTER,
+        icon if *icon == icondata::LuStore => icons::STORE,
+        icon if *icon == icondata::LuLayoutPanelTop => icons::LAYOUT_PANEL_TOP,
+        _ => icons::LAYOUT_PANEL_TOP,
+    }
 }
 
 pub(crate) fn spawn_divider<'a>(

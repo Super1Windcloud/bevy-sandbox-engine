@@ -72,6 +72,14 @@ pub fn title_font(theme: &Theme) -> TextFont {
     }
 }
 
+pub fn title_icon_font(theme: &Theme) -> TextFont {
+    TextFont {
+        font: theme.icon.font.clone().into(),
+        font_size: FontSize::Px(12.0),
+        ..default()
+    }
+}
+
 pub fn close_button_font(theme: &Theme) -> TextFont {
     TextFont {
         font: theme.text.font.clone().into(),
